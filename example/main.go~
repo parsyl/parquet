@@ -1,0 +1,9 @@
+* Parquet
+** Write
+   -> "PAR1"
+   for column in columns:
+     for page in column.pages:
+       -> PageHeader
+       for value in values:
+         -> value
+     
