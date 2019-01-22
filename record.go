@@ -2,14 +2,11 @@ package parquet
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
 
-	xit "github.com/xitongsys/parquet-go/parquet"
-
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/cswank/parquet/thrift"
 	"github.com/golang/snappy"
 )
 
@@ -24,12 +21,14 @@ type Records struct {
 	// Records are for subsequent row groups
 	records []Records
 
-	w *nWriter
+	w      *nWriter
+	thrift *thrift.Thrift
 }
 
 func New(w io.Writer) *Records {
 	return &Records{
-		w: &nWriter{w: w},
+		w:  &nWriter{w: w},
+		ts: thrift.New(),
 	}
 }
 
@@ -62,18 +61,6 @@ func (r *Records) writeID() error {
 	buf := bytes.Buffer{}
 	w := &nWriter{w: &buf}
 
-	for _, a := range r.IDReps {
-		if err := binary.Write(w, binary.LittleEndian, byte(a)); err != nil {
-			return err
-		}
-	}
-
-	for _, a := range r.IDDefs {
-		if err := binary.Write(w, binary.LittleEndian, byte(a)); err != nil {
-			return err
-		}
-	}
-
 	for _, i := range r.ID {
 		if err := binary.Write(w, binary.BigEndian, i); err != nil {
 			return err
@@ -81,12 +68,7 @@ func (r *Records) writeID() error {
 	}
 	n := w.n
 	compressed := snappy.Encode(nil, buf.Bytes())
-	for _, b := range compressed {
-		fmt.Printf("%02x\n", b)
-	}
-	cn := len(compressed)
-
-	if err := r.writePageHeader(n, cn, len(r.ID)); err != nil {
+	if err := r.thrift.PageHeader(r.w, int32(n), int32(len(compressed)), int32(len(r.ID))); err != nil {
 		return err
 	}
 
@@ -94,33 +76,9 @@ func (r *Records) writeID() error {
 	return err
 }
 
-func (r *Records) writePageHeader(n, cn, l int) error {
-	ph := &xit.PageHeader{
-		UncompressedPageSize: int32(n),
-		CompressedPageSize:   int32(cn),
-		DataPageHeader: &xit.DataPageHeader{
-			NumValues:               int32(l),
-			DefinitionLevelEncoding: xit.Encoding_PLAIN,
-			RepetitionLevelEncoding: xit.Encoding_PLAIN,
-		},
-	}
-
-	ts := thrift.NewTSerializer()
-	ts.Protocol = thrift.NewTCompactProtocolFactory().GetProtocol(ts.Transport)
-	pageHeaderBuf, _ := ts.Write(context.TODO(), ph)
-	_, err := io.Copy(r.w, bytes.NewBuffer(pageHeaderBuf))
-	return err
-}
-
 func (r *Records) writeAge() error {
 	buf := bytes.Buffer{}
 	w := &nWriter{w: &buf}
-
-	for _, a := range r.AgeReps {
-		if err := binary.Write(w, binary.LittleEndian, byte(a)); err != nil {
-			return err
-		}
-	}
 
 	for _, a := range r.AgeDefs {
 		if err := binary.Write(w, binary.LittleEndian, byte(a)); err != nil {
@@ -135,9 +93,7 @@ func (r *Records) writeAge() error {
 	}
 	n := w.n
 	compressed := snappy.Encode(nil, buf.Bytes())
-	cn := len(compressed)
-
-	if err := r.writePageHeader(n, cn, len(r.AgeDefs)); err != nil {
+	if err := r.thrift.PageHeader(r.w, int32(n), int32(len(compressed)), int32(len(r.Age))); err != nil {
 		return err
 	}
 
@@ -147,15 +103,11 @@ func (r *Records) writeAge() error {
 
 func (r *Records) Add(rec Record) {
 	r.ID = append(r.ID, rec.ID)
-	r.IDDefs = append(r.IDDefs, 1)
-	r.IDReps = append(r.IDReps, 0)
 	if rec.Age != nil {
 		r.Age = append(r.Age, *rec.Age)
-		r.AgeDefs = append(r.AgeDefs, 1)
-		r.AgeReps = append(r.AgeReps, 0)
+		r.AgeDefs = append(r.IDDefs, 1)
 	} else {
 		r.AgeDefs = append(r.AgeDefs, 0)
-		r.AgeReps = append(r.AgeReps, 0)
 	}
 }
 

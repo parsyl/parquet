@@ -1,8 +1,9 @@
-package parquet
+package thrift
 
 import (
-	"encoding/binary"
-	"io"
+	"fmt"
+
+	th "github.com/apache/thrift/lib/go/thrift"
 )
 
 type PageType int64
@@ -124,48 +125,44 @@ type SortingColumn struct {
 	NullsFirst bool  `thrift:"nulls_first,3,required" db:"nulls_first" json:"nulls_first"`
 }
 
-type PageHeader struct {
-	Type                 PageType        `thrift:"type,1,required" db:"type" json:"type"`
-	UncompressedPageSize int32           `thrift:"uncompressed_page_size,2,required" db:"uncompressed_page_size" json:"uncompressed_page_size"`
-	CompressedPageSize   int32           `thrift:"compressed_page_size,3,required" db:"compressed_page_size" json:"compressed_page_size"`
-	Crc                  *int32          `thrift:"crc,4" db:"crc" json:"crc,omitempty"`
-	DataPageHeader       *DataPageHeader `thrift:"data_page_header,5" db:"data_page_header" json:"data_page_header,omitempty"`
+type pageHeader struct {
+	Type                 PageType       `thrift:"type,1,required" db:"type" json:"type"`
+	UncompressedPageSize int32          `thrift:"uncompressed_page_size,2,required" db:"uncompressed_page_size" json:"uncompressed_page_size"`
+	CompressedPageSize   int32          `thrift:"compressed_page_size,3,required" db:"compressed_page_size" json:"compressed_page_size"`
+	DataPageHeader       dataPageHeader `thrift:"data_page_header,5" db:"data_page_header" json:"data_page_header,omitempty"`
 }
 
-func (p PageHeader) Write(w io.Writer) error {
-	if err := binary.Write(w, binary.LittleEndian, int64(p.Type)); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, p.UncompressedPageSize); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, p.CompressedPageSize); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, p.DataPageHeader.NumValues); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, int32(p.DataPageHeader.Encoding)); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, int32(p.DataPageHeader.DefinitionLevelEncoding)); err != nil {
-		return err
-	}
-	return binary.Write(w, binary.LittleEndian, int32(p.DataPageHeader.RepetitionLevelEncoding))
+func (p pageHeader) Read(pr th.TProtocol) error {
+	return nil
 }
 
-func int64ToZigzag(l int64) int64 {
-	return (l << 1) ^ (l >> 63)
-}
+func (p pageHeader) Write(pr th.TProtocol) error {
+	fields := []struct {
+		name string
+		t    th.TType
+		val  int32
+	}{
+		{"type", th.I32, int32(p.Type)},
+		{"uncompressed_page_size", th.I32, p.UncompressedPageSize},
+		{"compressed_page_size", th.I32, p.CompressedPageSize},
+	}
 
-func int32ToZigzag(n int32) int32 {
-	return (n << 1) ^ (n >> 31)
+	for i, f := range fields {
+		if err := pr.WriteFieldBegin(f.name, f.t, int16(i+1)); err != nil {
+			return th.PrependError(fmt.Sprintf("%T write field begin error 1:type: ", p), err)
+		}
+		if err := pr.WriteI32(f.val); err != nil {
+			return th.PrependError(fmt.Sprintf("%T.type (1) field write error: ", p), err)
+		}
+	}
+
+	return p.DataPageHeader.Write(pr)
 }
 
 type IndexPageHeader struct {
 }
 
-type DataPageHeader struct {
+type dataPageHeader struct {
 	NumValues               int32       `thrift:"num_values,1,required" db:"num_values" json:"num_values"`
 	Encoding                Encoding    `thrift:"encoding,2,required" db:"encoding" json:"encoding"`
 	DefinitionLevelEncoding Encoding    `thrift:"definition_level_encoding,3,required" db:"definition_level_encoding" json:"definition_level_encoding"`
