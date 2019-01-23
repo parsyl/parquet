@@ -41,7 +41,7 @@ func writeParq() {
 		log.Fatal(err)
 	}
 
-	rec := p.New(f, p.Max(10))
+	rec := p.New(f, p.MaxPageSize(10))
 
 	for _, r := range records {
 		rec.Add(r)

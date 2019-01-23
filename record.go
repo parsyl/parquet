@@ -12,11 +12,8 @@ import (
 // Records reprents a row group
 type Records struct {
 	ID      []int32
-	IDDefs  []int64
-	IDReps  []int64
 	Age     []int32
 	AgeDefs []int64
-	AgeReps []int64
 
 	// records are for subsequent chunks
 	records *Records
@@ -45,7 +42,8 @@ func New(w io.Writer, opts ...func(*Records)) *Records {
 	return r
 }
 
-func Max(m int) func(*Records) {
+// MaxPageSize is the maximum number of rows in each row groups' page.
+func MaxPageSize(m int) func(*Records) {
 	return func(r *Records) {
 		r.max = m
 	}
@@ -132,7 +130,7 @@ func (r *Records) writeAge() error {
 func (r *Records) Add(rec Record) {
 	if len(r.ID) == r.max {
 		if r.records == nil {
-			r.records = New(r.w, Max(r.max))
+			r.records = New(r.w, MaxPageSize(r.max))
 			r.records.meta = r.meta
 		}
 
@@ -141,7 +139,6 @@ func (r *Records) Add(rec Record) {
 	}
 
 	r.ID = append(r.ID, rec.ID)
-	r.IDDefs = append(r.IDDefs, 1)
 	if rec.Age != nil {
 		r.Age = append(r.Age, *rec.Age)
 		r.AgeDefs = append(r.AgeDefs, 1)
