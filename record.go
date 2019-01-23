@@ -3,10 +3,9 @@ package parquet
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"io"
 
-	"github.com/cswank/parquet/thrift"
+	"github.com/cswank/parquet/schema"
 	"github.com/golang/snappy"
 )
 
@@ -18,17 +17,25 @@ type Records struct {
 	Age     []int32
 	AgeDefs []int
 	AgeReps []int
-	// Records are for subsequent row groups
-	records []Records
 
-	w      *nWriter
-	thrift *thrift.Thrift
+	// records are for subsequent chunks
+	records *Records
+	// max is the number of Record items that can get written before
+	// a new set of column chunks is written
+	max int
+
+	meta *schema.Metadata
+	w    *writeCounter
 }
 
 func New(w io.Writer) *Records {
 	return &Records{
-		w:  &nWriter{w: w},
-		ts: thrift.New(),
+		max: 1000,
+		w:   &writeCounter{w: w},
+		meta: schema.New(
+			schema.Field{Name: "id", Type: schema.Int32Type, RepetitionType: schema.RepetitionRequired},
+			schema.Field{Name: "age", Type: schema.Int32Type, RepetitionType: schema.RepetitionOptional},
+		),
 	}
 }
 
@@ -40,14 +47,23 @@ func (r *Records) Write() error {
 	if err := r.writeID(); err != nil {
 		return err
 	}
+
+	for child := r.records; child != nil; child = child.records {
+		child := r.records
+		if child == nil {
+			break
+		}
+
+		if err := child.writeID(); err != nil {
+			return err
+		}
+	}
+
 	if err := r.writeAge(); err != nil {
 		return err
 	}
 
-	for _, child := range r.records {
-		if err := child.writeID(); err != nil {
-			return err
-		}
+	for child := r.records; child != nil; child = child.records {
 		if err := child.writeAge(); err != nil {
 			return err
 		}
@@ -58,17 +74,20 @@ func (r *Records) Write() error {
 }
 
 func (r *Records) writeID() error {
+	pos := r.w.n
 	buf := bytes.Buffer{}
-	w := &nWriter{w: &buf}
+	w := &writeCounter{w: &buf}
 
 	for _, i := range r.ID {
 		if err := binary.Write(w, binary.BigEndian, i); err != nil {
 			return err
 		}
 	}
-	n := w.n
+
+	size := w.n - pos
 	compressed := snappy.Encode(nil, buf.Bytes())
-	if err := r.thrift.PageHeader(r.w, int32(n), int32(len(compressed)), int32(len(r.ID))); err != nil {
+
+	if err := r.meta.WritePageHeader(r.w, "id", pos, size, len(compressed), len(r.ID)); err != nil {
 		return err
 	}
 
@@ -77,8 +96,9 @@ func (r *Records) writeID() error {
 }
 
 func (r *Records) writeAge() error {
+	pos := r.w.n
 	buf := bytes.Buffer{}
-	w := &nWriter{w: &buf}
+	w := &writeCounter{w: &buf}
 
 	for _, a := range r.AgeDefs {
 		if err := binary.Write(w, binary.LittleEndian, byte(a)); err != nil {
@@ -91,9 +111,10 @@ func (r *Records) writeAge() error {
 			return err
 		}
 	}
-	n := w.n
+
+	size := w.n - pos
 	compressed := snappy.Encode(nil, buf.Bytes())
-	if err := r.thrift.PageHeader(r.w, int32(n), int32(len(compressed)), int32(len(r.Age))); err != nil {
+	if err := r.meta.WritePageHeader(r.w, "age", pos, size, len(compressed), len(r.AgeDefs)); err != nil {
 		return err
 	}
 
@@ -102,6 +123,14 @@ func (r *Records) writeAge() error {
 }
 
 func (r *Records) Add(rec Record) {
+	if len(r.ID) == r.max {
+		if r.records == nil {
+			r.records = New(r.w)
+		}
+		r.records.Add(rec)
+		return
+	}
+
 	r.ID = append(r.ID, rec.ID)
 	if rec.Age != nil {
 		r.Age = append(r.Age, *rec.Age)
@@ -116,13 +145,12 @@ type Record struct {
 	Age *int32 `parquet:"name=age, type=INT32"`
 }
 
-type nWriter struct {
+type writeCounter struct {
 	n int
 	w io.Writer
 }
 
-func (w *nWriter) Write(p []byte) (int, error) {
-	fmt.Printf("%x\n", p)
+func (w *writeCounter) Write(p []byte) (int, error) {
 	n, err := w.w.Write(p)
 	w.n += n
 	return n, err
