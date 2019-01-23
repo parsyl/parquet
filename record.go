@@ -12,9 +12,7 @@ import (
 type Records struct {
 	fields []Field
 
-	ID      []int32
-	Age     []int32
-	AgeDefs []int64
+	len int
 
 	// records are for subsequent chunks
 	records *Records
@@ -78,7 +76,7 @@ func (r *Records) Write() error {
 }
 
 func (r *Records) Add(rec Record) {
-	if len(r.ID) == r.max {
+	if r.len == r.max {
 		if r.records == nil {
 			r.records = New(r.w, MaxPageSize(r.max))
 			r.records.meta = r.meta
@@ -91,6 +89,8 @@ func (r *Records) Add(rec Record) {
 	for _, f := range r.fields {
 		f.add(rec)
 	}
+
+	r.len++
 }
 
 type Record struct {
