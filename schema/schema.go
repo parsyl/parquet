@@ -3,6 +3,7 @@ package schema
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
 
@@ -20,7 +21,6 @@ type Metadata struct {
 	ts        *thrift.TSerializer
 	fields    []*sch.SchemaElement
 	rows      int64
-	size      int64
 	rowGroups []rowGroup
 }
 
@@ -37,6 +37,17 @@ func New(fields ...Field) *Metadata {
 	return m
 }
 
+func (m *Metadata) Merge(m2 *Metadata) {
+	m.rows += m2.rows
+	for i, rg := range m.rowGroups {
+		rg2 := m2.rowGroups[i]
+		rg.rowGroup.TotalByteSize += rg2.rowGroup.TotalByteSize
+		rg.rowGroup.NumRows += rg2.rowGroup.NumRows
+		rg.rowGroup.Columns = append(rg.rowGroup.Columns, rg2.rowGroup.Columns...)
+		m.rowGroups[i] = rg
+	}
+}
+
 func (m *Metadata) StartRowGroup(fields ...Field) {
 	m.rowGroups = append(m.rowGroups, rowGroup{
 		fields:  schemaElements(fields),
@@ -46,16 +57,16 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 
 // WritePageHeader indicates you are done writing this columns's chunk
 func (m *Metadata) WritePageHeader(w io.Writer, col string, pos, dataLen, compressedLen, count int) error {
-	m.size += int64(dataLen)
 	m.rows += int64(count)
 
 	ph := &sch.PageHeader{
+		Type:                 sch.PageType_DATA_PAGE,
 		UncompressedPageSize: int32(dataLen),
 		CompressedPageSize:   int32(compressedLen),
 		DataPageHeader: &sch.DataPageHeader{
 			NumValues:               int32(count),
-			DefinitionLevelEncoding: sch.Encoding_PLAIN,
-			RepetitionLevelEncoding: sch.Encoding_PLAIN,
+			DefinitionLevelEncoding: sch.Encoding_RLE,
+			RepetitionLevelEncoding: sch.Encoding_RLE,
 		},
 	}
 
@@ -76,14 +87,14 @@ func (m *Metadata) updateRowGroup(col string, pos, dataLen, compressedLen, heade
 	}
 
 	rg := m.rowGroups[i-1]
+
 	rg.rowGroup.NumRows += int64(count)
-	rg.rowGroup.TotalByteSize += int64(dataLen + headerLen)
-	err := rg.updateColumnChunk(col, pos, dataLen, compressedLen, count, m.fields)
+	err := rg.updateColumnChunk(col, pos, dataLen+headerLen, compressedLen+headerLen, count, m.fields)
 	m.rowGroups[i-1] = rg
 	return err
 }
 
-func (r *rowGroup) columnType(col string, fields []*sch.SchemaElement) (sch.Type, error) {
+func columnType(col string, fields []*sch.SchemaElement) (sch.Type, error) {
 	for _, f := range fields {
 		if f.Name == col {
 			return *f.Type, nil
@@ -97,21 +108,27 @@ func (m *Metadata) Footer(w io.Writer) error {
 	rgs := make([]*sch.RowGroup, len(m.rowGroups))
 	for i, rg := range m.rowGroups {
 		for _, col := range rg.fields {
+			if col.Name == "parquet_go_root" {
+				continue
+			}
+
 			ch, ok := rg.columns[col.Name]
 			if !ok {
 				return fmt.Errorf("unknown column %s", col.Name)
 			}
-			rg.rowGroup.TotalByteSize += ch.MetaData.TotalUncompressedSize
+
+			rg.rowGroup.TotalByteSize += ch.MetaData.TotalCompressedSize
 			rg.rowGroup.Columns = append(rg.rowGroup.Columns, &ch)
 		}
 
+		rg.rowGroup.NumRows = rg.rowGroup.NumRows / int64(len(rg.fields)-1)
 		rgs[i] = &rg.rowGroup
 	}
 
 	f := &sch.FileMetaData{
 		Version:   1,
 		Schema:    m.fields,
-		NumRows:   m.rows,
+		NumRows:   m.rows / int64(len(m.fields)-1),
 		RowGroups: rgs,
 	}
 
@@ -120,29 +137,35 @@ func (m *Metadata) Footer(w io.Writer) error {
 		return err
 	}
 
-	_, err = io.Copy(w, bytes.NewBuffer(buf))
-	return err
+	n, err := io.Copy(w, bytes.NewBuffer(buf))
+	if err != nil {
+		return err
+	}
+
+	return binary.Write(w, binary.LittleEndian, uint32(n))
 }
 
 type rowGroup struct {
 	fields   []*sch.SchemaElement
 	rowGroup sch.RowGroup
 	columns  map[string]sch.ColumnChunk
+	child    *rowGroup
 }
 
 func (r *rowGroup) updateColumnChunk(col string, pos, dataLen, compressedLen, count int, fields []*sch.SchemaElement) error {
 	ch, ok := r.columns[col]
 	if !ok {
-		t, err := r.columnType(col, fields)
+		t, err := columnType(col, fields)
 		if err != nil {
 			return err
 		}
 
 		ch = sch.ColumnChunk{
+			FileOffset: int64(pos),
 			MetaData: &sch.ColumnMetaData{
 				Type:           t,
 				Encodings:      []sch.Encoding{sch.Encoding_PLAIN},
-				PathInSchema:   nil, //TODO lookup
+				PathInSchema:   []string{col},
 				DataPageOffset: int64(pos),
 				Codec:          sch.CompressionCodec_SNAPPY,
 			},
@@ -150,7 +173,7 @@ func (r *rowGroup) updateColumnChunk(col string, pos, dataLen, compressedLen, co
 	}
 
 	ch.MetaData.NumValues += int64(count)
-	ch.MetaData.TotalUncompressedSize += int64(compressedLen)
+	ch.MetaData.TotalUncompressedSize += int64(dataLen)
 	ch.MetaData.TotalCompressedSize += int64(compressedLen)
 	r.columns[col] = ch
 	return nil
