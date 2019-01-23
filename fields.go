@@ -64,7 +64,7 @@ func (i *Int32OptionalField) write(w io.Writer, meta *schema.Metadata, pos int) 
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 
-	err := writeLevels(w, i.defs)
+	err := writeLevels(wc, i.defs)
 	if err != nil {
 		return err
 	}
