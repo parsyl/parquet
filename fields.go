@@ -182,6 +182,60 @@ func (i *float32OptionalField) add(r Record) {
 	}
 }
 
+type optionalBoolField struct {
+	vals []bool
+	defs []int64
+	col  string
+	val  func(r Record) *bool
+}
+
+func newOptionalBoolField(val func(r Record) *bool, col string) *optionalBoolField {
+	return &optionalBoolField{
+		val: val,
+		col: col,
+	}
+}
+
+func (f *optionalBoolField) add(r Record) {
+	v := f.val(r)
+	if v != nil {
+		f.vals = append(f.vals, *v)
+		f.defs = append(f.defs, 1)
+	} else {
+		f.defs = append(f.defs, 0)
+	}
+}
+
+func (f *optionalBoolField) write(w io.Writer, meta *schema.Metadata, pos int) error {
+	buf := bytes.Buffer{}
+	wc := &writeCounter{w: &buf}
+
+	err := writeLevels(wc, f.defs)
+	if err != nil {
+		return err
+	}
+
+	ln := len(f.vals)
+	byteNum := (ln + 7) / 8
+	rawBuf := make([]byte, byteNum)
+
+	for i := 0; i < ln; i++ {
+		if f.vals[i] {
+			rawBuf[i/8] = rawBuf[i/8] | (1 << uint32(i%8))
+		}
+	}
+
+	wc.Write(rawBuf)
+
+	compressed := snappy.Encode(nil, buf.Bytes())
+	if err := meta.WritePageHeader(w, f.col, pos, wc.n, len(compressed), len(f.defs)); err != nil {
+		return err
+	}
+
+	_, err = io.Copy(w, bytes.NewBuffer(compressed))
+	return err
+}
+
 type requiredStringField struct {
 	vals []string
 	col  string

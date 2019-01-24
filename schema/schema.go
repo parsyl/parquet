@@ -234,6 +234,11 @@ func Float32Type(se *sch.SchemaElement) {
 	se.Type = &t
 }
 
+func BoolType(se *sch.SchemaElement) {
+	t := sch.Type_BOOLEAN
+	se.Type = &t
+}
+
 func StringType(se *sch.SchemaElement) {
 	t := sch.Type_BYTE_ARRAY
 	se.Type = &t
