@@ -50,18 +50,20 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/parsyl/parquet"
 	"github.com/golang/snappy"
+	"github.com/parsyl/parquet"
 )
 
-// Records reprents a row group
-type Records struct {
+// ParquetWriter reprents a row group
+type ParquetWriter struct {
 	fields []Field
+
+	newFields func() []Field
 
 	len int
 
 	// records are for subsequent chunks
-	records *Records
+	child *ParquetWriter
 
 	// max is the number of Record items that can get written before
 	// a new set of column chunks is written
@@ -71,66 +73,67 @@ type Records struct {
 	w    *WriteCounter
 }
 
-func NewParquetWriter(w io.Writer, fields []Field, meta *parquet.Metadata, opts ...func(*Records)) *Records {
-	r := &Records{
-		max:    1000,
-		w:      &WriteCounter{w: w},
-		fields: fields,
-		meta:   meta,
+func NewParquetWriter(w io.Writer, fields func() []Field, meta *parquet.Metadata, opts ...func(*ParquetWriter)) *ParquetWriter {
+	p := &ParquetWriter{
+		max:       1000,
+		w:         &WriteCounter{w: w},
+		fields:    fields(),
+		newFields: fields,
+		meta:      meta,
 	}
 
 	for _, opt := range opts {
-		opt(r)
+		opt(p)
 	}
-	return r
+	return p
 }
 
 // MaxPageSize is the maximum number of rows in each row groups' page.
-func MaxPageSize(m int) func(*Records) {
-	return func(r *Records) {
-		r.max = m
+func MaxPageSize(m int) func(*ParquetWriter) {
+	return func(p *ParquetWriter) {
+		p.max = m
 	}
 }
 
-func (r *Records) Write() error {
-	if _, err := r.w.Write([]byte("PAR1")); err != nil {
+func (p *ParquetWriter) Write() error {
+	if _, err := p.w.Write([]byte("PAR1")); err != nil {
 		return err
 	}
 
-	for i, f := range r.fields {
-		pos := r.w.n
-		f.Write(r.w, r.meta, pos)
+	for i, f := range p.fields {
+		pos := p.w.n
+		f.Write(p.w, p.meta, pos)
 
-		for child := r.records; child != nil; child = child.records {
-			pos := r.w.n
-			child.fields[i].Write(r.w, r.meta, pos)
+		for child := p.child; child != nil; child = child.child {
+			pos := p.w.n
+			child.fields[i].Write(p.w, p.meta, pos)
 		}
 	}
 
-	if err := r.meta.Footer(r.w); err != nil {
+	if err := p.meta.Footer(p.w); err != nil {
 		return err
 	}
 
-	_, err := r.w.Write([]byte("PAR1"))
+	_, err := p.w.Write([]byte("PAR1"))
 	return err
 }
 
-func (r *Records) Add(rec {{.Type}}) {
-	if r.len == r.max {
-		if r.records == nil {
-			r.records = NewParquetWriter(r.w, r.fields, r.meta, MaxPageSize(r.max))
-			r.records.meta = r.meta
+func (p *ParquetWriter) Add(rec {{.Type}}) {
+	if p.len == p.max {
+		if p.child == nil {
+			p.child = NewParquetWriter(p.w, p.newFields, p.meta, MaxPageSize(p.max))
+			p.child.meta = p.meta
 		}
 
-		r.records.Add(rec)
+		p.child.Add(rec)
 		return
 	}
 
-	for _, f := range r.fields {
+	for _, f := range p.fields {
 		f.Add(rec)
 	}
 
-	r.len++
+	p.len++
 }
 
 type Field interface {
@@ -440,6 +443,59 @@ func (f *StringField) Write(w io.Writer, meta *parquet.Metadata, pos int) error 
 	}
 
 	_, err := io.Copy(w, bytes.NewBuffer(compressed))
+	return err
+}
+
+type StringOptionalField struct {
+	vals []string
+	defs []int64
+	col  string
+	val  func(r {{.Type}}) *string
+}
+
+func NewStringOptionalField(val func(r {{.Type}}) *string, col string) *StringOptionalField {
+	return &StringOptionalField{
+		val: val,
+		col: col,
+	}
+}
+
+func (f *StringOptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
+}
+
+func (f *StringOptionalField) Add(r {{.Type}}) {
+	v := f.val(r)
+	if v != nil {
+		f.vals = append(f.vals, *v)
+		f.defs = append(f.defs, 1)
+	} else {
+		f.defs = append(f.defs, 0)
+	}
+}
+
+func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int) error {
+	buf := bytes.Buffer{}
+	wc := &WriteCounter{w: &buf}
+
+	err := WriteLevels(wc, f.defs)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range f.vals {
+		if err := binary.Write(wc, binary.LittleEndian, int32(len(s))); err != nil {
+			return err
+		}
+		wc.Write([]byte(s))
+	}
+
+	compressed := snappy.Encode(nil, buf.Bytes())
+	if err := meta.WritePageHeader(w, f.col, pos, wc.n, len(compressed), len(f.defs)); err != nil {
+		return err
+	}
+
+	_, err = io.Copy(w, bytes.NewBuffer(compressed))
 	return err
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -16,19 +17,22 @@ func main() {
 
 	defer f.Close()
 
-	fields := []Field{
-		NewInt32Field(func(p Person) int32 { return p.ID }, "id"),
-		NewInt32OptionalField(func(p Person) *int32 { return p.Age }, "age"),
-		NewInt64Field(func(p Person) int64 { return p.Happiness }, "happiness"),
-		NewInt64OptionalField(func(p Person) *int64 { return p.Sadness }, "sadness"),
-		NewStringField(func(p Person) string { return p.Code }, "code"),
-		NewFloat32Field(func(p Person) float32 { return p.Funkiness }, "funkiness"),
-		NewFloat32OptionalField(func(p Person) *float32 { return p.Lameness }, "lameness"),
-		NewBoolOptionalField(func(p Person) *bool { return p.Keen }, "keen"),
+	fields := func() []Field {
+		return []Field{
+			NewInt32Field(func(p Person) int32 { return p.ID }, "id"),
+			NewInt32OptionalField(func(p Person) *int32 { return p.Age }, "age"),
+			NewInt64Field(func(p Person) int64 { return p.Happiness }, "happiness"),
+			NewInt64OptionalField(func(p Person) *int64 { return p.Sadness }, "sadness"),
+			NewStringField(func(p Person) string { return p.Code }, "code"),
+			NewFloat32Field(func(p Person) float32 { return p.Funkiness }, "funkiness"),
+			NewFloat32OptionalField(func(p Person) *float32 { return p.Lameness }, "lameness"),
+			NewBoolOptionalField(func(p Person) *bool { return p.Keen }, "keen"),
+		}
 	}
 
-	schema := make([]parquet.Field, len(fields))
-	for i, f := range fields {
+	ff := fields()
+	schema := make([]parquet.Field, len(ff))
+	for i, f := range ff {
 		schema[i] = f.Schema()
 	}
 
@@ -47,6 +51,7 @@ func main() {
 	if err := json.NewDecoder(jf).Decode(&people); err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("people", len(people))
 
 	for _, person := range people {
 		w.Add(person)
