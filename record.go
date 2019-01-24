@@ -30,12 +30,18 @@ func New(w io.Writer, opts ...func(*Records)) *Records {
 		max: 1000,
 		w:   &writeCounter{w: w},
 		fields: []Field{
-			&Int32Field{col: "id", val: func(r Record) int32 { return r.ID }},
-			&Int32OptionalField{col: "age", val: func(r Record) *int32 { return r.Age }},
+			newInt32Field(func(r Record) int32 { return r.ID }, "id"),
+			newInt32OptionalField(func(r Record) *int32 { return r.Age }, "age"),
+			newInt64Field(func(r Record) int64 { return r.Happiness }, "happiness"),
+			newInt64OptionalField(func(r Record) *int64 { return r.Sadness }, "sadness"),
+			newStringField(func(r Record) string { return r.Code }, "code"),
 		},
 		meta: schema.New(
 			schema.Field{Name: "id", Type: schema.Int32Type, RepetitionType: schema.RepetitionRequired},
 			schema.Field{Name: "age", Type: schema.Int32Type, RepetitionType: schema.RepetitionOptional},
+			schema.Field{Name: "happiness", Type: schema.Int64Type, RepetitionType: schema.RepetitionRequired},
+			schema.Field{Name: "sadness", Type: schema.Int64Type, RepetitionType: schema.RepetitionOptional},
+			schema.Field{Name: "code", Type: schema.StringType, RepetitionType: schema.RepetitionRequired},
 		),
 	}
 
@@ -94,8 +100,11 @@ func (r *Records) Add(rec Record) {
 }
 
 type Record struct {
-	ID  int32  `parquet:"name=id, type=INT32"`
-	Age *int32 `parquet:"name=age, type=INT32"`
+	ID        int32
+	Age       *int32
+	Happiness int64
+	Sadness   *int64
+	Code      string
 }
 
 type writeCounter struct {

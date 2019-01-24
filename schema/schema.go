@@ -220,6 +220,16 @@ func RepetitionOptional(se *sch.SchemaElement) {
 }
 
 func Int32Type(se *sch.SchemaElement) {
-	i := sch.Type_INT32
-	se.Type = &i
+	t := sch.Type_INT32
+	se.Type = &t
+}
+
+func Int64Type(se *sch.SchemaElement) {
+	t := sch.Type_INT64
+	se.Type = &t
+}
+
+func StringType(se *sch.SchemaElement) {
+	t := sch.Type_BYTE_ARRAY
+	se.Type = &t
 }

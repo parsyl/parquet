@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
 	p "github.com/cswank/parquet"
 )
@@ -62,9 +64,18 @@ func writeJSON() {
 			a := int32(20 + i%5)
 			age = &a
 		}
+
+		var sadness *int64
+		if i%3 == 0 {
+			s := int64(i + 5)
+			sadness = &s
+		}
 		records = append(records, p.Record{
-			ID:  int32(i),
-			Age: age,
+			ID:        int32(i),
+			Age:       age,
+			Happiness: int64(i * 2),
+			Sadness:   sadness,
+			Code:      randString(8),
 		})
 	}
 
@@ -78,4 +89,18 @@ func writeJSON() {
 		log.Fatal(err)
 	}
 	f.Close()
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
