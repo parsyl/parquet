@@ -1,51 +1,6 @@
 package main
 
 import (
-	"flag"
-	"log"
-	"os"
-	"text/template"
-)
-
-var (
-	typ = flag.String("type", "", "type name")
-	pkg = flag.String("package", "", "package name")
-)
-
-func main() {
-	flag.Parse()
-
-	i := Input{
-		Package: *pkg,
-		Type:    *typ,
-	}
-
-	tmpl, err := template.New("output").Parse(tpl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	f, err := os.Create("parquet.go")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = tmpl.Execute(f, i)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	f.Close()
-}
-
-type Input struct {
-	Package string
-	Type    string
-}
-
-var tpl = `package {{.Package}}
-
-import (
 	"bytes"
 	"encoding/binary"
 	"io"
@@ -115,7 +70,7 @@ func (r *Records) Write() error {
 	return err
 }
 
-func (r *Records) Add(rec {{.Type}}) {
+func (r *Records) Add(rec Person) {
 	if r.len == r.max {
 		if r.records == nil {
 			r.records = NewParquetWriter(r.w, r.fields, r.meta, MaxPageSize(r.max))
@@ -134,7 +89,7 @@ func (r *Records) Add(rec {{.Type}}) {
 }
 
 type Field interface {
-	Add(r {{.Type}})
+	Add(r Person)
 	Write(w io.Writer, meta *parquet.Metadata, pos int) error
 	Schema() parquet.Field
 }
@@ -195,11 +150,11 @@ func (i *OptionalNumField) Write(w io.Writer, meta *parquet.Metadata, pos int) e
 
 type Int32Field struct {
 	RequiredNumField
-	val func(r {{.Type}}) int32
+	val func(r Person) int32
 	col string
 }
 
-func NewInt32Field(val func(r {{.Type}}) int32, col string) *Int32Field {
+func NewInt32Field(val func(r Person) int32, col string) *Int32Field {
 	return &Int32Field{
 		col:              col,
 		val:              val,
@@ -211,17 +166,17 @@ func (i *Int32Field) Schema() parquet.Field {
 	return parquet.Field{Name: i.col, Type: parquet.Int32Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (i *Int32Field) Add(r {{.Type}}) {
+func (i *Int32Field) Add(r Person) {
 	i.vals = append(i.vals, i.val(r))
 }
 
 type Int32OptionalField struct {
 	OptionalNumField
-	val func(r {{.Type}}) *int32
+	val func(r Person) *int32
 	col string
 }
 
-func NewInt32OptionalField(val func(r {{.Type}}) *int32, col string) *Int32OptionalField {
+func NewInt32OptionalField(val func(r Person) *int32, col string) *Int32OptionalField {
 	return &Int32OptionalField{
 		col:              col,
 		val:              val,
@@ -233,7 +188,7 @@ func (i *Int32OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: i.col, Type: parquet.Int32Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (i *Int32OptionalField) Add(r {{.Type}}) {
+func (i *Int32OptionalField) Add(r Person) {
 	v := i.val(r)
 	if v != nil {
 		i.vals = append(i.vals, *v)
@@ -245,11 +200,11 @@ func (i *Int32OptionalField) Add(r {{.Type}}) {
 
 type Int64Field struct {
 	RequiredNumField
-	val func(r {{.Type}}) int64
+	val func(r Person) int64
 	col string
 }
 
-func NewInt64Field(val func(r {{.Type}}) int64, col string) *Int64Field {
+func NewInt64Field(val func(r Person) int64, col string) *Int64Field {
 	return &Int64Field{
 		col:              col,
 		val:              val,
@@ -261,17 +216,17 @@ func (i *Int64Field) Schema() parquet.Field {
 	return parquet.Field{Name: i.col, Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (i *Int64Field) Add(r {{.Type}}) {
+func (i *Int64Field) Add(r Person) {
 	i.vals = append(i.vals, i.val(r))
 }
 
 type Int64OptionalField struct {
 	OptionalNumField
-	val func(r {{.Type}}) *int64
+	val func(r Person) *int64
 	col string
 }
 
-func NewInt64OptionalField(val func(r {{.Type}}) *int64, col string) *Int64OptionalField {
+func NewInt64OptionalField(val func(r Person) *int64, col string) *Int64OptionalField {
 	return &Int64OptionalField{
 		col:              col,
 		val:              val,
@@ -283,7 +238,7 @@ func (i *Int64OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: i.col, Type: parquet.Int64Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (i *Int64OptionalField) Add(r {{.Type}}) {
+func (i *Int64OptionalField) Add(r Person) {
 	v := i.val(r)
 	if v != nil {
 		i.vals = append(i.vals, *v)
@@ -295,11 +250,11 @@ func (i *Int64OptionalField) Add(r {{.Type}}) {
 
 type Float32Field struct {
 	RequiredNumField
-	val func(r {{.Type}}) float32
+	val func(r Person) float32
 	col string
 }
 
-func NewFloat32Field(val func(r {{.Type}}) float32, col string) *Float32Field {
+func NewFloat32Field(val func(r Person) float32, col string) *Float32Field {
 	return &Float32Field{
 		col:              col,
 		val:              val,
@@ -311,17 +266,17 @@ func (i *Float32Field) Schema() parquet.Field {
 	return parquet.Field{Name: i.col, Type: parquet.Float32Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (i *Float32Field) Add(r {{.Type}}) {
+func (i *Float32Field) Add(r Person) {
 	i.vals = append(i.vals, i.val(r))
 }
 
 type Float32OptionalField struct {
 	OptionalNumField
-	val func(r {{.Type}}) *float32
+	val func(r Person) *float32
 	col string
 }
 
-func NewFloat32OptionalField(val func(r {{.Type}}) *float32, col string) *Float32OptionalField {
+func NewFloat32OptionalField(val func(r Person) *float32, col string) *Float32OptionalField {
 	return &Float32OptionalField{
 		col:              col,
 		val:              val,
@@ -333,7 +288,7 @@ func (i *Float32OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: i.col, Type: parquet.Float32Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (i *Float32OptionalField) Add(r {{.Type}}) {
+func (i *Float32OptionalField) Add(r Person) {
 	v := i.val(r)
 	if v != nil {
 		i.vals = append(i.vals, *v)
@@ -348,10 +303,10 @@ type BoolOptionalField struct {
 	vals []bool
 	defs []int64
 	col  string
-	val  func(r {{.Type}}) *bool
+	val  func(r Person) *bool
 }
 
-func NewBoolOptionalField(val func(r {{.Type}}) *bool, col string) *BoolOptionalField {
+func NewBoolOptionalField(val func(r Person) *bool, col string) *BoolOptionalField {
 	return &BoolOptionalField{
 		val: val,
 		col: col,
@@ -362,7 +317,7 @@ func (f *BoolOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.BoolType, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *BoolOptionalField) Add(r {{.Type}}) {
+func (f *BoolOptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -405,10 +360,10 @@ func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int) 
 type StringField struct {
 	vals []string
 	col  string
-	val  func(r {{.Type}}) string
+	val  func(r Person) string
 }
 
-func NewStringField(val func(r {{.Type}}) string, col string) *StringField {
+func NewStringField(val func(r Person) string, col string) *StringField {
 	return &StringField{
 		val: val,
 		col: col,
@@ -419,7 +374,7 @@ func (f *StringField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *StringField) Add(r {{.Type}}) {
+func (f *StringField) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
@@ -521,4 +476,4 @@ func bitNum(num uint64) uint64 {
 		bitn++
 	}
 	return bitn
-}`
+}
