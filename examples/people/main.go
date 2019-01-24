@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/cswank/parquet"
+	"github.com/parsyl/parquet"
 )
 
 func main() {

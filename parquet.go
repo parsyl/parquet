@@ -8,7 +8,7 @@ import (
 	"io"
 
 	"github.com/apache/thrift/lib/go/thrift"
-	sch "github.com/cswank/parquet/generated"
+	sch "github.com/parsyl/parquet/generated"
 )
 
 type Field struct {
