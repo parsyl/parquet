@@ -364,7 +364,7 @@ func NewUint64Field(val func(r {{.Type}}) uint64, col string) *Uint64Field {
 }
 
 func (i *Uint64Field) Schema() parquet.Field {
-	return parquet.Field{Name: i.col, Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: i.col, Type: parquet.Uint64Type, RepetitionType: parquet.RepetitionRequired}
 }
 
 func (i *Uint64Field) Add(r {{.Type}}) {
@@ -384,7 +384,7 @@ func NewUint64OptionalField(val func(r {{.Type}}) *uint64, col string) *Uint64Op
 }
 
 func (i *Uint64OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: i.col, Type: parquet.Int64Type, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: i.col, Type: parquet.Uint64Type, RepetitionType: parquet.RepetitionOptional}
 }
 
 func (i *Uint64OptionalField) Add(r {{.Type}}) {
@@ -558,7 +558,7 @@ func NewStringOptionalField(val func(r {{.Type}}) *string, col string) *StringOp
 }
 
 func (f *StringOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionOptional}
 }
 
 func (f *StringOptionalField) Add(r {{.Type}}) {

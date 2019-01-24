@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 )
 
@@ -45,7 +46,7 @@ func main() {
 	fmt.Println("people", len(people))
 
 	for i, person := range people {
-		person.Birthday = uint64(i + 1000)
+		person.Birthday = math.MaxUint64 - uint64(i+1)
 		w.Add(person)
 	}
 

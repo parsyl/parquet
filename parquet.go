@@ -224,6 +224,20 @@ func Int32Type(se *sch.SchemaElement) {
 	se.Type = &t
 }
 
+func Uint32Type(se *sch.SchemaElement) {
+	t := sch.Type_INT32
+	se.Type = &t
+	ct := sch.ConvertedType_UINT_32
+	se.ConvertedType = &ct
+}
+
+func Uint64Type(se *sch.SchemaElement) {
+	t := sch.Type_INT64
+	se.Type = &t
+	ct := sch.ConvertedType_UINT_64
+	se.ConvertedType = &ct
+}
+
 func Int64Type(se *sch.SchemaElement) {
 	t := sch.Type_INT64
 	se.Type = &t
