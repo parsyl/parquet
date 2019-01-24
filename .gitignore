@@ -14,3 +14,4 @@
 
 *.parquet
 *.py
+examples/people/parquet.go
