@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/parsyl/parquet"
 )
 
 func main() {
@@ -17,29 +15,22 @@ func main() {
 
 	defer f.Close()
 
-	fields := func() []Field {
-		return []Field{
-			NewInt32Field(func(p Person) int32 { return p.ID }, "id"),
-			NewInt32OptionalField(func(p Person) *int32 { return p.Age }, "age"),
-			NewInt64Field(func(p Person) int64 { return p.Happiness }, "happiness"),
-			NewInt64OptionalField(func(p Person) *int64 { return p.Sadness }, "sadness"),
-			NewStringField(func(p Person) string { return p.Code }, "code"),
-			NewFloat32Field(func(p Person) float32 { return p.Funkiness }, "funkiness"),
-			NewFloat32OptionalField(func(p Person) *float32 { return p.Lameness }, "lameness"),
-			NewBoolOptionalField(func(p Person) *bool { return p.Keen }, "keen"),
-		}
-	}
-
-	ff := fields()
-	schema := make([]parquet.Field, len(ff))
-	for i, f := range ff {
-		schema[i] = f.Schema()
-	}
-
 	w := NewParquetWriter(
 		f,
-		fields,
-		parquet.New(schema...),
+		func() []Field {
+			return []Field{
+				NewInt32Field(func(p Person) int32 { return p.ID }, "id"),
+				NewInt32OptionalField(func(p Person) *int32 { return p.Age }, "age"),
+				NewInt64Field(func(p Person) int64 { return p.Happiness }, "happiness"),
+				NewInt64OptionalField(func(p Person) *int64 { return p.Sadness }, "sadness"),
+				NewStringField(func(p Person) string { return p.Code }, "code"),
+				NewFloat32Field(func(p Person) float32 { return p.Funkiness }, "funkiness"),
+				NewFloat32OptionalField(func(p Person) *float32 { return p.Lameness }, "lameness"),
+				NewBoolOptionalField(func(p Person) *bool { return p.Keen }, "keen"),
+				NewUint64Field(func(p Person) uint64 { return p.Birthday }, "birthday"),
+				NewUint64OptionalField(func(p Person) *uint64 { return p.Anniversary }, "anniversary"),
+			}
+		},
 	)
 
 	jf, err := os.Open("people.json")
@@ -53,7 +44,8 @@ func main() {
 	}
 	fmt.Println("people", len(people))
 
-	for _, person := range people {
+	for i, person := range people {
+		person.Birthday = uint64(i + 1000)
 		w.Add(person)
 	}
 
@@ -63,12 +55,14 @@ func main() {
 }
 
 type Person struct {
-	ID        int32
-	Age       *int32
-	Happiness int64
-	Sadness   *int64
-	Code      string
-	Funkiness float32
-	Lameness  *float32
-	Keen      *bool
+	ID          int32
+	Age         *int32
+	Happiness   int64
+	Sadness     *int64
+	Code        string
+	Funkiness   float32
+	Lameness    *float32
+	Keen        *bool
+	Birthday    uint64
+	Anniversary *uint64
 }
