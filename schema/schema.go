@@ -229,6 +229,11 @@ func Int64Type(se *sch.SchemaElement) {
 	se.Type = &t
 }
 
+func Float32Type(se *sch.SchemaElement) {
+	t := sch.Type_FLOAT
+	se.Type = &t
+}
+
 func StringType(se *sch.SchemaElement) {
 	t := sch.Type_BYTE_ARRAY
 	se.Type = &t

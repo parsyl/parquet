@@ -35,6 +35,8 @@ func New(w io.Writer, opts ...func(*Records)) *Records {
 			newInt64Field(func(r Record) int64 { return r.Happiness }, "happiness"),
 			newInt64OptionalField(func(r Record) *int64 { return r.Sadness }, "sadness"),
 			newStringField(func(r Record) string { return r.Code }, "code"),
+			newFloat32Field(func(r Record) float32 { return r.Funkiness }, "funkiness"),
+			newFloat32OptionalField(func(r Record) *float32 { return r.Lameness }, "lameness"),
 		},
 		meta: schema.New(
 			schema.Field{Name: "id", Type: schema.Int32Type, RepetitionType: schema.RepetitionRequired},
@@ -42,6 +44,8 @@ func New(w io.Writer, opts ...func(*Records)) *Records {
 			schema.Field{Name: "happiness", Type: schema.Int64Type, RepetitionType: schema.RepetitionRequired},
 			schema.Field{Name: "sadness", Type: schema.Int64Type, RepetitionType: schema.RepetitionOptional},
 			schema.Field{Name: "code", Type: schema.StringType, RepetitionType: schema.RepetitionRequired},
+			schema.Field{Name: "funkiness", Type: schema.Float32Type, RepetitionType: schema.RepetitionRequired},
+			schema.Field{Name: "lameness", Type: schema.Float32Type, RepetitionType: schema.RepetitionOptional},
 		),
 	}
 
@@ -105,6 +109,8 @@ type Record struct {
 	Happiness int64
 	Sadness   *int64
 	Code      string
+	Funkiness float32
+	Lameness  *float32
 }
 
 type writeCounter struct {

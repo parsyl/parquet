@@ -70,12 +70,20 @@ func writeJSON() {
 			s := int64(i + 5)
 			sadness = &s
 		}
+
+		var lameness *float32
+		if i%4 == 0 {
+			l := rand.Float32()
+			lameness = &l
+		}
 		records = append(records, p.Record{
 			ID:        int32(i),
 			Age:       age,
 			Happiness: int64(i * 2),
 			Sadness:   sadness,
 			Code:      randString(8),
+			Funkiness: rand.Float32(),
+			Lameness:  lameness,
 		})
 	}
 
