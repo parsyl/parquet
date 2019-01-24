@@ -10,16 +10,16 @@ import (
 )
 
 type Field interface {
-	add(r Record)
-	write(w io.Writer, meta *schema.Metadata, pos int) error
+	Add(r Record)
+	Write(w io.Writer, meta *schema.Metadata, pos int) error
 }
 
-type requiredNumField struct {
+type RequiredNumField struct {
 	vals []interface{}
 	col  string
 }
 
-func (i *requiredNumField) write(w io.Writer, meta *schema.Metadata, pos int) error {
+func (i *RequiredNumField) Write(w io.Writer, meta *schema.Metadata, pos int) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 
@@ -38,13 +38,13 @@ func (i *requiredNumField) write(w io.Writer, meta *schema.Metadata, pos int) er
 	return err
 }
 
-type optionalNumField struct {
+type OptionalNumField struct {
 	vals []interface{}
 	defs []int64
 	col  string
 }
 
-func (i *optionalNumField) write(w io.Writer, meta *schema.Metadata, pos int) error {
+func (i *OptionalNumField) Write(w io.Writer, meta *schema.Metadata, pos int) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 
@@ -68,35 +68,35 @@ func (i *optionalNumField) write(w io.Writer, meta *schema.Metadata, pos int) er
 	return err
 }
 
-type int32Field struct {
-	requiredNumField
+type Int32Field struct {
+	RequiredNumField
 	val func(r Record) int32
 }
 
-func newInt32Field(val func(r Record) int32, col string) *int32Field {
-	return &int32Field{
+func NewInt32Field(val func(r Record) int32, col string) *Int32Field {
+	return &Int32Field{
 		val:              val,
-		requiredNumField: requiredNumField{col: col},
+		RequiredNumField: RequiredNumField{col: col},
 	}
 }
 
-func (i *int32Field) add(r Record) {
+func (i *Int32Field) Add(r Record) {
 	i.vals = append(i.vals, i.val(r))
 }
 
-type int32OptionalField struct {
-	optionalNumField
+type Int32OptionalField struct {
+	OptionalNumField
 	val func(r Record) *int32
 }
 
-func newInt32OptionalField(val func(r Record) *int32, col string) *int32OptionalField {
-	return &int32OptionalField{
+func NewInt32OptionalField(val func(r Record) *int32, col string) *Int32OptionalField {
+	return &Int32OptionalField{
 		val:              val,
-		optionalNumField: optionalNumField{col: col},
+		OptionalNumField: OptionalNumField{col: col},
 	}
 }
 
-func (i *int32OptionalField) add(r Record) {
+func (i *Int32OptionalField) Add(r Record) {
 	v := i.val(r)
 	if v != nil {
 		i.vals = append(i.vals, *v)
@@ -106,35 +106,35 @@ func (i *int32OptionalField) add(r Record) {
 	}
 }
 
-type int64Field struct {
-	requiredNumField
+type Int64Field struct {
+	RequiredNumField
 	val func(r Record) int64
 }
 
-func newInt64Field(val func(r Record) int64, col string) *int64Field {
-	return &int64Field{
+func NewInt64Field(val func(r Record) int64, col string) *Int64Field {
+	return &Int64Field{
 		val:              val,
-		requiredNumField: requiredNumField{col: col},
+		RequiredNumField: RequiredNumField{col: col},
 	}
 }
 
-func (i *int64Field) add(r Record) {
+func (i *Int64Field) Add(r Record) {
 	i.vals = append(i.vals, i.val(r))
 }
 
-type int64OptionalField struct {
-	optionalNumField
+type Int64OptionalField struct {
+	OptionalNumField
 	val func(r Record) *int64
 }
 
-func newInt64OptionalField(val func(r Record) *int64, col string) *int64OptionalField {
-	return &int64OptionalField{
+func NewInt64OptionalField(val func(r Record) *int64, col string) *Int64OptionalField {
+	return &Int64OptionalField{
 		val:              val,
-		optionalNumField: optionalNumField{col: col},
+		OptionalNumField: OptionalNumField{col: col},
 	}
 }
 
-func (i *int64OptionalField) add(r Record) {
+func (i *Int64OptionalField) Add(r Record) {
 	v := i.val(r)
 	if v != nil {
 		i.vals = append(i.vals, *v)
@@ -144,35 +144,35 @@ func (i *int64OptionalField) add(r Record) {
 	}
 }
 
-type float32Field struct {
-	requiredNumField
+type Float32Field struct {
+	RequiredNumField
 	val func(r Record) float32
 }
 
-func newFloat32Field(val func(r Record) float32, col string) *float32Field {
-	return &float32Field{
+func NewFloat32Field(val func(r Record) float32, col string) *Float32Field {
+	return &Float32Field{
 		val:              val,
-		requiredNumField: requiredNumField{col: col},
+		RequiredNumField: RequiredNumField{col: col},
 	}
 }
 
-func (i *float32Field) add(r Record) {
+func (i *Float32Field) Add(r Record) {
 	i.vals = append(i.vals, i.val(r))
 }
 
-type float32OptionalField struct {
-	optionalNumField
+type Float32OptionalField struct {
+	OptionalNumField
 	val func(r Record) *float32
 }
 
-func newFloat32OptionalField(val func(r Record) *float32, col string) *float32OptionalField {
-	return &float32OptionalField{
+func NewFloat32OptionalField(val func(r Record) *float32, col string) *Float32OptionalField {
+	return &Float32OptionalField{
 		val:              val,
-		optionalNumField: optionalNumField{col: col},
+		OptionalNumField: OptionalNumField{col: col},
 	}
 }
 
-func (i *float32OptionalField) add(r Record) {
+func (i *Float32OptionalField) Add(r Record) {
 	v := i.val(r)
 	if v != nil {
 		i.vals = append(i.vals, *v)
@@ -182,21 +182,21 @@ func (i *float32OptionalField) add(r Record) {
 	}
 }
 
-type optionalBoolField struct {
+type OptionalBoolField struct {
 	vals []bool
 	defs []int64
 	col  string
 	val  func(r Record) *bool
 }
 
-func newOptionalBoolField(val func(r Record) *bool, col string) *optionalBoolField {
-	return &optionalBoolField{
+func NewOptionalBoolField(val func(r Record) *bool, col string) *OptionalBoolField {
+	return &OptionalBoolField{
 		val: val,
 		col: col,
 	}
 }
 
-func (f *optionalBoolField) add(r Record) {
+func (f *OptionalBoolField) Add(r Record) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -206,7 +206,7 @@ func (f *optionalBoolField) add(r Record) {
 	}
 }
 
-func (f *optionalBoolField) write(w io.Writer, meta *schema.Metadata, pos int) error {
+func (f *OptionalBoolField) Write(w io.Writer, meta *schema.Metadata, pos int) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 
@@ -236,24 +236,24 @@ func (f *optionalBoolField) write(w io.Writer, meta *schema.Metadata, pos int) e
 	return err
 }
 
-type requiredStringField struct {
+type RequiredStringField struct {
 	vals []string
 	col  string
 	val  func(r Record) string
 }
 
-func newStringField(val func(r Record) string, col string) *requiredStringField {
-	return &requiredStringField{
+func NewStringField(val func(r Record) string, col string) *RequiredStringField {
+	return &RequiredStringField{
 		val: val,
 		col: col,
 	}
 }
 
-func (f *requiredStringField) add(r Record) {
+func (f *RequiredStringField) Add(r Record) {
 	f.vals = append(f.vals, f.val(r))
 }
 
-func (f *requiredStringField) write(w io.Writer, meta *schema.Metadata, pos int) error {
+func (f *RequiredStringField) Write(w io.Writer, meta *schema.Metadata, pos int) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 
