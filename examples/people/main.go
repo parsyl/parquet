@@ -28,7 +28,7 @@ func main() {
 				NewFloat32Field(func(p Person) float32 { return p.Funkiness }, "funkiness"),
 				NewFloat32OptionalField(func(p Person) *float32 { return p.Lameness }, "lameness"),
 				NewBoolOptionalField(func(p Person) *bool { return p.Keen }, "keen"),
-				NewUint64Field(func(p Person) uint64 { return p.Birthday }, "birthday"),
+				NewUint32Field(func(p Person) uint32 { return p.Birthday }, "birthday"),
 				NewUint64OptionalField(func(p Person) *uint64 { return p.Anniversary }, "anniversary"),
 			}
 		},
@@ -46,7 +46,7 @@ func main() {
 	fmt.Println("people", len(people))
 
 	for i, person := range people {
-		person.Birthday = math.MaxUint64 - uint64(i+1)
+		person.Birthday = math.MaxUint32 - uint32(i+1)
 		w.Add(person)
 	}
 
@@ -64,6 +64,6 @@ type Person struct {
 	Funkiness   float32
 	Lameness    *float32
 	Keen        *bool
-	Birthday    uint64
+	Birthday    uint32
 	Anniversary *uint64
 }

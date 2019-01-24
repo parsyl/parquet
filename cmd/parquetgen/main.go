@@ -226,7 +226,7 @@ func NewUint32Field(val func(r {{.Type}}) uint32, col string) *Uint32Field {
 }
 
 func (i *Uint32Field) Schema() parquet.Field {
-	return parquet.Field{Name: i.col, Type: parquet.Int32Type, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: i.col, Type: parquet.Uint32Type, RepetitionType: parquet.RepetitionRequired}
 }
 
 func (i *Uint32Field) Add(r {{.Type}}) {
@@ -246,7 +246,7 @@ func NewUint32OptionalField(val func(r {{.Type}}) *uint32, col string) *Uint32Op
 }
 
 func (i *Uint32OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: i.col, Type: parquet.Int32Type, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: i.col, Type: parquet.Uint32Type, RepetitionType: parquet.RepetitionOptional}
 }
 
 func (i *Uint32OptionalField) Add(r {{.Type}}) {
