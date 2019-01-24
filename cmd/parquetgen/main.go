@@ -50,7 +50,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/cswank/parquet"
+	"github.com/parsyl/parquet"
 	"github.com/golang/snappy"
 )
 
