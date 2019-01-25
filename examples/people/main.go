@@ -1,6 +1,6 @@
 package main
 
-//go:generate parquetgen -type Person -package main
+//go:generate parquetgen -input main.go -type Person -package main
 
 import (
 	"log"
@@ -87,7 +87,6 @@ type Being struct {
 	Age *int32
 }
 
-//go:generate parquetgen -input main.go -type Person -package main
 type Person struct {
 	Being
 	Happiness   int64

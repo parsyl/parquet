@@ -61,7 +61,6 @@ func formatFields(fields []field) []string {
 
 func getFields() ([]field, error) {
 	fset := token.NewFileSet()
-	fmt.Println("path", *pth)
 	file, err := parser.ParseFile(fset, *pth, nil, 0)
 	if err != nil {
 		log.Fatal(err)
