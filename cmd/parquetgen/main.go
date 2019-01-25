@@ -204,8 +204,6 @@ type field struct {
 	FieldName string
 	TypeName  string
 	FuncName  string
-
-	structName string
 }
 
 type input struct {
