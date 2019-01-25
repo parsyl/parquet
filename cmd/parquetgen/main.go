@@ -8,7 +8,6 @@ import (
 	"go/token"
 	"log"
 	"os"
-	"sort"
 	"text/template"
 )
 
@@ -80,13 +79,11 @@ func getFields() ([]field, error) {
 	}
 
 	out := fields[*typ]
-	for _, name := range getEmbeddedStructs(f.n[*typ]) {
-		out = append(out, fields[name]...)
+	for i, name := range getEmbeddedStructs(f.n[*typ]) {
+		newFields := fields[name]
+		out = append(out[:i], append(newFields, out[i:]...)...)
 	}
 
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].TypeName < out[j].TypeName
-	})
 	return out, nil
 }
 
@@ -207,6 +204,8 @@ type field struct {
 	FieldName string
 	TypeName  string
 	FuncName  string
+
+	structName string
 }
 
 type input struct {
