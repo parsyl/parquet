@@ -1,5 +1,7 @@
 package main
 
+//go:generate parquetgen -type Person -package main
+
 import (
 	"encoding/json"
 	"fmt"
@@ -16,24 +18,7 @@ func main() {
 
 	defer f.Close()
 
-	w := NewParquetWriter(
-		f,
-		func() []Field {
-			return []Field{
-				NewInt32Field(func(p Person) int32 { return p.ID }, "id"),
-				NewInt32OptionalField(func(p Person) *int32 { return p.Age }, "age"),
-				NewInt64Field(func(p Person) int64 { return p.Happiness }, "happiness"),
-				NewInt64OptionalField(func(p Person) *int64 { return p.Sadness }, "sadness"),
-				NewStringField(func(p Person) string { return p.Code }, "code"),
-				NewFloat32Field(func(p Person) float32 { return p.Funkiness }, "funkiness"),
-				NewFloat32OptionalField(func(p Person) *float32 { return p.Lameness }, "lameness"),
-				NewBoolOptionalField(func(p Person) *bool { return p.Keen }, "keen"),
-				NewUint32Field(func(p Person) uint32 { return p.Birthday }, "birthday"),
-				NewUint64OptionalField(func(p Person) *uint64 { return p.Anniversary }, "anniversary"),
-			}
-		},
-	)
-
+	w := NewParquetWriter(f)
 	jf, err := os.Open("people.json")
 	if err != nil {
 		log.Fatal(err)
@@ -55,9 +40,13 @@ func main() {
 	}
 }
 
+type Being struct {
+	ID  int32
+	Age *int32
+}
+
 type Person struct {
-	ID          int32
-	Age         *int32
+	Being
 	Happiness   int64
 	Sadness     *int64
 	Code        string

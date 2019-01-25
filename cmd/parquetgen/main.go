@@ -2,23 +2,36 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"log"
 	"os"
+	"sort"
 	"text/template"
 )
 
 var (
 	typ = flag.String("type", "", "type name")
 	pkg = flag.String("package", "", "package name")
+	pth = flag.String("path", "", "path to the go file that defines -type")
 )
 
 func main() {
 	flag.Parse()
 
-	i := Input{
+	i := input{
 		Package: *pkg,
 		Type:    *typ,
 	}
+
+	fields, err := getFields()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	i.Fields = formatFields(fields)
 
 	tmpl, err := template.New("output").Parse(tpl)
 	if err != nil {
@@ -38,9 +51,168 @@ func main() {
 	f.Close()
 }
 
-type Input struct {
+func formatFields(fields []field) []string {
+	out := make([]string, len(fields))
+	for i, f := range fields {
+		out[i] = fmt.Sprintf(`%s(func(x %s) %s { return x.%s }, "%s"),`, f.FuncName, *typ, f.TypeName, f.FieldName, f.FieldName)
+	}
+	return out
+}
+
+func getFields() ([]field, error) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, *pth, nil, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f := &finder{n: map[string]ast.Node{}}
+
+	ast.Walk(visitorFunc(f.findTypes), file)
+
+	if f.n == nil {
+		return nil, fmt.Errorf("could not find %s", *typ)
+	}
+
+	fields, err := doGetFields(f.n)
+	if err != nil {
+		return nil, err
+	}
+
+	out := fields[*typ]
+	for _, name := range getEmbeddedStructs(f.n[*typ]) {
+		out = append(out, fields[name]...)
+	}
+
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].TypeName < out[j].TypeName
+	})
+	return out, nil
+}
+
+func getEmbeddedStructs(n ast.Node) []string {
+	var out []string
+	ast.Inspect(n, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.Field:
+			if len(x.Names) == 0 {
+				out = append(out, fmt.Sprintf("%s", x.Type))
+			}
+		}
+		return true
+	})
+
+	return out
+}
+
+func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
+	fields := map[string][]field{}
+	for k, n := range n {
+		ast.Inspect(n, func(n ast.Node) bool {
+			switch x := n.(type) {
+			case *ast.Field:
+				if len(x.Names) == 1 {
+					f := getField(x.Names[0].Name, x)
+					fields[k] = append(fields[k], f)
+				}
+			}
+			return true
+		})
+	}
+	return fields, nil
+}
+
+func getField(name string, x ast.Node) field {
+	var typ string
+	var optional bool
+	ast.Inspect(x, func(n ast.Node) bool {
+		switch t := n.(type) {
+		case *ast.StarExpr:
+			optional = true
+		case ast.Expr:
+			s := fmt.Sprintf("%v", t)
+			if s != name {
+				typ = s
+			}
+		}
+		return true
+	})
+
+	return field{FieldName: name, TypeName: getTypeName(typ, optional), FuncName: lookupType(typ, optional)}
+}
+
+func getTypeName(s string, optional bool) string {
+	var star string
+	if optional {
+		star = "*"
+	}
+	return fmt.Sprintf("%s%s", star, s)
+}
+
+func lookupType(name string, optional bool) string {
+	var op string
+	if optional {
+		op = "Optional"
+	}
+	switch name {
+	case "int32":
+		return fmt.Sprintf("NewInt32%sField", op)
+	case "uint32":
+		return fmt.Sprintf("NewUint32%sField", op)
+	case "int64":
+		return fmt.Sprintf("NewInt64%sField", op)
+	case "uint64":
+		return fmt.Sprintf("NewUint64%sField", op)
+	case "float32":
+		return fmt.Sprintf("NewFloat32%sField", op)
+	case "float64":
+		return fmt.Sprintf("NewFloat64%sField", op)
+	case "bool":
+		return fmt.Sprintf("NewBool%sField", op)
+	case "string":
+		return fmt.Sprintf("NewString%sField", op)
+	}
+	return ""
+}
+
+type visitorFunc func(n ast.Node) ast.Visitor
+
+func (f visitorFunc) Visit(n ast.Node) ast.Visitor {
+	return f(n)
+}
+
+type finder struct {
+	n map[string]ast.Node
+}
+
+func (f *finder) findTypes(n ast.Node) ast.Visitor {
+	switch n := n.(type) {
+	case *ast.Package:
+		return visitorFunc(f.findTypes)
+	case *ast.File:
+		return visitorFunc(f.findTypes)
+	case *ast.GenDecl:
+		if n.Tok == token.TYPE {
+			return visitorFunc(f.findTypes)
+		}
+	case *ast.TypeSpec:
+		f.n[n.Name.Name] = n
+		return visitorFunc(f.findTypes)
+	}
+
+	return nil
+}
+
+type field struct {
+	FieldName string
+	TypeName  string
+	FuncName  string
+}
+
+type input struct {
 	Package string
 	Type    string
+	Fields  []string
 }
 
 var tpl = `package {{.Package}}
@@ -62,7 +234,6 @@ type ParquetWriter struct {
 	fields []Field
 
 	newFields func() []Field
-
 	len int
 
 	// records are for subsequent chunks
@@ -76,12 +247,18 @@ type ParquetWriter struct {
 	w    *WriteCounter
 }
 
-func NewParquetWriter(w io.Writer, fields func() []Field, opts ...func(*ParquetWriter)) *ParquetWriter {
+func Fields() []Field {
+	return []Field{ {{range .Fields}}
+			{{.}}{{end}}
+	}
+}
+
+func NewParquetWriter(w io.Writer, opts ...func(*ParquetWriter)) *ParquetWriter {
 	p := &ParquetWriter{
 		max:       1000,
 		w:         &WriteCounter{w: w},
-		fields:    fields(),
-		newFields: fields,
+		fields:    Fields(),
+		newFields: Fields,
 	}
 
 	for _, opt := range opts {
@@ -89,7 +266,7 @@ func NewParquetWriter(w io.Writer, fields func() []Field, opts ...func(*ParquetW
 	}
 
 	if p.meta == nil {
-		ff := fields()
+		ff := Fields()
 		schema := make([]parquet.Field, len(ff))
 		for i, f := range ff {
 			schema[i] = f.Schema()
@@ -139,7 +316,7 @@ func (p *ParquetWriter) Write() error {
 func (p *ParquetWriter) Add(rec {{.Type}}) {
 	if p.len == p.max {
 		if p.child == nil {
-			p.child = NewParquetWriter(p.w, p.newFields, MaxPageSize(p.max), withMeta(p.meta))
+			p.child = NewParquetWriter(p.w, MaxPageSize(p.max), withMeta(p.meta))
 		}
 
 		p.child.Add(rec)
