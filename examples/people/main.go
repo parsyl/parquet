@@ -7,7 +7,14 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"time"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func main() {
 	f, err := os.Create("people.parquet")
@@ -20,10 +27,7 @@ func main() {
 	w := NewParquetWriter(f)
 
 	for i := 0; i < 2000; i++ {
-		w.Add(Person{
-			ID:       i,
-			Birthday: math.MaxUint32 - uint32(i+1),
-		})
+		w.Add(newPerson(i))
 	}
 
 	if err := w.Write(); err != nil {
@@ -56,17 +60,25 @@ func newPerson(i int) Person {
 		keen = &b
 	}
 
+	var anv *uint64
+	if i%3 == 0 {
+		x := math.MaxUint64 - uint64(i*100)
+		anv = &x
+	}
+
 	return Person{
 		Being: Being{
 			ID:  int32(i),
 			Age: age,
 		},
-		Happiness: int64(i * 2),
-		Sadness:   sadness,
-		Code:      randString(8),
-		Funkiness: rand.Float32(),
-		Lameness:  lameness,
-		Keen:      keen,
+		Happiness:   int64(i * 2),
+		Sadness:     sadness,
+		Code:        randString(8),
+		Funkiness:   rand.Float32(),
+		Lameness:    lameness,
+		Keen:        keen,
+		Birthday:    uint32(i * 1000),
+		Anniversary: anv,
 	}
 }
 
@@ -75,6 +87,7 @@ type Being struct {
 	Age *int32
 }
 
+//go:generate parquetgen -input main.go -type Person -package main
 type Person struct {
 	Being
 	Happiness   int64
@@ -85,4 +98,12 @@ type Person struct {
 	Keen        *bool
 	Birthday    uint32
 	Anniversary *uint64
+}
+
+func randString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }

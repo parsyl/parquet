@@ -15,7 +15,7 @@ import (
 var (
 	typ = flag.String("type", "", "type name")
 	pkg = flag.String("package", "", "package name")
-	pth = flag.String("path", "", "path to the go file that defines -type")
+	pth = flag.String("input", "", "path to the go file that defines -type")
 )
 
 func main() {
@@ -61,6 +61,7 @@ func formatFields(fields []field) []string {
 
 func getFields() ([]field, error) {
 	fset := token.NewFileSet()
+	fmt.Println("path", *pth)
 	file, err := parser.ParseFile(fset, *pth, nil, 0)
 	if err != nil {
 		log.Fatal(err)
