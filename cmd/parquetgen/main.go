@@ -233,7 +233,7 @@ type ParquetWriter struct {
 	fields []Field
 
 	newFields func() []Field
-	len int
+	len       int
 
 	// records are for subsequent chunks
 	child *ParquetWriter
