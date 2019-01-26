@@ -109,7 +109,10 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 			switch x := n.(type) {
 			case *ast.Field:
 				if len(x.Names) == 1 && !isPrivate(x) {
-					fields[k] = append(fields[k], getField(x.Names[0].Name, x))
+					f, err := getField(x.Names[0].Name, x)
+					if err == nil {
+						fields[k] = append(fields[k], f)
+					}
 				}
 			}
 			return true
@@ -118,7 +121,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 	return fields, nil
 }
 
-func getField(name string, x ast.Node) field {
+func getField(name string, x ast.Node) (field, error) {
 	var typ, tag string
 	var optional bool
 	ast.Inspect(x, func(n ast.Node) bool {
@@ -139,7 +142,13 @@ func getField(name string, x ast.Node) field {
 		return true
 	})
 
-	return field{fieldName: name, typeName: getTypeName(typ, optional), funcName: lookupType(typ, optional), tagName: tag, omit: tag == "-"}
+	var err error
+	_, ok := types[typ]
+	if !ok {
+		err = fmt.Errorf("unsupported type: %v", typ)
+	}
+
+	return field{fieldName: name, typeName: getTypeName(typ, optional), funcName: lookupType(typ, optional), tagName: tag, omit: tag == "-"}, err
 }
 
 func parseTag(t string) string {

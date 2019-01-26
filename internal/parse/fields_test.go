@@ -33,6 +33,21 @@ func TestFields(t *testing.T) {
 			},
 		},
 		{
+			name: "nested structs",
+			typ:  "Nested",
+			expected: []string{
+				`NewUint64OptionalField(func(x Nested) *uint64 { return x.Anniversary }, "Anniversary"),`,
+			},
+		},
+		{
+			name: "unsupported fields",
+			typ:  "Unsupported",
+			expected: []string{
+				`NewInt32Field(func(x Unsupported) int32 { return x.ID }, "ID"),`,
+				`NewInt32OptionalField(func(x Unsupported) *int32 { return x.Age }, "Age"),`,
+			},
+		},
+		{
 			name: "embedded",
 			typ:  "Person",
 			expected: []string{

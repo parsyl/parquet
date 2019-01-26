@@ -1,5 +1,7 @@
 package parse_test
 
+import "time"
+
 type Being struct {
 	ID  int32
 	Age *int32
@@ -42,4 +44,19 @@ type Tagged struct {
 type Private struct {
 	Being
 	name string
+}
+
+// Nested structs are not supported at this time.
+type Nested struct {
+	// This field will be ignored because it's not one of the
+	// supported types.
+	Being       Being
+	Anniversary *uint64
+}
+
+type Unsupported struct {
+	Being
+	// This field will be ignored because it's not one of the
+	// supported types.
+	Time time.Time
 }
