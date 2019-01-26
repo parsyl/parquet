@@ -37,17 +37,6 @@ func New(fields ...Field) *Metadata {
 	return m
 }
 
-func (m *Metadata) Merge(m2 *Metadata) {
-	m.rows += m2.rows
-	for i, rg := range m.rowGroups {
-		rg2 := m2.rowGroups[i]
-		rg.rowGroup.TotalByteSize += rg2.rowGroup.TotalByteSize
-		rg.rowGroup.NumRows += rg2.rowGroup.NumRows
-		rg.rowGroup.Columns = append(rg.rowGroup.Columns, rg2.rowGroup.Columns...)
-		m.rowGroups[i] = rg
-	}
-}
-
 func (m *Metadata) StartRowGroup(fields ...Field) {
 	m.rowGroups = append(m.rowGroups, rowGroup{
 		fields:  schemaElements(fields),
