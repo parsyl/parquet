@@ -1,10 +1,9 @@
 # Parquetgen example
 
-
 To generate the code needed to run this example:
 
     cd examples/people
-    parquetgen -type Person -package main
+    go generate
     go run .
 
 You should now have a parquet file that encodes all the people in
