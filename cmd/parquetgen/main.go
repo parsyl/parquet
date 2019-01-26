@@ -683,7 +683,7 @@ func writeUnsignedVarInt(num uint64) []byte {
 }
 
 func bitNum(num uint64) uint64 {
-	var bitn uint64 = 0
+	var bitn uint64
 	for ; num != 0; num >>= 1 {
 		bitn++
 	}

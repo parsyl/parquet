@@ -18,10 +18,15 @@ type Field struct {
 }
 
 type Metadata struct {
-	ts        *thrift.TSerializer
+	ts *thrift.TSerializer
+
 	fields    []*sch.SchemaElement
 	rows      int64
 	rowGroups []rowGroup
+
+	//for reading
+	protocol thrift.TProtocol
+	metadata *sch.FileMetaData
 }
 
 func New(fields ...Field) *Metadata {
@@ -127,6 +132,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 	}
 
 	n, err := io.Copy(w, bytes.NewBuffer(buf))
+	fmt.Println("metadata is", n)
 	if err != nil {
 		return err
 	}
