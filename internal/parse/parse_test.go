@@ -60,3 +60,13 @@ type Unsupported struct {
 	// supported types.
 	Time time.Time
 }
+
+type SupportedAndUnsupported struct {
+	Happiness int64
+	x         int
+	T1        time.Time
+	Being
+	y           int
+	T2          time.Time
+	Anniversary *uint64
+}

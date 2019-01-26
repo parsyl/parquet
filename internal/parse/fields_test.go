@@ -48,6 +48,16 @@ func TestFields(t *testing.T) {
 			},
 		},
 		{
+			name: "unsupported fields mixed in with supported and embedded",
+			typ:  "SupportedAndUnsupported",
+			expected: []string{
+				`NewInt64Field(func(x SupportedAndUnsupported) int64 { return x.Happiness }, "Happiness"),`,
+				`NewInt32Field(func(x SupportedAndUnsupported) int32 { return x.ID }, "ID"),`,
+				`NewInt32OptionalField(func(x SupportedAndUnsupported) *int32 { return x.Age }, "Age"),`,
+				`NewUint64OptionalField(func(x SupportedAndUnsupported) *uint64 { return x.Anniversary }, "Anniversary"),`,
+			},
+		},
+		{
 			name: "embedded",
 			typ:  "Person",
 			expected: []string{

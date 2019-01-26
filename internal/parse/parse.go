@@ -18,6 +18,7 @@ type field struct {
 	funcName  string
 	tagName   string
 	omit      bool
+	embedded  bool
 }
 
 func (f field) getFieldName() string {
@@ -50,12 +51,17 @@ func Fields(typ, pth string) ([]string, error) {
 		return nil, err
 	}
 
-	out := fields[typ]
-	embedded, positions := getEmbeddedStructs(f.n[typ])
-	for _, name := range embedded {
-		i := positions[name]
-		newFields := fields[name]
-		out = append(out[:i], append(newFields, out[i:]...)...)
+	var out []field
+	var i int
+	for _, f := range fields[typ] {
+		if f.embedded {
+			embeddedFields := fields[f.typeName]
+			out = append(out[:i], append(embeddedFields, out[i:]...)...)
+			i += len(embeddedFields)
+		} else {
+			out = append(out, f)
+			i++
+		}
 	}
 
 	return formatFields(typ, out), nil
@@ -69,29 +75,6 @@ func formatFields(typ string, fields []field) []string {
 		}
 	}
 	return out
-}
-
-func getEmbeddedStructs(n ast.Node) ([]string, map[string]int) {
-	var out []string
-	position := map[string]int{}
-	var i int
-	ast.Inspect(n, func(n ast.Node) bool {
-		switch x := n.(type) {
-		case *ast.Field:
-			if isPrivate(x) {
-				return true
-			}
-			if len(x.Names) == 0 {
-				s := fmt.Sprintf("%s", x.Type)
-				out = append(out, s)
-				position[s] = i
-			}
-			i++
-		}
-		return true
-	})
-
-	return out, position
 }
 
 func isPrivate(x *ast.Field) bool {
@@ -115,6 +98,8 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 					if err == nil {
 						fields[k] = append(fields[k], f)
 					}
+				} else if len(x.Names) == 0 && !isPrivate(x) {
+					fields[k] = append(fields[k], field{embedded: true, typeName: fmt.Sprintf("%s", x.Type)})
 				}
 			}
 			return true
