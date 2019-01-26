@@ -10,6 +10,8 @@ import (
 	"go/ast"
 )
 
+const letters = "abcdefghijklmnopqrstuvwxyz"
+
 type field struct {
 	fieldName string
 	typeName  string
@@ -74,6 +76,9 @@ func getEmbeddedStructs(n ast.Node) ([]string, map[string]int) {
 	ast.Inspect(n, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.Field:
+			if isPrivate(x) {
+				return true
+			}
 			if len(x.Names) == 0 {
 				s := fmt.Sprintf("%s", x.Type)
 				out = append(out, s)
@@ -87,13 +92,23 @@ func getEmbeddedStructs(n ast.Node) ([]string, map[string]int) {
 	return out, position
 }
 
+func isPrivate(x *ast.Field) bool {
+	var s string
+	if len(x.Names) == 0 {
+		s = fmt.Sprintf("%s", x.Type)
+	} else {
+		s = fmt.Sprintf("%s", x.Names[0])
+	}
+	return strings.Contains(letters, string(s[0]))
+}
+
 func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 	fields := map[string][]field{}
 	for k, n := range n {
 		ast.Inspect(n, func(n ast.Node) bool {
 			switch x := n.(type) {
 			case *ast.Field:
-				if len(x.Names) == 1 {
+				if len(x.Names) == 1 && !isPrivate(x) {
 					fields[k] = append(fields[k], getField(x.Names[0].Name, x))
 				}
 			}

@@ -38,3 +38,8 @@ type Tagged struct {
 	ID   int32  `parquet:"id"`
 	Name string `parquet:"name"`
 }
+
+type Private struct {
+	Being
+	name string
+}

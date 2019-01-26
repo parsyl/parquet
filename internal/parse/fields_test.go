@@ -25,6 +25,14 @@ func TestFields(t *testing.T) {
 			},
 		},
 		{
+			name: "private fields",
+			typ:  "Private",
+			expected: []string{
+				`NewInt32Field(func(x Private) int32 { return x.ID }, "ID"),`,
+				`NewInt32OptionalField(func(x Private) *int32 { return x.Age }, "Age"),`,
+			},
+		},
+		{
 			name: "embedded",
 			typ:  "Person",
 			expected: []string{
