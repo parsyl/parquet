@@ -1,14 +1,14 @@
 package parse_test
 
 type Being struct {
-	ID  int32 `parquet:"id"`
+	ID  int32
 	Age *int32
 }
 
 type Person struct {
 	Being
 	Happiness   int64
-	Sadness     *int64 `parquet:"sadness"`
+	Sadness     *int64
 	Code        string
 	Funkiness   float32
 	Lameness    *float32
@@ -20,4 +20,9 @@ type Person struct {
 type IgnoreMe struct {
 	ID     int32  `parquet:"id"`
 	Secret string `parquet:"-"`
+}
+
+type Tagged struct {
+	ID   int32  `parquet:"id"`
+	Name string `parquet:"name"`
 }

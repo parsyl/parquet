@@ -20,7 +20,7 @@ func TestFields(t *testing.T) {
 			name: "flat",
 			typ:  "Being",
 			expected: []string{
-				`NewInt32Field(func(x Being) int32 { return x.ID }, "id"),`,
+				`NewInt32Field(func(x Being) int32 { return x.ID }, "ID"),`,
 				`NewInt32OptionalField(func(x Being) *int32 { return x.Age }, "Age"),`,
 			},
 		},
@@ -28,10 +28,10 @@ func TestFields(t *testing.T) {
 			name: "embedded",
 			typ:  "Person",
 			expected: []string{
-				`NewInt32Field(func(x Person) int32 { return x.ID }, "id"),`,
+				`NewInt32Field(func(x Person) int32 { return x.ID }, "ID"),`,
 				`NewInt32OptionalField(func(x Person) *int32 { return x.Age }, "Age"),`,
 				`NewInt64Field(func(x Person) int64 { return x.Happiness }, "Happiness"),`,
-				`NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, "sadness"),`,
+				`NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, "Sadness"),`,
 				`NewStringField(func(x Person) string { return x.Code }, "Code"),`,
 				`NewFloat32Field(func(x Person) float32 { return x.Funkiness }, "Funkiness"),`,
 				`NewFloat32OptionalField(func(x Person) *float32 { return x.Lameness }, "Lameness"),`,
@@ -41,7 +41,15 @@ func TestFields(t *testing.T) {
 			},
 		},
 		{
-			name: "omit",
+			name: "tags",
+			typ:  "Tagged",
+			expected: []string{
+				`NewInt32Field(func(x Tagged) int32 { return x.ID }, "id"),`,
+				`NewStringField(func(x Tagged) string { return x.Name }, "name"),`,
+			},
+		},
+		{
+			name: "omit tag",
 			typ:  "IgnoreMe",
 			expected: []string{
 				`NewInt32Field(func(x IgnoreMe) int32 { return x.ID }, "id"),`,
