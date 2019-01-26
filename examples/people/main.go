@@ -83,20 +83,20 @@ func newPerson(i int) Person {
 }
 
 type Being struct {
-	ID  int32
-	Age *int32
+	ID  int32  `parquet:"id"`
+	Age *int32 `parquet:"age"`
 }
 
 type Person struct {
 	Being
-	Happiness   int64
-	Sadness     *int64
-	Code        string
-	Funkiness   float32
-	Lameness    *float32
-	Keen        *bool
-	Birthday    uint32
-	Anniversary *uint64
+	Happiness   int64    `parquet:"happiness"`
+	Sadness     *int64   `parquet:"sadness"`
+	Code        string   `parquet:"code"`
+	Funkiness   float32  `parquet:"funkiness"`
+	Lameness    *float32 `parquet:"lameness"`
+	Keen        *bool    `parquet:"keen"`
+	Birthday    uint32   `parquet:"birthday"`
+	Anniversary *uint64  `parquet:"anniversary"`
 }
 
 func randString(n int) string {
