@@ -27,7 +27,9 @@ func (f field) getFieldName() string {
 	return f.fieldName
 }
 
-// Fields gets the fields of the given struct
+// Fields gets the fields of the given struct.
+// pth must be a go file that defines the typ struct.
+// Any embedded structs must also b.e in pth.
 func Fields(typ, pth string) ([]string, error) {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, pth, nil, 0)
