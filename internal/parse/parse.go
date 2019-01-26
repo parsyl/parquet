@@ -25,7 +25,7 @@ func (f field) getFieldName() string {
 	return f.fieldName
 }
 
-// Fields get the fields of the given struct
+// Fields gets the fields of the given struct
 func Fields(typ, pth string) ([]string, error) {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, pth, nil, 0)
@@ -47,7 +47,9 @@ func Fields(typ, pth string) ([]string, error) {
 	}
 
 	out := fields[typ]
-	for i, name := range getEmbeddedStructs(f.n[typ]) {
+	embedded, positions := getEmbeddedStructs(f.n[typ])
+	for _, name := range embedded {
+		i := positions[name]
 		newFields := fields[name]
 		out = append(out[:i], append(newFields, out[i:]...)...)
 	}
@@ -65,19 +67,24 @@ func formatFields(typ string, fields []field) []string {
 	return out
 }
 
-func getEmbeddedStructs(n ast.Node) []string {
+func getEmbeddedStructs(n ast.Node) ([]string, map[string]int) {
 	var out []string
+	position := map[string]int{}
+	var i int
 	ast.Inspect(n, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.Field:
 			if len(x.Names) == 0 {
-				out = append(out, fmt.Sprintf("%s", x.Type))
+				s := fmt.Sprintf("%s", x.Type)
+				out = append(out, s)
+				position[s] = i
 			}
+			i++
 		}
 		return true
 	})
 
-	return out
+	return out, position
 }
 
 func doGetFields(n map[string]ast.Node) (map[string][]field, error) {

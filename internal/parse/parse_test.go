@@ -17,6 +17,18 @@ type Person struct {
 	Anniversary *uint64
 }
 
+type NewOrderPerson struct {
+	Happiness int64
+	Sadness   *int64
+	Code      string
+	Funkiness float32
+	Lameness  *float32
+	Keen      *bool
+	Birthday  uint32
+	Being
+	Anniversary *uint64
+}
+
 type IgnoreMe struct {
 	ID     int32  `parquet:"id"`
 	Secret string `parquet:"-"`
