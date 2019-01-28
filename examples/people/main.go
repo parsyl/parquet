@@ -55,7 +55,7 @@ func read() {
 
 	for r.Next() {
 		var p Person
-		err := r.Read(&p)
+		err := r.Scan(&p)
 		if err != nil {
 			log.Fatal(err)
 		}

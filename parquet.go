@@ -18,9 +18,8 @@ type Field struct {
 }
 
 type Metadata struct {
-	ts *thrift.TSerializer
-
-	fields    []*sch.SchemaElement
+	ts        *thrift.TSerializer
+	schema    []*sch.SchemaElement
 	rows      int64
 	rowGroups []rowGroup
 
@@ -34,12 +33,17 @@ func New(fields ...Field) *Metadata {
 	ts.Protocol = thrift.NewTCompactProtocolFactory().GetProtocol(ts.Transport)
 	m := &Metadata{
 		ts:     ts,
-		fields: schemaElements(fields),
+		schema: schemaElements(fields),
 	}
 
 	// this is due to my not being sure about the purpose of RowGroup in parquet
 	m.StartRowGroup(fields...)
 	return m
+}
+
+func (m *Metadata) Fields() []Field {
+	//return m.fields
+	return nil
 }
 
 func (m *Metadata) StartRowGroup(fields ...Field) {
@@ -83,7 +87,7 @@ func (m *Metadata) updateRowGroup(col string, pos, dataLen, compressedLen, heade
 	rg := m.rowGroups[i-1]
 
 	rg.rowGroup.NumRows += int64(count)
-	err := rg.updateColumnChunk(col, pos, dataLen+headerLen, compressedLen+headerLen, count, m.fields)
+	err := rg.updateColumnChunk(col, pos, dataLen+headerLen, compressedLen+headerLen, count, m.schema)
 	m.rowGroups[i-1] = rg
 	return err
 }
@@ -121,8 +125,8 @@ func (m *Metadata) Footer(w io.Writer) error {
 
 	f := &sch.FileMetaData{
 		Version:   1,
-		Schema:    m.fields,
-		NumRows:   m.rows / int64(len(m.fields)-1),
+		Schema:    m.schema,
+		NumRows:   m.rows / int64(len(m.schema)-1),
 		RowGroups: rgs,
 	}
 

@@ -18,12 +18,33 @@ func (m *Metadata) Read(r io.ReadSeeker) error {
 	return nil
 }
 
+type Position struct {
+	N      int
+	Size   int
+	Offset int
+}
+
 func (m *Metadata) Rows() int {
 	return int(m.metadata.NumRows)
 }
 
-func (m *Metadata) ReadChunks(i int) error {
+func (m *Metadata) Offsets() map[string][]Position {
+	if len(m.metadata.RowGroups) == 0 {
+		return nil
+	}
 
+	out := map[string][]Position{}
+	rg := m.metadata.RowGroups[0]
+	for i, ch := range rg.Columns {
+		se := m.schema[i]
+		pos := Position{
+			N:      int(ch.MetaData.NumValues),
+			Offset: int(ch.FileOffset),
+			Size:   int(ch.MetaData.TotalCompressedSize),
+		}
+		out[se.Name] = append(out[se.Name], pos)
+	}
+	return out
 }
 
 func (m *Metadata) readFooter(r io.ReadSeeker) error {

@@ -13,25 +13,40 @@ func NewParquetReader(r io.ReadSeeker) (*ParquetReader, error) {
 		schema[i] = f.Schema()
 	}
 
-	pr := &ParquetReader{meta: parquet.New(schema...), r: r}
+	pr := &ParquetReader{
+		fields: ff,
+		meta:   parquet.New(schema...),
+		r:      r,
+	}
 
 	if err := pr.meta.Read(pr.r); err != nil {
 		return nil, err
 	}
 
 	pr.rows = pr.meta.Rows()
+	pr.offsets = pr.meta.Offsets()
 
-	err := pr.meta.ReadChunks(0)
-	return pr, err
+	// TODO: move this to Scan?
+	// for i, o := range pr.Offsets {
+	// 	for _,
+	// }
+
+	return pr, nil
 
 }
 
 type ParquetReader struct {
+	fields []Field
+
+	err     error
+	cur     int
+	rows    int
+	offsets map[string][]parquet.Position
+	// child points to the next page
+	child *ParquetReader
+
 	r    io.ReadSeeker
 	meta *parquet.Metadata
-	err  error
-	cur  int
-	rows int
 }
 
 func (p *ParquetReader) Error() error {
@@ -42,8 +57,9 @@ func (p *ParquetReader) Next() bool {
 	if p.cur >= p.rows || p.err != nil {
 		return false
 	}
+	return false
 }
 
-func (p *ParquetReader) Read(x *Person) error {
+func (p *ParquetReader) Scan(x *Person) error {
 	return nil
 }
