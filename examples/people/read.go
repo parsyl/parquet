@@ -6,7 +6,7 @@ import (
 	"github.com/parsyl/parquet"
 )
 
-func NewParquetReader(r io.ReadSeeker) (*ParquetReader, error) {
+func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetReader, error) {
 	ff := Fields()
 	schema := make([]parquet.Field, len(ff))
 	for i, f := range ff {
@@ -19,26 +19,46 @@ func NewParquetReader(r io.ReadSeeker) (*ParquetReader, error) {
 		r:      r,
 	}
 
-	if err := pr.meta.Read(pr.r); err != nil {
-		return nil, err
+	for _, opt := range opts {
+		opt(pr)
 	}
 
-	pr.rows = pr.meta.Rows()
-	pr.offsets = pr.meta.Offsets()
+	if pr.meta == nil {
+		if err := pr.meta.Read(pr.r); err != nil {
+			return nil, err
+		}
+		pr.rows = pr.meta.Rows()
+		pr.offsets = pr.meta.Offsets()
+	}
 
-	// TODO: move this to Scan?
-	// for i, o := range pr.Offsets {
-	// 	for _,
-	// }
+	offsets := pr.meta.Offsets()
+	for _, f := range pr.fields {
+		o := offsets[]
+	}
 
 	return pr, nil
 
 }
 
+func readerIndex(i int) func(*ParquetReader) {
+	return func(p *ParquetReader) {
+		p.index = i
+	}
+}
+
+func readerMeta(m *parquet.Metadata) func(*ParquetReader) {
+	return func(p *ParquetReader) {
+		p.meta = m
+	}
+}
+
+// ParquetReader reads one page from a row group.
 type ParquetReader struct {
 	fields []Field
 
-	err     error
+	err error
+	// index keeps track
+	index   int
 	cur     int
 	rows    int
 	offsets map[string][]parquet.Position

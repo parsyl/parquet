@@ -41,11 +41,6 @@ func New(fields ...Field) *Metadata {
 	return m
 }
 
-func (m *Metadata) Fields() []Field {
-	//return m.fields
-	return nil
-}
-
 func (m *Metadata) StartRowGroup(fields ...Field) {
 	m.rowGroups = append(m.rowGroups, rowGroup{
 		fields:  schemaElements(fields),
