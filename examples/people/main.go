@@ -55,10 +55,7 @@ func read() {
 
 	for r.Next() {
 		var p Person
-		err := r.Scan(&p)
-		if err != nil {
-			log.Fatal(err)
-		}
+		r.Scan(&p)
 		fmt.Printf("%+v\n", p)
 	}
 }

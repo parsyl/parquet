@@ -49,7 +49,7 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 }
 
 // WritePageHeader indicates you are done writing this columns's chunk
-func (m *Metadata) WritePageHeader(w io.Writer, col string, pos, dataLen, compressedLen, count int) error {
+func (m *Metadata) WritePageHeader(w io.Writer, col string, pos int64, dataLen, compressedLen, count int) error {
 	m.rows += int64(count)
 
 	ph := &sch.PageHeader{
@@ -58,6 +58,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, pos, dataLen, compre
 		CompressedPageSize:   int32(compressedLen),
 		DataPageHeader: &sch.DataPageHeader{
 			NumValues:               int32(count),
+			Encoding:                sch.Encoding_PLAIN,
 			DefinitionLevelEncoding: sch.Encoding_RLE,
 			RepetitionLevelEncoding: sch.Encoding_RLE,
 		},
@@ -69,11 +70,11 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, pos, dataLen, compre
 	}
 
 	m.updateRowGroup(col, pos, dataLen, compressedLen, len(buf), count)
-	_, err = io.Copy(w, bytes.NewBuffer(buf))
+	_, err = w.Write(buf)
 	return err
 }
 
-func (m *Metadata) updateRowGroup(col string, pos, dataLen, compressedLen, headerLen, count int) error {
+func (m *Metadata) updateRowGroup(col string, pos int64, dataLen, compressedLen, headerLen, count int) error {
 	i := len(m.rowGroups)
 	if i == 0 {
 		return fmt.Errorf("no row groups, you must call StartRowGroup at least once")
@@ -131,7 +132,6 @@ func (m *Metadata) Footer(w io.Writer) error {
 	}
 
 	n, err := io.Copy(w, bytes.NewBuffer(buf))
-	fmt.Println("metadata is", n)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ type rowGroup struct {
 	child    *rowGroup
 }
 
-func (r *rowGroup) updateColumnChunk(col string, pos, dataLen, compressedLen, count int, fields []*sch.SchemaElement) error {
+func (r *rowGroup) updateColumnChunk(col string, pos int64, dataLen, compressedLen, count int, fields []*sch.SchemaElement) error {
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)
@@ -155,12 +155,12 @@ func (r *rowGroup) updateColumnChunk(col string, pos, dataLen, compressedLen, co
 		}
 
 		ch = sch.ColumnChunk{
-			FileOffset: int64(pos),
+			FileOffset: pos,
 			MetaData: &sch.ColumnMetaData{
 				Type:           t,
 				Encodings:      []sch.Encoding{sch.Encoding_PLAIN},
 				PathInSchema:   []string{col},
-				DataPageOffset: int64(pos),
+				DataPageOffset: pos,
 				Codec:          sch.CompressionCodec_SNAPPY,
 			},
 		}
