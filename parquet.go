@@ -37,17 +37,6 @@ func New(fields ...Field) *Metadata {
 	return m
 }
 
-func (m *Metadata) Merge(m2 *Metadata) {
-	m.rows += m2.rows
-	for i, rg := range m.rowGroups {
-		rg2 := m2.rowGroups[i]
-		rg.rowGroup.TotalByteSize += rg2.rowGroup.TotalByteSize
-		rg.rowGroup.NumRows += rg2.rowGroup.NumRows
-		rg.rowGroup.Columns = append(rg.rowGroup.Columns, rg2.rowGroup.Columns...)
-		m.rowGroups[i] = rg
-	}
-}
-
 func (m *Metadata) StartRowGroup(fields ...Field) {
 	m.rowGroups = append(m.rowGroups, rowGroup{
 		fields:  schemaElements(fields),
@@ -108,7 +97,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 	rgs := make([]*sch.RowGroup, len(m.rowGroups))
 	for i, rg := range m.rowGroups {
 		for _, col := range rg.fields {
-			if col.Name == "parquet_go_root" {
+			if col.Name == "root" {
 				continue
 			}
 
@@ -185,7 +174,7 @@ func schemaElements(fields []Field) []*sch.SchemaElement {
 	rt := sch.FieldRepetitionType_REQUIRED
 	out[0] = &sch.SchemaElement{
 		RepetitionType: &rt,
-		Name:           "parquet_go_root",
+		Name:           "root",
 		NumChildren:    &l,
 	}
 
