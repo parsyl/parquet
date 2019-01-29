@@ -71,7 +71,7 @@ func formatFields(typ string, fields []field) []string {
 	out := make([]string, 0, len(fields))
 	for _, f := range fields {
 		if !f.omit {
-			out = append(out, fmt.Sprintf(`%s(func(x %s) %s { return x.%s }, "%s"),`, f.funcName, typ, f.typeName, f.fieldName, f.getFieldName()))
+			out = append(out, fmt.Sprintf(`%s(func(x %s) %s { return x.%s }, func(x *%s, v %s) { x.%s = v }, "%s"),`, f.funcName, typ, f.typeName, f.fieldName, typ, f.typeName, f.fieldName, f.getFieldName()))
 		}
 	}
 	return out

@@ -19,9 +19,13 @@ type Field struct {
 
 type Metadata struct {
 	ts        *thrift.TSerializer
-	fields    []*sch.SchemaElement
+	schema    []*sch.SchemaElement
 	rows      int64
 	rowGroups []rowGroup
+
+	//for reading
+	protocol thrift.TProtocol
+	metadata *sch.FileMetaData
 }
 
 func New(fields ...Field) *Metadata {
@@ -29,7 +33,7 @@ func New(fields ...Field) *Metadata {
 	ts.Protocol = thrift.NewTCompactProtocolFactory().GetProtocol(ts.Transport)
 	m := &Metadata{
 		ts:     ts,
-		fields: schemaElements(fields),
+		schema: schemaElements(fields),
 	}
 
 	// this is due to my not being sure about the purpose of RowGroup in parquet
@@ -45,7 +49,7 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 }
 
 // WritePageHeader indicates you are done writing this columns's chunk
-func (m *Metadata) WritePageHeader(w io.Writer, col string, pos, dataLen, compressedLen, count int) error {
+func (m *Metadata) WritePageHeader(w io.Writer, col string, pos int64, dataLen, compressedLen, count int) error {
 	m.rows += int64(count)
 
 	ph := &sch.PageHeader{
@@ -54,6 +58,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, pos, dataLen, compre
 		CompressedPageSize:   int32(compressedLen),
 		DataPageHeader: &sch.DataPageHeader{
 			NumValues:               int32(count),
+			Encoding:                sch.Encoding_PLAIN,
 			DefinitionLevelEncoding: sch.Encoding_RLE,
 			RepetitionLevelEncoding: sch.Encoding_RLE,
 		},
@@ -65,11 +70,11 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, pos, dataLen, compre
 	}
 
 	m.updateRowGroup(col, pos, dataLen, compressedLen, len(buf), count)
-	_, err = io.Copy(w, bytes.NewBuffer(buf))
+	_, err = w.Write(buf)
 	return err
 }
 
-func (m *Metadata) updateRowGroup(col string, pos, dataLen, compressedLen, headerLen, count int) error {
+func (m *Metadata) updateRowGroup(col string, pos int64, dataLen, compressedLen, headerLen, count int) error {
 	i := len(m.rowGroups)
 	if i == 0 {
 		return fmt.Errorf("no row groups, you must call StartRowGroup at least once")
@@ -78,7 +83,7 @@ func (m *Metadata) updateRowGroup(col string, pos, dataLen, compressedLen, heade
 	rg := m.rowGroups[i-1]
 
 	rg.rowGroup.NumRows += int64(count)
-	err := rg.updateColumnChunk(col, pos, dataLen+headerLen, compressedLen+headerLen, count, m.fields)
+	err := rg.updateColumnChunk(col, pos, dataLen+headerLen, compressedLen+headerLen, count, m.schema)
 	m.rowGroups[i-1] = rg
 	return err
 }
@@ -116,8 +121,8 @@ func (m *Metadata) Footer(w io.Writer) error {
 
 	f := &sch.FileMetaData{
 		Version:   1,
-		Schema:    m.fields,
-		NumRows:   m.rows / int64(len(m.fields)-1),
+		Schema:    m.schema,
+		NumRows:   m.rows / int64(len(m.schema)-1),
 		RowGroups: rgs,
 	}
 
@@ -141,7 +146,7 @@ type rowGroup struct {
 	child    *rowGroup
 }
 
-func (r *rowGroup) updateColumnChunk(col string, pos, dataLen, compressedLen, count int, fields []*sch.SchemaElement) error {
+func (r *rowGroup) updateColumnChunk(col string, pos int64, dataLen, compressedLen, count int, fields []*sch.SchemaElement) error {
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)
@@ -150,12 +155,12 @@ func (r *rowGroup) updateColumnChunk(col string, pos, dataLen, compressedLen, co
 		}
 
 		ch = sch.ColumnChunk{
-			FileOffset: int64(pos),
+			FileOffset: pos,
 			MetaData: &sch.ColumnMetaData{
 				Type:           t,
 				Encodings:      []sch.Encoding{sch.Encoding_PLAIN},
 				PathInSchema:   []string{col},
-				DataPageOffset: int64(pos),
+				DataPageOffset: pos,
 				Codec:          sch.CompressionCodec_SNAPPY,
 			},
 		}

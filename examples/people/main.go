@@ -3,11 +3,26 @@ package main
 //go:generate parquetgen -input main.go -type Person -package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"os"
 )
 
+var (
+	rd = flag.String("read", "", "read a parquet file")
+)
+
 func main() {
+	flag.Parse()
+	if *rd != "" {
+		read()
+	} else {
+		write()
+	}
+}
+
+func write() {
 	f, err := os.Create("people.parquet")
 	if err != nil {
 		log.Fatal(err)
@@ -23,6 +38,25 @@ func main() {
 
 	if err := w.Write(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func read() {
+	f, err := os.Open(*rd)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	r, err := NewParquetReader(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for r.Next() {
+		var p Person
+		r.Scan(&p)
+		fmt.Printf("%+v\n", p)
 	}
 }
 

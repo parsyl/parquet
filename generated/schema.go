@@ -4003,6 +4003,7 @@ func (p *DataPageHeader) Read(iprot thrift.TProtocol) error {
 
 	for {
 		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+
 		if err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
 		}
