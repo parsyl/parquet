@@ -33,10 +33,6 @@ type Position struct {
 	Offset int64
 }
 
-func (m *Metadata) Rows() int {
-	return int(m.metadata.NumRows)
-}
-
 func (m *Metadata) Offsets() map[string][]Position {
 	if len(m.metadata.RowGroups) == 0 {
 		return nil

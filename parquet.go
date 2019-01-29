@@ -98,6 +98,10 @@ func columnType(col string, fields []*sch.SchemaElement) (sch.Type, error) {
 	return 0, fmt.Errorf("could not find type for column %s", col)
 }
 
+func (m *Metadata) Rows() int64 {
+	return m.metadata.NumRows
+}
+
 func (m *Metadata) Footer(w io.Writer) error {
 	rgs := make([]*sch.RowGroup, len(m.rowGroups))
 	for i, rg := range m.rowGroups {
