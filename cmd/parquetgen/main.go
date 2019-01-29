@@ -69,7 +69,7 @@ import (
 
 	"github.com/golang/snappy"
 	"github.com/parsyl/parquet"
-    {{.Import}}
+	{{.Import}}
 )
 
 // ParquetWriter reprents a row group
