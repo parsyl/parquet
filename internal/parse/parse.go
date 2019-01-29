@@ -59,8 +59,6 @@ func Fields(typ, pth string) ([]string, string, error) {
 		return nil, "", err
 	}
 
-	fmt.Println(imp)
-
 	var out []field
 	var i int
 	for _, f := range fields[typ] {
