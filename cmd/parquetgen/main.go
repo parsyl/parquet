@@ -12,7 +12,7 @@ import (
 var (
 	typ = flag.String("type", "", "type name")
 	pkg = flag.String("package", "", "package name")
-	imp = flag.String("import", "", "the type's import statement (only if it doesn't live 'package')")
+	imp = flag.String("import", "", "the type's import statement (only if it doesn't live in 'package')")
 	pth = flag.String("input", "", "path to the go file that defines -type")
 )
 
