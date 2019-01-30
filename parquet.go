@@ -17,9 +17,14 @@ type Field struct {
 	RepetitionType FieldFunc
 }
 
+type schema struct {
+	schema []*sch.SchemaElement
+	lookup map[string]sch.SchemaElement
+}
+
 type Metadata struct {
 	ts        *thrift.TSerializer
-	schema    []*sch.SchemaElement
+	schema    schema
 	rows      int64
 	rowGroups []rowGroup
 
@@ -88,8 +93,8 @@ func (m *Metadata) updateRowGroup(col string, pos int64, dataLen, compressedLen,
 	return err
 }
 
-func columnType(col string, fields []*sch.SchemaElement) (sch.Type, error) {
-	for _, f := range fields {
+func columnType(col string, fields schema) (sch.Type, error) {
+	for _, f := range fields.schema {
 		if f.Name == col {
 			return *f.Type, nil
 		}
@@ -105,7 +110,7 @@ func (m *Metadata) Rows() int64 {
 func (m *Metadata) Footer(w io.Writer) error {
 	rgs := make([]*sch.RowGroup, len(m.rowGroups))
 	for i, rg := range m.rowGroups {
-		for _, col := range rg.fields {
+		for _, col := range rg.fields.schema {
 			if col.Name == "root" {
 				continue
 			}
@@ -119,14 +124,14 @@ func (m *Metadata) Footer(w io.Writer) error {
 			rg.rowGroup.Columns = append(rg.rowGroup.Columns, &ch)
 		}
 
-		rg.rowGroup.NumRows = rg.rowGroup.NumRows / int64(len(rg.fields)-1)
+		rg.rowGroup.NumRows = rg.rowGroup.NumRows / int64(len(rg.fields.schema)-1)
 		rgs[i] = &rg.rowGroup
 	}
 
 	f := &sch.FileMetaData{
 		Version:   1,
-		Schema:    m.schema,
-		NumRows:   m.rows / int64(len(m.schema)-1),
+		Schema:    m.schema.schema,
+		NumRows:   m.rows / int64(len(m.schema.schema)-1),
 		RowGroups: rgs,
 	}
 
@@ -144,13 +149,13 @@ func (m *Metadata) Footer(w io.Writer) error {
 }
 
 type rowGroup struct {
-	fields   []*sch.SchemaElement
+	fields   schema
 	rowGroup sch.RowGroup
 	columns  map[string]sch.ColumnChunk
 	child    *rowGroup
 }
 
-func (r *rowGroup) updateColumnChunk(col string, pos int64, dataLen, compressedLen, count int, fields []*sch.SchemaElement) error {
+func (r *rowGroup) updateColumnChunk(col string, pos int64, dataLen, compressedLen, count int, fields schema) error {
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)
@@ -177,8 +182,9 @@ func (r *rowGroup) updateColumnChunk(col string, pos int64, dataLen, compressedL
 	return nil
 }
 
-func schemaElements(fields []Field) []*sch.SchemaElement {
+func schemaElements(fields []Field) schema {
 	out := make([]*sch.SchemaElement, len(fields)+1)
+	m := make(map[string]sch.SchemaElement)
 	l := int32(len(fields))
 	rt := sch.FieldRepetitionType_REQUIRED
 	out[0] = &sch.SchemaElement{
@@ -200,9 +206,10 @@ func schemaElements(fields []Field) []*sch.SchemaElement {
 		f.Type(se)
 		f.RepetitionType(se)
 		out[i+1] = se
+		m[f.Name] = *se
 	}
 
-	return out
+	return schema{schema: out, lookup: m}
 }
 
 type FieldFunc func(*sch.SchemaElement)

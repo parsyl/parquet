@@ -31,7 +31,7 @@ func (f field) getFieldName() string {
 // Fields gets the fields of the given struct.
 // pth must be a go file that defines the typ struct.
 // Any embedded structs must also be in that same file.
-func Fields(typ, pth string) ([]string, string, error) {
+func Fields(typ, pth string) ([]string, error) {
 	fullTyp := typ
 	typ = getType(fullTyp)
 
@@ -46,17 +46,12 @@ func Fields(typ, pth string) ([]string, string, error) {
 	ast.Walk(visitorFunc(f.findTypes), file)
 
 	if f.n == nil {
-		return nil, "", fmt.Errorf("could not find %s", typ)
+		return nil, fmt.Errorf("could not find %s", typ)
 	}
 
 	fields, err := doGetFields(f.n)
 	if err != nil {
-		return nil, "", err
-	}
-
-	imp, err := doGetImport(f.n)
-	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	var out []field
@@ -72,7 +67,7 @@ func Fields(typ, pth string) ([]string, string, error) {
 		}
 	}
 
-	return formatFields(fullTyp, out), imp, nil
+	return formatFields(fullTyp, out), nil
 }
 
 func getType(typ string) string {
@@ -119,21 +114,6 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 		})
 	}
 	return fields, nil
-}
-
-func doGetImport(n map[string]ast.Node) (string, error) {
-	var imp string
-	for _, n := range n {
-		ast.Inspect(n, func(n ast.Node) bool {
-			switch x := n.(type) {
-			case *ast.ImportSpec:
-				imp = fmt.Sprintf("%s", x.Name)
-				return false
-			}
-			return true
-		})
-	}
-	return imp, nil
 }
 
 func getField(name string, x ast.Node) (field, error) {

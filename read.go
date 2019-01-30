@@ -3,6 +3,7 @@ package parquet
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -33,15 +34,20 @@ type Position struct {
 	Offset int64
 }
 
-func (m *Metadata) Offsets() map[string][]Position {
+func (m *Metadata) Offsets() (map[string][]Position, error) {
 	if len(m.metadata.RowGroups) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	out := map[string][]Position{}
 	for _, rg := range m.metadata.RowGroups {
-		for i, ch := range rg.Columns {
-			se := m.schema[i+1] //skip root
+		for _, ch := range rg.Columns {
+			pth := ch.MetaData.PathInSchema
+			se, ok := m.schema.lookup[pth[len(pth)-1]]
+			if !ok {
+				return nil, fmt.Errorf("could not find schema for %v", pth)
+			}
+
 			pos := Position{
 				N:      int(ch.MetaData.NumValues),
 				Offset: ch.FileOffset,
@@ -50,7 +56,7 @@ func (m *Metadata) Offsets() map[string][]Position {
 			out[se.Name] = append(out[se.Name], pos)
 		}
 	}
-	return out
+	return out, nil
 }
 
 func (m *Metadata) PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
