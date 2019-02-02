@@ -11,10 +11,11 @@ import (
 )
 
 var (
-	typ = flag.String("type", "", "type name")
-	pkg = flag.String("package", "", "package name")
-	imp = flag.String("import", "", "the type's import statement (only if it doesn't live in 'package')")
-	pth = flag.String("input", "", "path to the go file that defines -type")
+	typ    = flag.String("type", "", "type name")
+	pkg    = flag.String("package", "", "package name")
+	imp    = flag.String("import", "", "the type's import statement (only if it doesn't live in 'package')")
+	pth    = flag.String("input", "", "path to the go file that defines -type")
+	ignore = flag.Bool("ignore", false, "ignore unsupported fields in -type")
 )
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 	}
 
 	var err error
-	i.Fields, err = parse.Fields(*typ, *pth)
+	i.Fields, err = parse.Fields(*typ, *pth, *ignore)
 	if err != nil {
 		log.Fatal(err)
 	}

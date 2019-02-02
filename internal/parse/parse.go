@@ -19,6 +19,7 @@ type field struct {
 	tagName   string
 	omit      bool
 	embedded  bool
+	err       error
 }
 
 func (f field) getFieldName() string {
@@ -31,7 +32,7 @@ func (f field) getFieldName() string {
 // Fields gets the fields of the given struct.
 // pth must be a go file that defines the typ struct.
 // Any embedded structs must also be in that same file.
-func Fields(typ, pth string) ([]string, error) {
+func Fields(typ, pth string, ignore bool) ([]string, error) {
 	fullTyp := typ
 	typ = getType(fullTyp)
 
@@ -57,11 +58,16 @@ func Fields(typ, pth string) ([]string, error) {
 	var out []field
 	var i int
 	for _, f := range fields[typ] {
-		if f.embedded {
+		if f.err != nil && !ignore {
+			return nil, f.err
+		}
+		if f.err != nil {
+			log.Printf("ignoring unsupported field: %v", f.typeName)
+		} else if f.err == nil && f.embedded {
 			embeddedFields := fields[f.typeName]
 			out = append(out[:i], append(embeddedFields, out[i:]...)...)
 			i += len(embeddedFields)
-		} else {
+		} else if f.err == nil {
 			out = append(out, f)
 			i++
 		}
@@ -102,10 +108,8 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 			switch x := n.(type) {
 			case *ast.Field:
 				if len(x.Names) == 1 && !isPrivate(x) {
-					f, err := getField(x.Names[0].Name, x)
-					if err == nil {
-						fields[k] = append(fields[k], f)
-					}
+					f := getField(x.Names[0].Name, x)
+					fields[k] = append(fields[k], f)
 				} else if len(x.Names) == 0 && !isPrivate(x) {
 					fields[k] = append(fields[k], field{embedded: true, typeName: fmt.Sprintf("%s", x.Type)})
 				}
@@ -116,7 +120,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 	return fields, nil
 }
 
-func getField(name string, x ast.Node) (field, error) {
+func getField(name string, x ast.Node) field {
 	var typ, tag string
 	var optional bool
 	ast.Inspect(x, func(n ast.Node) bool {
@@ -140,10 +144,10 @@ func getField(name string, x ast.Node) (field, error) {
 	var err error
 	_, ok := types[typ]
 	if !ok {
-		err = fmt.Errorf("unsupported type: %v", typ)
+		err = fmt.Errorf("unsupported type: %s", name)
 	}
 
-	return field{fieldName: name, typeName: getTypeName(typ, optional), funcName: lookupType(typ, optional), tagName: tag, omit: tag == "-"}, err
+	return field{fieldName: name, typeName: getTypeName(typ, optional), funcName: lookupType(typ, optional), tagName: tag, omit: tag == "-", err: err}
 }
 
 func parseTag(t string) string {
