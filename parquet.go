@@ -36,8 +36,6 @@ type Metadata struct {
 	rows      int64
 	rowGroups []rowGroup
 
-	//for reading
-	protocol thrift.TProtocol
 	metadata *sch.FileMetaData
 }
 
@@ -49,7 +47,6 @@ func New(fields ...Field) *Metadata {
 		schema: schemaElements(fields),
 	}
 
-	// this is due to my not being sure about the purpose of RowGroup in parquet
 	m.StartRowGroup(fields...)
 	return m
 }
@@ -116,31 +113,36 @@ func (m *Metadata) Rows() int64 {
 }
 
 func (m *Metadata) Footer(w io.Writer) error {
-	rgs := make([]*sch.RowGroup, len(m.rowGroups))
-	for i, rg := range m.rowGroups {
-		for _, col := range rg.fields.schema {
-			if col.Name == "root" {
-				continue
-			}
-
-			ch, ok := rg.columns[col.Name]
-			if !ok {
-				return fmt.Errorf("unknown column %s", col.Name)
-			}
-
-			rg.rowGroup.TotalByteSize += ch.MetaData.TotalCompressedSize
-			rg.rowGroup.Columns = append(rg.rowGroup.Columns, &ch)
-		}
-
-		rg.rowGroup.NumRows = rg.rowGroup.NumRows / int64(len(rg.fields.schema)-1)
-		rgs[i] = &rg.rowGroup
-	}
 
 	f := &sch.FileMetaData{
 		Version:   1,
 		Schema:    m.schema.schema,
 		NumRows:   m.rows / int64(len(m.schema.schema)-1),
-		RowGroups: rgs,
+		RowGroups: make([]*sch.RowGroup, 0, len(m.rowGroups)),
+	}
+
+	for _, mrg := range m.rowGroups {
+		rg := mrg.rowGroup
+		if rg.NumRows == 0 {
+			continue
+		}
+
+		for _, col := range mrg.fields.schema {
+			if col.Name == "root" {
+				continue
+			}
+
+			ch, ok := mrg.columns[col.Name]
+			if !ok {
+				return fmt.Errorf("unknown column %s", col.Name)
+			}
+
+			rg.TotalByteSize += ch.MetaData.TotalCompressedSize
+			rg.Columns = append(rg.Columns, &ch)
+		}
+
+		rg.NumRows = rg.NumRows / int64(len(mrg.fields.schema)-1)
+		f.RowGroups = append(f.RowGroups, &rg)
 	}
 
 	buf, err := m.ts.Write(context.TODO(), f)
@@ -224,7 +226,6 @@ func (m *Metadata) Offsets() (map[string][]Position, error) {
 	if len(m.metadata.RowGroups) == 0 {
 		return nil, nil
 	}
-
 	out := map[string][]Position{}
 	for _, rg := range m.metadata.RowGroups {
 		for _, ch := range rg.Columns {
@@ -246,8 +247,7 @@ func (m *Metadata) Offsets() (map[string][]Position, error) {
 }
 
 func (m *Metadata) PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
-	ttransport := &thrift.StreamTransport{Reader: r}
-	p := thrift.NewTCompactProtocol(ttransport)
+	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	pg := &sch.PageHeader{}
 	err := pg.Read(p)
 	return pg, err
@@ -264,8 +264,7 @@ func (m *Metadata) getSize(r io.ReadSeeker) (int, error) {
 }
 
 func (m *Metadata) ReadFooter(r io.ReadSeeker) error {
-	pf := thrift.NewTCompactProtocolFactory()
-	p := pf.GetProtocol(thrift.NewStreamTransportR(r))
+	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	size, err := m.getSize(r)
 	if err != nil {
 		return err
