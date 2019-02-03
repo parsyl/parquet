@@ -58,10 +58,13 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 	})
 }
 
-// WritePageHeader indicates you are done writing this columns's chunk
-func (m *Metadata) WritePageHeader(w io.Writer, col string, pos int64, dataLen, compressedLen, count int) error {
-	m.rows += int64(count)
+func (m *Metadata) RowGroups() int {
+	return len(m.metadata.RowGroups)
+}
 
+// WritePageHeader indicates you are done writing this columns's chunk
+func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedLen, count int) error {
+	m.rows += int64(count)
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
 		UncompressedPageSize: int32(dataLen),
@@ -79,12 +82,12 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, pos int64, dataLen, 
 		return err
 	}
 
-	m.updateRowGroup(col, pos, dataLen, compressedLen, len(buf), count)
+	m.updateRowGroup(col, dataLen, compressedLen, len(buf), count)
 	_, err = w.Write(buf)
 	return err
 }
 
-func (m *Metadata) updateRowGroup(col string, pos int64, dataLen, compressedLen, headerLen, count int) error {
+func (m *Metadata) updateRowGroup(col string, dataLen, compressedLen, headerLen, count int) error {
 	i := len(m.rowGroups)
 	if i == 0 {
 		return fmt.Errorf("no row groups, you must call StartRowGroup at least once")
@@ -93,7 +96,7 @@ func (m *Metadata) updateRowGroup(col string, pos int64, dataLen, compressedLen,
 	rg := m.rowGroups[i-1]
 
 	rg.rowGroup.NumRows += int64(count)
-	err := rg.updateColumnChunk(col, pos, dataLen+headerLen, compressedLen+headerLen, count, m.schema)
+	err := rg.updateColumnChunk(col, dataLen+headerLen, compressedLen+headerLen, count, m.schema)
 	m.rowGroups[i-1] = rg
 	return err
 }
@@ -121,6 +124,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 		RowGroups: make([]*sch.RowGroup, 0, len(m.rowGroups)),
 	}
 
+	pos := int64(4)
 	for _, mrg := range m.rowGroups {
 		rg := mrg.rowGroup
 		if rg.NumRows == 0 {
@@ -133,12 +137,17 @@ func (m *Metadata) Footer(w io.Writer) error {
 			}
 
 			ch, ok := mrg.columns[col.Name]
+
 			if !ok {
 				return fmt.Errorf("unknown column %s", col.Name)
 			}
 
+			ch.FileOffset = pos
+			ch.MetaData.DataPageOffset = pos
 			rg.TotalByteSize += ch.MetaData.TotalCompressedSize
 			rg.Columns = append(rg.Columns, &ch)
+			pos += ch.MetaData.TotalCompressedSize
+
 		}
 
 		rg.NumRows = rg.NumRows / int64(len(mrg.fields.schema)-1)
@@ -150,7 +159,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 		return err
 	}
 
-	n, err := io.Copy(w, bytes.NewBuffer(buf))
+	n, err := w.Write(buf)
 	if err != nil {
 		return err
 	}
@@ -165,7 +174,7 @@ type rowGroup struct {
 	child    *rowGroup
 }
 
-func (r *rowGroup) updateColumnChunk(col string, pos int64, dataLen, compressedLen, count int, fields schema) error {
+func (r *rowGroup) updateColumnChunk(col string, dataLen, compressedLen, count int, fields schema) error {
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)
@@ -174,18 +183,17 @@ func (r *rowGroup) updateColumnChunk(col string, pos int64, dataLen, compressedL
 		}
 
 		ch = sch.ColumnChunk{
-			FileOffset: pos,
 			MetaData: &sch.ColumnMetaData{
-				Type:           t,
-				Encodings:      []sch.Encoding{sch.Encoding_PLAIN},
-				PathInSchema:   []string{col},
-				DataPageOffset: pos,
-				Codec:          sch.CompressionCodec_SNAPPY,
+				Type:         t,
+				Encodings:    []sch.Encoding{sch.Encoding_PLAIN},
+				PathInSchema: []string{col},
+				Codec:        sch.CompressionCodec_SNAPPY,
 			},
 		}
 	}
 
 	ch.MetaData.NumValues += int64(count)
+
 	ch.MetaData.TotalUncompressedSize += int64(dataLen)
 	ch.MetaData.TotalCompressedSize += int64(compressedLen)
 	r.columns[col] = ch

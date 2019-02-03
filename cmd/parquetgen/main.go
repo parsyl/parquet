@@ -154,14 +154,12 @@ func withMeta(m *parquet.Metadata) func(*ParquetWriter) error {
 
 func (p *ParquetWriter) Write() error {
 	for i, f := range p.fields {
-		pos := p.w.n
-		if err := f.Write(p.w, p.meta, pos); err != nil {
+		if err := f.Write(p.w, p.meta); err != nil {
 			return err
 		}
 
 		for child := p.child; child != nil; child = child.child {
-			pos := p.w.n
-			if err := child.fields[i].Write(p.w, p.meta, pos); err != nil {
+			if err := child.fields[i].Write(p.w, p.meta); err != nil {
 				return err
 			}
 		}
@@ -188,7 +186,7 @@ func (p *ParquetWriter) Close() error {
 	return err
 }
 
-func (p *ParquetWriter) Add(rec {{.Type}}) {
+func (p *ParquetWriter) Add(rec Person) {
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
@@ -207,10 +205,10 @@ func (p *ParquetWriter) Add(rec {{.Type}}) {
 }
 
 type Field interface {
-	Add(r {{.Type}})
-	Write(w io.Writer, meta *parquet.Metadata, pos int64) error
+	Add(r Person)
+	Write(w io.Writer, meta *parquet.Metadata) error
 	Schema() parquet.Field
-	Scan(r *{{.Type}})
+	Scan(r *Person)
 	Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error
 	Name() string
 }
@@ -219,9 +217,9 @@ type RequiredField struct {
 	col string
 }
 
-func (f *RequiredField) doWrite(w io.Writer, meta *parquet.Metadata, pos int64, vals []byte, count int) error {
+func (f *RequiredField) doWrite(w io.Writer, meta *parquet.Metadata, vals []byte, count int) error {
 	compressed := snappy.Encode(nil, vals)
-	if err := meta.WritePageHeader(w, f.col, pos, len(vals), len(compressed), count); err != nil {
+	if err := meta.WritePageHeader(w, f.col, len(vals), len(compressed), count); err != nil {
 		return err
 	}
 
@@ -245,6 +243,9 @@ func (f *RequiredField) doRead(r io.ReadSeeker, meta *parquet.Metadata, pos parq
 		}
 
 		data, err := snappy.Decode(nil, compressed)
+		if err != nil {
+			return nil, err
+		}
 		out = append(out, data...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
@@ -271,7 +272,7 @@ func (f *OptionalField) nVals() int {
 	return out
 }
 
-func (f *OptionalField) doWrite(w io.Writer, meta *parquet.Metadata, pos int64, vals []byte, count int) error {
+func (f *OptionalField) doWrite(w io.Writer, meta *parquet.Metadata, vals []byte, count int) error {
 	buf := bytes.Buffer{}
 	wc := &WriteCounter{w: &buf}
 
@@ -285,7 +286,7 @@ func (f *OptionalField) doWrite(w io.Writer, meta *parquet.Metadata, pos int64, 
 	}
 
 	compressed := snappy.Encode(nil, buf.Bytes())
-	if err := meta.WritePageHeader(w, f.col, pos, int(wc.n), len(compressed), len(f.defs)); err != nil {
+	if err := meta.WritePageHeader(w, f.col, int(wc.n), len(compressed), len(f.defs)); err != nil {
 		return err
 	}
 
@@ -314,6 +315,7 @@ func (f *OptionalField) doRead(r io.ReadSeeker, meta *parquet.Metadata, pos parq
 		}
 
 		defs, l, err := parquet.ReadLevels(bytes.NewBuffer(uncompressed))
+
 		if err != nil {
 			return nil, err
 		}
@@ -332,11 +334,11 @@ func (f *OptionalField) Name() string {
 type Uint32Field struct {
 	vals []uint32
 	RequiredField
-	val  func(r {{.Type}}) uint32
-	read func(r *{{.Type}}, v uint32)
+	val  func(r Person) uint32
+	read func(r *Person, v uint32)
 }
 
-func NewUint32Field(val func(r {{.Type}}) uint32, read func(r *{{.Type}}, v uint32), col string) *Uint32Field {
+func NewUint32Field(val func(r Person) uint32, read func(r *Person, v uint32), col string) *Uint32Field {
 	return &Uint32Field{
 		val:           val,
 		read:          read,
@@ -348,7 +350,7 @@ func (f *Uint32Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Uint32Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *Uint32Field) Scan(r *{{.Type}}) {
+func (f *Uint32Field) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -357,14 +359,14 @@ func (f *Uint32Field) Scan(r *{{.Type}}) {
 	f.read(r, v)
 }
 
-func (f *Uint32Field) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Uint32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Uint32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -375,22 +377,22 @@ func (f *Uint32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.
 
 	v := make([]uint32, int(pos.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Uint32Field) Add(r {{.Type}}) {
+func (f *Uint32Field) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Uint32OptionalField struct {
 	OptionalField
 	vals []uint32
-	read func(r *{{.Type}}, v *uint32)
-	val  func(r {{.Type}}) *uint32
+	read func(r *Person, v *uint32)
+	val  func(r Person) *uint32
 }
 
-func NewUint32OptionalField(val func(r {{.Type}}) *uint32, read func(r *{{.Type}}, v *uint32), col string) *Uint32OptionalField {
+func NewUint32OptionalField(val func(r Person) *uint32, read func(r *Person, v *uint32), col string) *Uint32OptionalField {
 	return &Uint32OptionalField{
 		val:           val,
 		read:          read,
@@ -402,14 +404,14 @@ func (f *Uint32OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Uint32Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *Uint32OptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Uint32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Uint32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -418,13 +420,13 @@ func (f *Uint32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos 
 		return err
 	}
 
-	v := make([]uint32, f.nVals())
+	v := make([]uint32, f.nVals()-len(f.vals))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Uint32OptionalField) Add(r {{.Type}}) {
+func (f *Uint32OptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -434,7 +436,7 @@ func (f *Uint32OptionalField) Add(r {{.Type}}) {
 	}
 }
 
-func (f *Uint32OptionalField) Scan(r *{{.Type}}) {
+func (f *Uint32OptionalField) Scan(r *Person) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -452,11 +454,11 @@ func (f *Uint32OptionalField) Scan(r *{{.Type}}) {
 type Int32Field struct {
 	vals []int32
 	RequiredField
-	val  func(r {{.Type}}) int32
-	read func(r *{{.Type}}, v int32)
+	val  func(r Person) int32
+	read func(r *Person, v int32)
 }
 
-func NewInt32Field(val func(r {{.Type}}) int32, read func(r *{{.Type}}, v int32), col string) *Int32Field {
+func NewInt32Field(val func(r Person) int32, read func(r *Person, v int32), col string) *Int32Field {
 	return &Int32Field{
 		val:           val,
 		read:          read,
@@ -468,12 +470,12 @@ func (f *Int32Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Int32Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *Int32Field) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Int32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	if err := binary.Write(&buf, binary.LittleEndian, f.vals); err != nil {
 		return err
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Int32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -484,15 +486,15 @@ func (f *Int32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.P
 
 	v := make([]int32, int(pos.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Int32Field) Add(r {{.Type}}) {
+func (f *Int32Field) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
-func (f *Int32Field) Scan(r *{{.Type}}) {
+func (f *Int32Field) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -505,11 +507,11 @@ func (f *Int32Field) Scan(r *{{.Type}}) {
 type Int32OptionalField struct {
 	vals []int32
 	OptionalField
-	val  func(r {{.Type}}) *int32
-	read func(r *{{.Type}}, v *int32)
+	val  func(r Person) *int32
+	read func(r *Person, v *int32)
 }
 
-func NewInt32OptionalField(val func(r {{.Type}}) *int32, read func(r *{{.Type}}, v *int32), col string) *Int32OptionalField {
+func NewInt32OptionalField(val func(r Person) *int32, read func(r *Person, v *int32), col string) *Int32OptionalField {
 	return &Int32OptionalField{
 		val:           val,
 		read:          read,
@@ -521,7 +523,7 @@ func (f *Int32OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Int32Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *Int32OptionalField) Scan(r *{{.Type}}) {
+func (f *Int32OptionalField) Scan(r *Person) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -536,14 +538,14 @@ func (f *Int32OptionalField) Scan(r *{{.Type}}) {
 	f.read(r, val)
 }
 
-func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Int32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -552,13 +554,13 @@ func (f *Int32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos p
 		return err
 	}
 
-	v := make([]int32, f.nVals())
+	v := make([]int32, f.nVals()-len(f.vals))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Int32OptionalField) Add(r {{.Type}}) {
+func (f *Int32OptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -571,11 +573,11 @@ func (f *Int32OptionalField) Add(r {{.Type}}) {
 type Int64Field struct {
 	vals []int64
 	RequiredField
-	val  func(r {{.Type}}) int64
-	read func(r *{{.Type}}, v int64)
+	val  func(r Person) int64
+	read func(r *Person, v int64)
 }
 
-func NewInt64Field(val func(r {{.Type}}) int64, read func(r *{{.Type}}, v int64), col string) *Int64Field {
+func NewInt64Field(val func(r Person) int64, read func(r *Person, v int64), col string) *Int64Field {
 	return &Int64Field{
 		val:           val,
 		read:          read,
@@ -587,7 +589,7 @@ func (f *Int64Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *Int64Field) Scan(r *{{.Type}}) {
+func (f *Int64Field) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -597,14 +599,14 @@ func (f *Int64Field) Scan(r *{{.Type}}) {
 	f.read(r, v)
 }
 
-func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Int64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -615,22 +617,22 @@ func (f *Int64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.P
 
 	v := make([]int64, int(pos.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Int64Field) Add(r {{.Type}}) {
+func (f *Int64Field) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Int64OptionalField struct {
 	vals []int64
 	OptionalField
-	val  func(r {{.Type}}) *int64
-	read func(r *{{.Type}}, v *int64)
+	val  func(r Person) *int64
+	read func(r *Person, v *int64)
 }
 
-func NewInt64OptionalField(val func(r {{.Type}}) *int64, read func(r *{{.Type}}, v *int64), col string) *Int64OptionalField {
+func NewInt64OptionalField(val func(r Person) *int64, read func(r *Person, v *int64), col string) *Int64OptionalField {
 	return &Int64OptionalField{
 		val:           val,
 		read:          read,
@@ -642,14 +644,14 @@ func (f *Int64OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Int64Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Int64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -658,13 +660,13 @@ func (f *Int64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos p
 		return err
 	}
 
-	v := make([]int64, int(f.nVals()))
+	v := make([]int64, int(f.nVals()-len(f.vals)))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Int64OptionalField) Scan(r *{{.Type}}) {
+func (f *Int64OptionalField) Scan(r *Person) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -679,7 +681,7 @@ func (f *Int64OptionalField) Scan(r *{{.Type}}) {
 	f.read(r, val)
 }
 
-func (f *Int64OptionalField) Add(r {{.Type}}) {
+func (f *Int64OptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -692,11 +694,11 @@ func (f *Int64OptionalField) Add(r {{.Type}}) {
 type Uint64Field struct {
 	vals []uint64
 	RequiredField
-	val  func(r {{.Type}}) uint64
-	read func(r *{{.Type}}, v uint64)
+	val  func(r Person) uint64
+	read func(r *Person, v uint64)
 }
 
-func NewUint64Field(val func(r {{.Type}}) uint64, read func(r *{{.Type}}, v uint64), col string) *Uint64Field {
+func NewUint64Field(val func(r Person) uint64, read func(r *Person, v uint64), col string) *Uint64Field {
 	return &Uint64Field{
 		val:           val,
 		read:          read,
@@ -708,14 +710,14 @@ func (f *Uint64Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Uint64Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *Uint64Field) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Uint64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Uint64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -726,11 +728,11 @@ func (f *Uint64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.
 
 	v := make([]uint64, int(pos.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Uint64Field) Scan(r *{{.Type}}) {
+func (f *Uint64Field) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -740,18 +742,18 @@ func (f *Uint64Field) Scan(r *{{.Type}}) {
 	f.read(r, v)
 }
 
-func (f *Uint64Field) Add(r {{.Type}}) {
+func (f *Uint64Field) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Uint64OptionalField struct {
 	vals []uint64
 	OptionalField
-	val  func(r {{.Type}}) *uint64
-	read func(r *{{.Type}}, v *uint64)
+	val  func(r Person) *uint64
+	read func(r *Person, v *uint64)
 }
 
-func NewUint64OptionalField(val func(r {{.Type}}) *uint64, read func(r *{{.Type}}, v *uint64), col string) *Uint64OptionalField {
+func NewUint64OptionalField(val func(r Person) *uint64, read func(r *Person, v *uint64), col string) *Uint64OptionalField {
 	return &Uint64OptionalField{
 		val:           val,
 		read:          read,
@@ -763,14 +765,14 @@ func (f *Uint64OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Uint64Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Uint64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -779,13 +781,13 @@ func (f *Uint64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos 
 		return err
 	}
 
-	v := make([]uint64, int(f.nVals()))
+	v := make([]uint64, int(f.nVals()-len(f.vals)))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Uint64OptionalField) Scan(r *{{.Type}}) {
+func (f *Uint64OptionalField) Scan(r *Person) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -800,7 +802,7 @@ func (f *Uint64OptionalField) Scan(r *{{.Type}}) {
 	f.read(r, val)
 }
 
-func (f *Uint64OptionalField) Add(r {{.Type}}) {
+func (f *Uint64OptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -813,11 +815,11 @@ func (f *Uint64OptionalField) Add(r {{.Type}}) {
 type Float32Field struct {
 	vals []float32
 	RequiredField
-	val  func(r {{.Type}}) float32
-	read func(r *{{.Type}}, v float32)
+	val  func(r Person) float32
+	read func(r *Person, v float32)
 }
 
-func NewFloat32Field(val func(r {{.Type}}) float32, read func(r *{{.Type}}, v float32), col string) *Float32Field {
+func NewFloat32Field(val func(r Person) float32, read func(r *Person, v float32), col string) *Float32Field {
 	return &Float32Field{
 		val:           val,
 		read:          read,
@@ -829,14 +831,14 @@ func (f *Float32Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Float32Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *Float32Field) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Float32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Float32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -847,11 +849,11 @@ func (f *Float32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet
 
 	v := make([]float32, int(pos.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Float32Field) Scan(r *{{.Type}}) {
+func (f *Float32Field) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -861,18 +863,18 @@ func (f *Float32Field) Scan(r *{{.Type}}) {
 	f.read(r, v)
 }
 
-func (f *Float32Field) Add(r {{.Type}}) {
+func (f *Float32Field) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Float32OptionalField struct {
 	vals []float32
 	OptionalField
-	val  func(r {{.Type}}) *float32
-	read func(r *{{.Type}}, v *float32)
+	val  func(r Person) *float32
+	read func(r *Person, v *float32)
 }
 
-func NewFloat32OptionalField(val func(r {{.Type}}) *float32, read func(r *{{.Type}}, v *float32), col string) *Float32OptionalField {
+func NewFloat32OptionalField(val func(r Person) *float32, read func(r *Person, v *float32), col string) *Float32OptionalField {
 	return &Float32OptionalField{
 		val:           val,
 		read:          read,
@@ -884,14 +886,14 @@ func (f *Float32OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Float32Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
 	for _, v := range f.vals {
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *Float32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -900,13 +902,13 @@ func (f *Float32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos
 		return err
 	}
 
-	v := make([]float32, int(f.nVals()))
+	v := make([]float32, int(f.nVals()-len(f.vals)))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	f.vals = v
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *Float32OptionalField) Scan(r *{{.Type}}) {
+func (f *Float32OptionalField) Scan(r *Person) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -921,7 +923,7 @@ func (f *Float32OptionalField) Scan(r *{{.Type}}) {
 	f.read(r, val)
 }
 
-func (f *Float32OptionalField) Add(r {{.Type}}) {
+func (f *Float32OptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -935,11 +937,11 @@ func (f *Float32OptionalField) Add(r {{.Type}}) {
 type BoolField struct {
 	RequiredField
 	vals []bool
-	val  func(r {{.Type}}) bool
-	read func(r *{{.Type}}, v bool)
+	val  func(r Person) bool
+	read func(r *Person, v bool)
 }
 
-func NewBoolField(val func(r {{.Type}}) bool, read func(r *{{.Type}}, v bool), col string) *BoolField {
+func NewBoolField(val func(r Person) bool, read func(r *Person, v bool), col string) *BoolField {
 	return &BoolField{
 		val:           val,
 		read:          read,
@@ -951,7 +953,7 @@ func (f *BoolField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *BoolField) Scan(r *{{.Type}}) {
+func (f *BoolField) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -965,11 +967,11 @@ func (f *BoolField) Name() string {
 	return f.col
 }
 
-func (f *BoolField) Add(r {{.Type}}) {
+func (f *BoolField) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
-func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 	ln := len(f.vals)
 	byteNum := (ln + 7) / 8
 	rawBuf := make([]byte, byteNum)
@@ -980,7 +982,7 @@ func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error 
 		}
 	}
 
-	return f.doWrite(w, meta, pos, rawBuf, len(f.vals))
+	return f.doWrite(w, meta, rawBuf, len(f.vals))
 }
 
 func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -996,11 +998,11 @@ func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Po
 type BoolOptionalField struct {
 	OptionalField
 	vals []bool
-	val  func(r {{.Type}}) *bool
-	read func(r *{{.Type}}, v *bool)
+	val  func(r Person) *bool
+	read func(r *Person, v *bool)
 }
 
-func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v *bool), col string) *BoolOptionalField {
+func NewBoolOptionalField(val func(r Person) *bool, read func(r *Person, v *bool), col string) *BoolOptionalField {
 	return &BoolOptionalField{
 		val:           val,
 		read:          read,
@@ -1018,11 +1020,12 @@ func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos pa
 		return err
 	}
 
-	f.vals, err = parquet.GetBools(rr, f.nVals())
+	v, err := parquet.GetBools(rr, f.nVals()-len(f.vals))
+	f.vals = append(f.vals, v...)
 	return err
 }
 
-func (f *BoolOptionalField) Scan(r *{{.Type}}) {
+func (f *BoolOptionalField) Scan(r *Person) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -1041,7 +1044,7 @@ func (f *BoolOptionalField) Name() string {
 	return f.col
 }
 
-func (f *BoolOptionalField) Add(r {{.Type}}) {
+func (f *BoolOptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -1051,7 +1054,7 @@ func (f *BoolOptionalField) Add(r {{.Type}}) {
 	}
 }
 
-func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	ln := len(f.vals)
 	byteNum := (ln + 7) / 8
 	rawBuf := make([]byte, byteNum)
@@ -1062,17 +1065,17 @@ func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64
 		}
 	}
 
-	return f.doWrite(w, meta, pos, rawBuf, len(f.vals))
+	return f.doWrite(w, meta, rawBuf, len(f.vals))
 }
 
 type StringField struct {
 	RequiredField
 	vals []string
-	val  func(r {{.Type}}) string
-	read func(r *{{.Type}}, v string)
+	val  func(r Person) string
+	read func(r *Person, v string)
 }
 
-func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v string), col string) *StringField {
+func NewStringField(val func(r Person) string, read func(r *Person, v string), col string) *StringField {
 	return &StringField{
 		val:           val,
 		read:          read,
@@ -1084,7 +1087,7 @@ func (f *StringField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *StringField) Scan(r *{{.Type}}) {
+func (f *StringField) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -1098,11 +1101,11 @@ func (f *StringField) Name() string {
 	return f.col
 }
 
-func (f *StringField) Add(r {{.Type}}) {
+func (f *StringField) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 
-func (f *StringField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
 	buf := bytes.Buffer{}
 
 	for _, s := range f.vals {
@@ -1112,7 +1115,7 @@ func (f *StringField) Write(w io.Writer, meta *parquet.Metadata, pos int64) erro
 		buf.Write([]byte(s))
 	}
 
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -1139,11 +1142,11 @@ func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.
 type StringOptionalField struct {
 	OptionalField
 	vals []string
-	val  func(r {{.Type}}) *string
-	read func(r *{{.Type}}, v *string)
+	val  func(r Person) *string
+	read func(r *Person, v *string)
 }
 
-func NewStringOptionalField(val func(r {{.Type}}) *string, read func(r *{{.Type}}, v *string), col string) *StringOptionalField {
+func NewStringOptionalField(val func(r Person) *string, read func(r *Person, v *string), col string) *StringOptionalField {
 	return &StringOptionalField{
 		val:  val,
 		read: read,
@@ -1157,7 +1160,7 @@ func (f *StringOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *StringOptionalField) Scan(r *{{.Type}}) {
+func (f *StringOptionalField) Scan(r *Person) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -1176,7 +1179,7 @@ func (f *StringOptionalField) Name() string {
 	return f.col
 }
 
-func (f *StringOptionalField) Add(r {{.Type}}) {
+func (f *StringOptionalField) Add(r Person) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -1186,7 +1189,7 @@ func (f *StringOptionalField) Add(r {{.Type}}) {
 	}
 }
 
-func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int64) error {
+func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	buf := bytes.Buffer{}
 
 	for _, s := range f.vals {
@@ -1196,7 +1199,7 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata, pos int
 		buf.Write([]byte(s))
 	}
 
-	return f.doWrite(w, meta, pos, buf.Bytes(), len(f.vals))
+	return f.doWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
 func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
@@ -1282,18 +1285,19 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 		return nil, err
 	}
 
-	for _, f := range pr.fields {
-		offsets := pr.offsets[f.Name()]
-		if len(offsets) <= pr.index {
-			break
-		}
+	for i := 0; i < pr.meta.RowGroups(); i++ {
+		for _, f := range pr.fields {
+			offsets := pr.offsets[f.Name()]
+			if len(offsets) <= pr.index {
+				break
+			}
 
-		o := offsets[pr.index] //TODO: increment index to get more row groups
-		if err := f.Read(r, pr.meta, o); err != nil {
-			return nil, fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
+			o := offsets[i]
+			if err := f.Read(r, pr.meta, o); err != nil {
+				return nil, fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
+			}
 		}
 	}
-
 	return pr, nil
 
 }
@@ -1329,7 +1333,7 @@ func (p *ParquetReader) Next() bool {
 	return true
 }
 
-func (p *ParquetReader) Scan(x *{{.Type}}) {
+func (p *ParquetReader) Scan(x *Person) {
 	for _, f := range p.fields {
 		f.Scan(x)
 	}

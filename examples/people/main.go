@@ -40,7 +40,7 @@ func write() {
 	}
 
 	// Every call to w.Write flushes data to disk (because
-	// f is *os.File), and starts a new RowGroup.
+	// f is *os.File) and creates a new RowGroup.
 	if err := w.Write(); err != nil {
 		log.Fatal(err)
 	}
