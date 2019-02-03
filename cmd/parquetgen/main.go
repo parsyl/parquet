@@ -21,16 +21,24 @@ var (
 func main() {
 	flag.Parse()
 
+	result, err := parse.Fields(*typ, *pth)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	i := input{
 		Package: *pkg,
 		Type:    *typ,
 		Import:  getImport(*imp),
+		Fields:  result.Fields,
 	}
 
-	var err error
-	i.Fields, err = parse.Fields(*typ, *pth, *ignore)
-	if err != nil {
-		log.Fatal(err)
+	for _, err := range result.Errors {
+		log.Println(err)
+	}
+
+	if len(result.Errors) > 0 && !*ignore {
+		log.Fatal("not generating parquet.go (-ignore set to false)")
 	}
 
 	tmpl, err := template.New("output").Parse(tpl)

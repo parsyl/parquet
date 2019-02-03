@@ -19,68 +19,63 @@ func TestFields(t *testing.T) {
 	type testInput struct {
 		name     string
 		typ      string
-		ignore   bool
 		expected []string
-		err      error
+		errors   []error
 	}
 
 	testCases := []testInput{
 		{
-			name:   "flat",
-			typ:    "Being",
-			ignore: true,
+			name: "flat",
+			typ:  "Being",
 			expected: []string{
 				`NewInt32Field(func(x Being) int32 { return x.ID }, func(x *Being, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x Being) *int32 { return x.Age }, func(x *Being, v *int32) { x.Age = v }, "Age"),`,
 			},
 		},
 		{
-			name:   "private fields",
-			typ:    "Private",
-			ignore: true,
+			name: "private fields",
+			typ:  "Private",
 			expected: []string{
 				`NewInt32Field(func(x Private) int32 { return x.ID }, func(x *Private, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x Private) *int32 { return x.Age }, func(x *Private, v *int32) { x.Age = v }, "Age"),`,
 			},
 		},
 		{
-			name:   "nested structs",
-			typ:    "Nested",
-			ignore: true,
+			name: "nested structs",
+			typ:  "Nested",
 			expected: []string{
 				`NewUint64OptionalField(func(x Nested) *uint64 { return x.Anniversary }, func(x *Nested, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
+			},
+			errors: []error{
+				fmt.Errorf("unsupported type: Being"),
 			},
 		},
 		{
 			name:   "unsupported fields",
 			typ:    "Unsupported",
-			ignore: true,
+			errors: []error{fmt.Errorf("unsupported type: Time")},
 			expected: []string{
 				`NewInt32Field(func(x Unsupported) int32 { return x.ID }, func(x *Unsupported, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x Unsupported) *int32 { return x.Age }, func(x *Unsupported, v *int32) { x.Age = v }, "Age"),`,
 			},
 		},
 		{
-			name:   "unsupported fields, don't ignore",
-			typ:    "Unsupported",
-			ignore: false,
-			err:    fmt.Errorf("unsupported type: Time"),
-		},
-		{
-			name:   "unsupported fields mixed in with supported and embedded",
-			typ:    "SupportedAndUnsupported",
-			ignore: true,
+			name: "unsupported fields mixed in with supported and embedded",
+			typ:  "SupportedAndUnsupported",
 			expected: []string{
 				`NewInt64Field(func(x SupportedAndUnsupported) int64 { return x.Happiness }, func(x *SupportedAndUnsupported, v int64) { x.Happiness = v }, "Happiness"),`,
 				`NewInt32Field(func(x SupportedAndUnsupported) int32 { return x.ID }, func(x *SupportedAndUnsupported, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x SupportedAndUnsupported) *int32 { return x.Age }, func(x *SupportedAndUnsupported, v *int32) { x.Age = v }, "Age"),`,
 				`NewUint64OptionalField(func(x SupportedAndUnsupported) *uint64 { return x.Anniversary }, func(x *SupportedAndUnsupported, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
 			},
+			errors: []error{
+				fmt.Errorf("unsupported type: T1"),
+				fmt.Errorf("unsupported type: T2"),
+			},
 		},
 		{
-			name:   "embedded",
-			typ:    "Person",
-			ignore: true,
+			name: "embedded",
+			typ:  "Person",
 			expected: []string{
 				`NewInt32Field(func(x Person) int32 { return x.ID }, func(x *Person, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x Person) *int32 { return x.Age }, func(x *Person, v *int32) { x.Age = v }, "Age"),`,
@@ -95,9 +90,8 @@ func TestFields(t *testing.T) {
 			},
 		},
 		{
-			name:   "embedded preserve order",
-			typ:    "NewOrderPerson",
-			ignore: true,
+			name: "embedded preserve order",
+			typ:  "NewOrderPerson",
 			expected: []string{
 				`NewInt64Field(func(x NewOrderPerson) int64 { return x.Happiness }, func(x *NewOrderPerson, v int64) { x.Happiness = v }, "Happiness"),`,
 				`NewInt64OptionalField(func(x NewOrderPerson) *int64 { return x.Sadness }, func(x *NewOrderPerson, v *int64) { x.Sadness = v }, "Sadness"),`,
@@ -112,18 +106,16 @@ func TestFields(t *testing.T) {
 			},
 		},
 		{
-			name:   "tags",
-			typ:    "Tagged",
-			ignore: true,
+			name: "tags",
+			typ:  "Tagged",
 			expected: []string{
 				`NewInt32Field(func(x Tagged) int32 { return x.ID }, func(x *Tagged, v int32) { x.ID = v }, "id"),`,
 				`NewStringField(func(x Tagged) string { return x.Name }, func(x *Tagged, v string) { x.Name = v }, "name"),`,
 			},
 		},
 		{
-			name:   "omit tag",
-			typ:    "IgnoreMe",
-			ignore: true,
+			name: "omit tag",
+			typ:  "IgnoreMe",
 			expected: []string{
 				`NewInt32Field(func(x IgnoreMe) int32 { return x.ID }, func(x *IgnoreMe, v int32) { x.ID = v }, "id"),`,
 			},
@@ -132,12 +124,17 @@ func TestFields(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			out, err := parse.Fields(tc.typ, "./parse_test.go", tc.ignore)
-			if tc.err == nil {
-				assert.Nil(t, err, tc.name)
-				assert.Equal(t, tc.expected, out, tc.name)
+			out, err := parse.Fields(tc.typ, "./parse_test.go")
+			assert.Nil(t, err, tc.name)
+			assert.Equal(t, tc.expected, out.Fields, tc.name)
+			if assert.Equal(t, len(tc.errors), len(out.Errors), tc.name) {
+				for i, err := range out.Errors {
+					assert.EqualError(t, tc.errors[i], err.Error(), tc.name)
+				}
 			} else {
-				assert.EqualError(t, err, tc.err.Error(), tc.name)
+				for _, err := range out.Errors {
+					fmt.Println(err)
+				}
 			}
 		})
 	}

@@ -29,10 +29,15 @@ func (f field) getFieldName() string {
 	return f.fieldName
 }
 
+type Result struct {
+	Fields []string
+	Errors []error
+}
+
 // Fields gets the fields of the given struct.
 // pth must be a go file that defines the typ struct.
 // Any embedded structs must also be in that same file.
-func Fields(typ, pth string, ignore bool) ([]string, error) {
+func Fields(typ, pth string) (*Result, error) {
 	fullTyp := typ
 	typ = getType(fullTyp)
 
@@ -56,13 +61,11 @@ func Fields(typ, pth string, ignore bool) ([]string, error) {
 	}
 
 	var out []field
+	var errs []error
 	var i int
 	for _, f := range fields[typ] {
-		if f.err != nil && !ignore {
-			return nil, f.err
-		}
 		if f.err != nil {
-			log.Printf("ignoring unsupported field: %v", f.typeName)
+			errs = append(errs, f.err)
 		} else if f.err == nil && f.embedded {
 			embeddedFields := fields[f.typeName]
 			out = append(out[:i], append(embeddedFields, out[i:]...)...)
@@ -73,7 +76,10 @@ func Fields(typ, pth string, ignore bool) ([]string, error) {
 		}
 	}
 
-	return formatFields(fullTyp, out), nil
+	return &Result{
+		Fields: formatFields(fullTyp, out),
+		Errors: errs,
+	}, nil
 }
 
 func getType(typ string) string {
