@@ -12,12 +12,17 @@ func init() {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func randString(n int) string {
+func randString(n int) *string {
+	if rand.Intn(2) == 0 {
+		return nil
+	}
+
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
-	return string(b)
+	s := string(b)
+	return &s
 }
 
 func newPerson(i int) Person {
@@ -34,7 +39,7 @@ func newPerson(i int) Person {
 	}
 
 	var lameness *float32
-	if i%4 == 0 {
+	if rand.Intn(2) == 0 {
 		l := rand.Float32()
 		lameness = &l
 	}
