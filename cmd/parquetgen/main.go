@@ -106,7 +106,7 @@ type ParquetWriter struct {
 }
 
 func Fields() []Field {
-	return []Field{ {{range .Fields}}
+	return []Field{{{range .Fields}}
 		{{.}}{{end}}
 	}
 }
