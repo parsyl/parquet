@@ -194,7 +194,7 @@ func (p *ParquetWriter) Close() error {
 	return err
 }
 
-func (p *ParquetWriter) Add(rec Person) {
+func (p *ParquetWriter) Add(rec {{.Type}}) {
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
@@ -213,10 +213,10 @@ func (p *ParquetWriter) Add(rec Person) {
 }
 
 type Field interface {
-	Add(r Person)
+	Add(r {{.Type}})
 	Write(w io.Writer, meta *parquet.Metadata) error
 	Schema() parquet.Field
-	Scan(r *Person)
+	Scan(r *{{.Type}})
 	Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error
 	Name() string
 }
@@ -342,11 +342,11 @@ func (f *OptionalField) Name() string {
 type Uint32Field struct {
 	vals []uint32
 	RequiredField
-	val  func(r Person) uint32
-	read func(r *Person, v uint32)
+	val  func(r {{.Type}}) uint32
+	read func(r *{{.Type}}, v uint32)
 }
 
-func NewUint32Field(val func(r Person) uint32, read func(r *Person, v uint32), col string) *Uint32Field {
+func NewUint32Field(val func(r {{.Type}}) uint32, read func(r *{{.Type}}, v uint32), col string) *Uint32Field {
 	return &Uint32Field{
 		val:           val,
 		read:          read,
@@ -358,7 +358,7 @@ func (f *Uint32Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Uint32Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *Uint32Field) Scan(r *Person) {
+func (f *Uint32Field) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -389,18 +389,18 @@ func (f *Uint32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.
 	return err
 }
 
-func (f *Uint32Field) Add(r Person) {
+func (f *Uint32Field) Add(r {{.Type}}) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Uint32OptionalField struct {
 	OptionalField
 	vals []uint32
-	read func(r *Person, v *uint32)
-	val  func(r Person) *uint32
+	read func(r *{{.Type}}, v *uint32)
+	val  func(r {{.Type}}) *uint32
 }
 
-func NewUint32OptionalField(val func(r Person) *uint32, read func(r *Person, v *uint32), col string) *Uint32OptionalField {
+func NewUint32OptionalField(val func(r {{.Type}}) *uint32, read func(r *{{.Type}}, v *uint32), col string) *Uint32OptionalField {
 	return &Uint32OptionalField{
 		val:           val,
 		read:          read,
@@ -434,7 +434,7 @@ func (f *Uint32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos 
 	return err
 }
 
-func (f *Uint32OptionalField) Add(r Person) {
+func (f *Uint32OptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -444,7 +444,7 @@ func (f *Uint32OptionalField) Add(r Person) {
 	}
 }
 
-func (f *Uint32OptionalField) Scan(r *Person) {
+func (f *Uint32OptionalField) Scan(r *{{.Type}}) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -462,11 +462,11 @@ func (f *Uint32OptionalField) Scan(r *Person) {
 type Int32Field struct {
 	vals []int32
 	RequiredField
-	val  func(r Person) int32
-	read func(r *Person, v int32)
+	val  func(r {{.Type}}) int32
+	read func(r *{{.Type}}, v int32)
 }
 
-func NewInt32Field(val func(r Person) int32, read func(r *Person, v int32), col string) *Int32Field {
+func NewInt32Field(val func(r {{.Type}}) int32, read func(r *{{.Type}}, v int32), col string) *Int32Field {
 	return &Int32Field{
 		val:           val,
 		read:          read,
@@ -498,11 +498,11 @@ func (f *Int32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.P
 	return err
 }
 
-func (f *Int32Field) Add(r Person) {
+func (f *Int32Field) Add(r {{.Type}}) {
 	f.vals = append(f.vals, f.val(r))
 }
 
-func (f *Int32Field) Scan(r *Person) {
+func (f *Int32Field) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -515,11 +515,11 @@ func (f *Int32Field) Scan(r *Person) {
 type Int32OptionalField struct {
 	vals []int32
 	OptionalField
-	val  func(r Person) *int32
-	read func(r *Person, v *int32)
+	val  func(r {{.Type}}) *int32
+	read func(r *{{.Type}}, v *int32)
 }
 
-func NewInt32OptionalField(val func(r Person) *int32, read func(r *Person, v *int32), col string) *Int32OptionalField {
+func NewInt32OptionalField(val func(r {{.Type}}) *int32, read func(r *{{.Type}}, v *int32), col string) *Int32OptionalField {
 	return &Int32OptionalField{
 		val:           val,
 		read:          read,
@@ -531,7 +531,7 @@ func (f *Int32OptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Int32Type, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *Int32OptionalField) Scan(r *Person) {
+func (f *Int32OptionalField) Scan(r *{{.Type}}) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -568,7 +568,7 @@ func (f *Int32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos p
 	return err
 }
 
-func (f *Int32OptionalField) Add(r Person) {
+func (f *Int32OptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -581,11 +581,11 @@ func (f *Int32OptionalField) Add(r Person) {
 type Int64Field struct {
 	vals []int64
 	RequiredField
-	val  func(r Person) int64
-	read func(r *Person, v int64)
+	val  func(r {{.Type}}) int64
+	read func(r *{{.Type}}, v int64)
 }
 
-func NewInt64Field(val func(r Person) int64, read func(r *Person, v int64), col string) *Int64Field {
+func NewInt64Field(val func(r {{.Type}}) int64, read func(r *{{.Type}}, v int64), col string) *Int64Field {
 	return &Int64Field{
 		val:           val,
 		read:          read,
@@ -597,7 +597,7 @@ func (f *Int64Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *Int64Field) Scan(r *Person) {
+func (f *Int64Field) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -629,18 +629,18 @@ func (f *Int64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.P
 	return err
 }
 
-func (f *Int64Field) Add(r Person) {
+func (f *Int64Field) Add(r {{.Type}}) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Int64OptionalField struct {
 	vals []int64
 	OptionalField
-	val  func(r Person) *int64
-	read func(r *Person, v *int64)
+	val  func(r {{.Type}}) *int64
+	read func(r *{{.Type}}, v *int64)
 }
 
-func NewInt64OptionalField(val func(r Person) *int64, read func(r *Person, v *int64), col string) *Int64OptionalField {
+func NewInt64OptionalField(val func(r {{.Type}}) *int64, read func(r *{{.Type}}, v *int64), col string) *Int64OptionalField {
 	return &Int64OptionalField{
 		val:           val,
 		read:          read,
@@ -674,7 +674,7 @@ func (f *Int64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos p
 	return err
 }
 
-func (f *Int64OptionalField) Scan(r *Person) {
+func (f *Int64OptionalField) Scan(r *{{.Type}}) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -689,7 +689,7 @@ func (f *Int64OptionalField) Scan(r *Person) {
 	f.read(r, val)
 }
 
-func (f *Int64OptionalField) Add(r Person) {
+func (f *Int64OptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -702,11 +702,11 @@ func (f *Int64OptionalField) Add(r Person) {
 type Uint64Field struct {
 	vals []uint64
 	RequiredField
-	val  func(r Person) uint64
-	read func(r *Person, v uint64)
+	val  func(r {{.Type}}) uint64
+	read func(r *{{.Type}}, v uint64)
 }
 
-func NewUint64Field(val func(r Person) uint64, read func(r *Person, v uint64), col string) *Uint64Field {
+func NewUint64Field(val func(r {{.Type}}) uint64, read func(r *{{.Type}}, v uint64), col string) *Uint64Field {
 	return &Uint64Field{
 		val:           val,
 		read:          read,
@@ -740,7 +740,7 @@ func (f *Uint64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.
 	return err
 }
 
-func (f *Uint64Field) Scan(r *Person) {
+func (f *Uint64Field) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -750,18 +750,18 @@ func (f *Uint64Field) Scan(r *Person) {
 	f.read(r, v)
 }
 
-func (f *Uint64Field) Add(r Person) {
+func (f *Uint64Field) Add(r {{.Type}}) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Uint64OptionalField struct {
 	vals []uint64
 	OptionalField
-	val  func(r Person) *uint64
-	read func(r *Person, v *uint64)
+	val  func(r {{.Type}}) *uint64
+	read func(r *{{.Type}}, v *uint64)
 }
 
-func NewUint64OptionalField(val func(r Person) *uint64, read func(r *Person, v *uint64), col string) *Uint64OptionalField {
+func NewUint64OptionalField(val func(r {{.Type}}) *uint64, read func(r *{{.Type}}, v *uint64), col string) *Uint64OptionalField {
 	return &Uint64OptionalField{
 		val:           val,
 		read:          read,
@@ -795,7 +795,7 @@ func (f *Uint64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos 
 	return err
 }
 
-func (f *Uint64OptionalField) Scan(r *Person) {
+func (f *Uint64OptionalField) Scan(r *{{.Type}}) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -810,7 +810,7 @@ func (f *Uint64OptionalField) Scan(r *Person) {
 	f.read(r, val)
 }
 
-func (f *Uint64OptionalField) Add(r Person) {
+func (f *Uint64OptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -823,11 +823,11 @@ func (f *Uint64OptionalField) Add(r Person) {
 type Float32Field struct {
 	vals []float32
 	RequiredField
-	val  func(r Person) float32
-	read func(r *Person, v float32)
+	val  func(r {{.Type}}) float32
+	read func(r *{{.Type}}, v float32)
 }
 
-func NewFloat32Field(val func(r Person) float32, read func(r *Person, v float32), col string) *Float32Field {
+func NewFloat32Field(val func(r {{.Type}}) float32, read func(r *{{.Type}}, v float32), col string) *Float32Field {
 	return &Float32Field{
 		val:           val,
 		read:          read,
@@ -861,7 +861,7 @@ func (f *Float32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet
 	return err
 }
 
-func (f *Float32Field) Scan(r *Person) {
+func (f *Float32Field) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -871,18 +871,18 @@ func (f *Float32Field) Scan(r *Person) {
 	f.read(r, v)
 }
 
-func (f *Float32Field) Add(r Person) {
+func (f *Float32Field) Add(r {{.Type}}) {
 	f.vals = append(f.vals, f.val(r))
 }
 
 type Float32OptionalField struct {
 	vals []float32
 	OptionalField
-	val  func(r Person) *float32
-	read func(r *Person, v *float32)
+	val  func(r {{.Type}}) *float32
+	read func(r *{{.Type}}, v *float32)
 }
 
-func NewFloat32OptionalField(val func(r Person) *float32, read func(r *Person, v *float32), col string) *Float32OptionalField {
+func NewFloat32OptionalField(val func(r {{.Type}}) *float32, read func(r *{{.Type}}, v *float32), col string) *Float32OptionalField {
 	return &Float32OptionalField{
 		val:           val,
 		read:          read,
@@ -916,7 +916,7 @@ func (f *Float32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos
 	return err
 }
 
-func (f *Float32OptionalField) Scan(r *Person) {
+func (f *Float32OptionalField) Scan(r *{{.Type}}) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -931,7 +931,7 @@ func (f *Float32OptionalField) Scan(r *Person) {
 	f.read(r, val)
 }
 
-func (f *Float32OptionalField) Add(r Person) {
+func (f *Float32OptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -945,11 +945,11 @@ func (f *Float32OptionalField) Add(r Person) {
 type BoolField struct {
 	RequiredField
 	vals []bool
-	val  func(r Person) bool
-	read func(r *Person, v bool)
+	val  func(r {{.Type}}) bool
+	read func(r *{{.Type}}, v bool)
 }
 
-func NewBoolField(val func(r Person) bool, read func(r *Person, v bool), col string) *BoolField {
+func NewBoolField(val func(r {{.Type}}) bool, read func(r *{{.Type}}, v bool), col string) *BoolField {
 	return &BoolField{
 		val:           val,
 		read:          read,
@@ -961,7 +961,7 @@ func (f *BoolField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *BoolField) Scan(r *Person) {
+func (f *BoolField) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -975,7 +975,7 @@ func (f *BoolField) Name() string {
 	return f.col
 }
 
-func (f *BoolField) Add(r Person) {
+func (f *BoolField) Add(r {{.Type}}) {
 	f.vals = append(f.vals, f.val(r))
 }
 
@@ -1006,11 +1006,11 @@ func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Po
 type BoolOptionalField struct {
 	OptionalField
 	vals []bool
-	val  func(r Person) *bool
-	read func(r *Person, v *bool)
+	val  func(r {{.Type}}) *bool
+	read func(r *{{.Type}}, v *bool)
 }
 
-func NewBoolOptionalField(val func(r Person) *bool, read func(r *Person, v *bool), col string) *BoolOptionalField {
+func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v *bool), col string) *BoolOptionalField {
 	return &BoolOptionalField{
 		val:           val,
 		read:          read,
@@ -1033,7 +1033,7 @@ func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos pa
 	return err
 }
 
-func (f *BoolOptionalField) Scan(r *Person) {
+func (f *BoolOptionalField) Scan(r *{{.Type}}) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -1052,7 +1052,7 @@ func (f *BoolOptionalField) Name() string {
 	return f.col
 }
 
-func (f *BoolOptionalField) Add(r Person) {
+func (f *BoolOptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -1079,11 +1079,11 @@ func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 type StringField struct {
 	RequiredField
 	vals []string
-	val  func(r Person) string
-	read func(r *Person, v string)
+	val  func(r {{.Type}}) string
+	read func(r *{{.Type}}, v string)
 }
 
-func NewStringField(val func(r Person) string, read func(r *Person, v string), col string) *StringField {
+func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v string), col string) *StringField {
 	return &StringField{
 		val:           val,
 		read:          read,
@@ -1095,7 +1095,7 @@ func (f *StringField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *StringField) Scan(r *Person) {
+func (f *StringField) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -1109,7 +1109,7 @@ func (f *StringField) Name() string {
 	return f.col
 }
 
-func (f *StringField) Add(r Person) {
+func (f *StringField) Add(r {{.Type}}) {
 	f.vals = append(f.vals, f.val(r))
 }
 
@@ -1150,11 +1150,11 @@ func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.
 type StringOptionalField struct {
 	OptionalField
 	vals []string
-	val  func(r Person) *string
-	read func(r *Person, v *string)
+	val  func(r {{.Type}}) *string
+	read func(r *{{.Type}}, v *string)
 }
 
-func NewStringOptionalField(val func(r Person) *string, read func(r *Person, v *string), col string) *StringOptionalField {
+func NewStringOptionalField(val func(r {{.Type}}) *string, read func(r *{{.Type}}, v *string), col string) *StringOptionalField {
 	return &StringOptionalField{
 		val:  val,
 		read: read,
@@ -1168,7 +1168,7 @@ func (f *StringOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.col, Type: parquet.StringType, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *StringOptionalField) Scan(r *Person) {
+func (f *StringOptionalField) Scan(r *{{.Type}}) {
 	if len(f.defs) == 0 {
 		return
 	}
@@ -1187,7 +1187,7 @@ func (f *StringOptionalField) Name() string {
 	return f.col
 }
 
-func (f *StringOptionalField) Add(r Person) {
+func (f *StringOptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -1341,7 +1341,7 @@ func (p *ParquetReader) Next() bool {
 	return true
 }
 
-func (p *ParquetReader) Scan(x *Person) {
+func (p *ParquetReader) Scan(x *{{.Type}}) {
 	for _, f := range p.fields {
 		f.Scan(x)
 	}
