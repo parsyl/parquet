@@ -30,13 +30,30 @@ func write() {
 
 	defer f.Close()
 
-	w := NewParquetWriter(f)
+	w, err := NewParquetWriter(f)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for i := 0; i < 2000; i++ {
 		w.Add(newPerson(i))
 	}
 
+	// Every call to w.Write flushes data to disk (because
+	// f is *os.File) and creates a new RowGroup.
 	if err := w.Write(); err != nil {
+		log.Fatal(err)
+	}
+
+	for i := 2000; i < 4000; i++ {
+		w.Add(newPerson(i))
+	}
+
+	if err := w.Write(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := w.Close(); err != nil {
 		log.Fatal(err)
 	}
 }

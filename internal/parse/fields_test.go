@@ -1,11 +1,18 @@
 package parse_test
 
 import (
+	"fmt"
+	"io/ioutil"
+	"log"
 	"testing"
 
 	"github.com/parsyl/parquet/internal/parse"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	log.SetOutput(ioutil.Discard)
+}
 
 func TestFields(t *testing.T) {
 
@@ -13,13 +20,13 @@ func TestFields(t *testing.T) {
 		name     string
 		typ      string
 		expected []string
+		errors   []error
 	}
 
 	testCases := []testInput{
 		{
 			name: "flat",
 			typ:  "Being",
-
 			expected: []string{
 				`NewInt32Field(func(x Being) int32 { return x.ID }, func(x *Being, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x Being) *int32 { return x.Age }, func(x *Being, v *int32) { x.Age = v }, "Age"),`,
@@ -39,10 +46,14 @@ func TestFields(t *testing.T) {
 			expected: []string{
 				`NewUint64OptionalField(func(x Nested) *uint64 { return x.Anniversary }, func(x *Nested, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
 			},
+			errors: []error{
+				fmt.Errorf("unsupported type: Being"),
+			},
 		},
 		{
-			name: "unsupported fields",
-			typ:  "Unsupported",
+			name:   "unsupported fields",
+			typ:    "Unsupported",
+			errors: []error{fmt.Errorf("unsupported type: Time")},
 			expected: []string{
 				`NewInt32Field(func(x Unsupported) int32 { return x.ID }, func(x *Unsupported, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x Unsupported) *int32 { return x.Age }, func(x *Unsupported, v *int32) { x.Age = v }, "Age"),`,
@@ -56,6 +67,10 @@ func TestFields(t *testing.T) {
 				`NewInt32Field(func(x SupportedAndUnsupported) int32 { return x.ID }, func(x *SupportedAndUnsupported, v int32) { x.ID = v }, "ID"),`,
 				`NewInt32OptionalField(func(x SupportedAndUnsupported) *int32 { return x.Age }, func(x *SupportedAndUnsupported, v *int32) { x.Age = v }, "Age"),`,
 				`NewUint64OptionalField(func(x SupportedAndUnsupported) *uint64 { return x.Anniversary }, func(x *SupportedAndUnsupported, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
+			},
+			errors: []error{
+				fmt.Errorf("unsupported type: T1"),
+				fmt.Errorf("unsupported type: T2"),
 			},
 		},
 		{
@@ -108,10 +123,19 @@ func TestFields(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(subT *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			out, err := parse.Fields(tc.typ, "./parse_test.go")
-			assert.Nil(subT, err, tc.name)
-			assert.Equal(subT, tc.expected, out, tc.name)
+			assert.Nil(t, err, tc.name)
+			assert.Equal(t, tc.expected, out.Fields, tc.name)
+			if assert.Equal(t, len(tc.errors), len(out.Errors), tc.name) {
+				for i, err := range out.Errors {
+					assert.EqualError(t, tc.errors[i], err.Error(), tc.name)
+				}
+			} else {
+				for _, err := range out.Errors {
+					fmt.Println(err)
+				}
+			}
 		})
 	}
 }
