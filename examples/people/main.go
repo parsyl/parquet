@@ -3,8 +3,8 @@ package main
 //go:generate parquetgen -input main.go -type Person -package main
 
 import (
+	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 )
@@ -30,7 +30,7 @@ func write() {
 
 	defer f.Close()
 
-	w, err := NewParquetWriter(f)
+	w, err := NewParquetWriter(f, MaxPageSize(100))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,10 +70,11 @@ func read() {
 		log.Fatal(err)
 	}
 
+	enc := json.NewEncoder(os.Stdout)
 	for r.Next() {
 		var p Person
 		r.Scan(&p)
-		fmt.Printf("%+v\n", p)
+		enc.Encode(p)
 	}
 }
 
@@ -88,7 +89,7 @@ type Person struct {
 	Being
 	Happiness   int64    `parquet:"happiness"`
 	Sadness     *int64   `parquet:"sadness"`
-	Code        string   `parquet:"code"`
+	Code        *string  `parquet:"code"`
 	Funkiness   float32  `parquet:"funkiness"`
 	Lameness    *float32 `parquet:"lameness"`
 	Keen        *bool    `parquet:"keen"`

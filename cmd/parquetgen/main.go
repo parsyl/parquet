@@ -1211,13 +1211,14 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 }
 
 func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
+	start := len(f.defs)
 	rr, err := f.doRead(r, meta, pos)
 	if err != nil {
 		return err
 	}
 
 	for j := 0; j < pos.N; j++ {
-		if f.defs[j] == 0 {
+		if f.defs[start+j] == 0 {
 			continue
 		}
 
@@ -1261,10 +1262,18 @@ func (r *ReadCounter) Read(p []byte) (int, error) {
 	return n, err
 }
 
+func getFields(ff []Field) map[string]Field {
+	m := make(map[string]Field, len(ff))
+	for _, f := range ff {
+		m[f.Name()] = f
+	}
+	return m
+}
+
 func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetReader, error) {
 	ff := Fields()
 	pr := &ParquetReader{
-		fields: ff,
+		fields: getFields(ff),
 		r:      r,
 	}
 
@@ -1293,8 +1302,13 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 		return nil, err
 	}
 
-	for i := 0; i < pr.meta.RowGroups(); i++ {
-		for _, f := range pr.fields {
+	for i, rg := range pr.meta.RowGroups() {
+		for _, col := range rg.Columns {
+			name := col.MetaData.PathInSchema[len(col.MetaData.PathInSchema)-1]
+			f, ok := pr.fields[name]
+			if !ok {
+				return nil, fmt.Errorf("unknown field: %s", name)
+			}
 			offsets := pr.offsets[f.Name()]
 			if len(offsets) <= pr.index {
 				break
@@ -1307,7 +1321,6 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 		}
 	}
 	return pr, nil
-
 }
 
 func readerIndex(i int) func(*ParquetReader) {
@@ -1318,8 +1331,7 @@ func readerIndex(i int) func(*ParquetReader) {
 
 // ParquetReader reads one page from a row group.
 type ParquetReader struct {
-	fields []Field
-
+	fields  map[string]Field
 	index   int
 	cur     int64
 	rows    int64

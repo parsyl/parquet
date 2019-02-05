@@ -58,8 +58,8 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 	})
 }
 
-func (m *Metadata) RowGroups() int {
-	return len(m.metadata.RowGroups)
+func (m *Metadata) RowGroups() []*sch.RowGroup {
+	return m.metadata.RowGroups
 }
 
 // WritePageHeader indicates you are done writing this columns's chunk
