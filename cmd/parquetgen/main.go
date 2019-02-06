@@ -1273,8 +1273,7 @@ func getFields(ff []Field) map[string]Field {
 func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetReader, error) {
 	ff := Fields()
 	pr := &ParquetReader{
-		fields: getFields(ff),
-		r:      r,
+		r: r,
 	}
 
 	for _, opt := range opts {
@@ -1286,41 +1285,25 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 		schema[i] = f.Schema()
 	}
 
-	pr.meta = parquet.New(schema...)
-	if err := pr.meta.ReadFooter(r); err != nil {
+	meta := parquet.New(schema...)
+	if err := meta.ReadFooter(r); err != nil {
 		return nil, err
 	}
-	pr.rows = pr.meta.Rows()
+	pr.rows = meta.Rows()
 	var err error
-	pr.offsets, err = pr.meta.Offsets()
+	pr.offsets, err = meta.Offsets()
 	if err != nil {
 		return nil, err
 	}
 
+	pr.rowGroups = meta.RowGroups()
 	_, err = r.Seek(4, io.SeekStart)
 	if err != nil {
 		return nil, err
 	}
+	pr.meta = meta
 
-	for i, rg := range pr.meta.RowGroups() {
-		for _, col := range rg.Columns {
-			name := col.MetaData.PathInSchema[len(col.MetaData.PathInSchema)-1]
-			f, ok := pr.fields[name]
-			if !ok {
-				return nil, fmt.Errorf("unknown field: %s", name)
-			}
-			offsets := pr.offsets[f.Name()]
-			if len(offsets) <= pr.index {
-				break
-			}
-
-			o := offsets[i]
-			if err := f.Read(r, pr.meta, o); err != nil {
-				return nil, fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
-			}
-		}
-	}
-	return pr, nil
+	return pr, pr.readRowGroup()
 }
 
 func readerIndex(i int) func(*ParquetReader) {
@@ -1331,29 +1314,75 @@ func readerIndex(i int) func(*ParquetReader) {
 
 // ParquetReader reads one page from a row group.
 type ParquetReader struct {
-	fields  map[string]Field
-	index   int
-	cur     int64
-	rows    int64
-	offsets map[string][]parquet.Position
+	fields         map[string]Field
+	index          int
+	cursor         int64
+	rows           int64
+	rowGroupCursor int64
+	rowGroupCount  int64
+	offsets        map[string][]parquet.Position
+	meta           *parquet.Metadata
+	err            error
 
-	r    io.ReadSeeker
-	meta *parquet.Metadata
+	r         io.ReadSeeker
+	rowGroups []parquet.RowGroup
+}
+
+func (p *ParquetReader) Error() error {
+	return p.err
+}
+
+func (p *ParquetReader) readRowGroup() error {
+	rg := p.rowGroups[0]
+	p.fields = getFields(Fields())
+	p.rowGroupCount = rg.Rows
+	p.rowGroupCursor = 0
+	for _, col := range rg.Columns() {
+		name := col.MetaData.PathInSchema[len(col.MetaData.PathInSchema)-1]
+		f, ok := p.fields[name]
+		if !ok {
+			return fmt.Errorf("unknown field: %s", name)
+		}
+		offsets := p.offsets[f.Name()]
+		if len(offsets) <= p.index {
+			break
+		}
+
+		o := offsets[0]
+		if err := f.Read(p.r, p.meta, o); err != nil {
+			return fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
+		}
+		p.offsets[f.Name()] = p.offsets[f.Name()][1:]
+	}
+	p.rowGroups = p.rowGroups[1:]
+	return nil
 }
 
 func (p *ParquetReader) Rows() int64 {
-	return p.meta.Rows()
+	return p.rows
 }
 
 func (p *ParquetReader) Next() bool {
-	if p.cur >= p.rows {
+	if p.err == nil && p.cursor >= p.rows {
 		return false
 	}
-	p.cur++
+	if p.rowGroupCursor >= p.rowGroupCount {
+		p.err = p.readRowGroup()
+		if p.err != nil {
+			return false
+		}
+	}
+
+	p.cursor++
+	p.rowGroupCursor++
 	return true
 }
 
 func (p *ParquetReader) Scan(x *{{.Type}}) {
+	if p.err != nil {
+		return
+	}
+
 	for _, f := range p.fields {
 		f.Scan(x)
 	}

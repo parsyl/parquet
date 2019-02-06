@@ -34,7 +34,7 @@ type Metadata struct {
 	ts        *thrift.TSerializer
 	schema    schema
 	rows      int64
-	rowGroups []rowGroup
+	rowGroups []RowGroup
 
 	metadata *sch.FileMetaData
 }
@@ -52,14 +52,21 @@ func New(fields ...Field) *Metadata {
 }
 
 func (m *Metadata) StartRowGroup(fields ...Field) {
-	m.rowGroups = append(m.rowGroups, rowGroup{
+	m.rowGroups = append(m.rowGroups, RowGroup{
 		fields:  schemaElements(fields),
 		columns: make(map[string]sch.ColumnChunk),
 	})
 }
 
-func (m *Metadata) RowGroups() []*sch.RowGroup {
-	return m.metadata.RowGroups
+func (m *Metadata) RowGroups() []RowGroup {
+	rgs := make([]RowGroup, len(m.metadata.RowGroups))
+	for i, rg := range m.metadata.RowGroups {
+		rgs[i] = RowGroup{
+			rowGroup: *rg,
+			Rows:     rg.NumRows,
+		}
+	}
+	return rgs
 }
 
 // WritePageHeader indicates you are done writing this columns's chunk
@@ -167,14 +174,20 @@ func (m *Metadata) Footer(w io.Writer) error {
 	return binary.Write(w, binary.LittleEndian, uint32(n))
 }
 
-type rowGroup struct {
+type RowGroup struct {
 	fields   schema
 	rowGroup sch.RowGroup
 	columns  map[string]sch.ColumnChunk
-	child    *rowGroup
+	child    *RowGroup
+
+	Rows int64
 }
 
-func (r *rowGroup) updateColumnChunk(col string, dataLen, compressedLen, count int, fields schema) error {
+func (r *RowGroup) Columns() []*sch.ColumnChunk {
+	return r.rowGroup.Columns
+}
+
+func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count int, fields schema) error {
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)

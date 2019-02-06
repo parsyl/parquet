@@ -76,6 +76,10 @@ func read() {
 		r.Scan(&p)
 		enc.Encode(p)
 	}
+
+	if err := r.Error(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Being is split out only to show how embedded structs
