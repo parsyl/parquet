@@ -19,7 +19,7 @@ func TestFields(t *testing.T) {
 	type testInput struct {
 		name     string
 		typ      string
-		expected []string
+		expected []parse.Field
 		errors   []error
 	}
 
@@ -27,24 +27,24 @@ func TestFields(t *testing.T) {
 		{
 			name: "flat",
 			typ:  "Being",
-			expected: []string{
-				`NewInt32Field(func(x Being) int32 { return x.ID }, func(x *Being, v int32) { x.ID = v }, "ID"),`,
-				`NewInt32OptionalField(func(x Being) *int32 { return x.Age }, func(x *Being, v *int32) { x.Age = v }, "Age"),`,
+			expected: []parse.Field{
+				{Type: "Being", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "ID", Category: "numeric"},
+				{Type: "Being", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", ColumnName: "Age", Category: "numericOptional"},
 			},
 		},
 		{
 			name: "private fields",
 			typ:  "Private",
-			expected: []string{
-				`NewInt32Field(func(x Private) int32 { return x.ID }, func(x *Private, v int32) { x.ID = v }, "ID"),`,
-				`NewInt32OptionalField(func(x Private) *int32 { return x.Age }, func(x *Private, v *int32) { x.Age = v }, "Age"),`,
+			expected: []parse.Field{
+				{Type: "Private", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "ID", Category: "numeric"},
+				{Type: "Private", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", ColumnName: "Age", Category: "numericOptional"},
 			},
 		},
 		{
 			name: "nested structs",
 			typ:  "Nested",
-			expected: []string{
-				`NewUint64OptionalField(func(x Nested) *uint64 { return x.Anniversary }, func(x *Nested, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
+			expected: []parse.Field{
+				{Type: "Nested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", ColumnName: "Anniversary", Category: "numericOptional"},
 			},
 			errors: []error{
 				fmt.Errorf("unsupported type: Being"),
@@ -54,19 +54,19 @@ func TestFields(t *testing.T) {
 			name:   "unsupported fields",
 			typ:    "Unsupported",
 			errors: []error{fmt.Errorf("unsupported type: Time")},
-			expected: []string{
-				`NewInt32Field(func(x Unsupported) int32 { return x.ID }, func(x *Unsupported, v int32) { x.ID = v }, "ID"),`,
-				`NewInt32OptionalField(func(x Unsupported) *int32 { return x.Age }, func(x *Unsupported, v *int32) { x.Age = v }, "Age"),`,
+			expected: []parse.Field{
+				{Type: "Unsupported", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "ID", Category: "numeric"},
+				{Type: "Unsupported", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", ColumnName: "Age", Category: "numericOptional"},
 			},
 		},
 		{
 			name: "unsupported fields mixed in with supported and embedded",
 			typ:  "SupportedAndUnsupported",
-			expected: []string{
-				`NewInt64Field(func(x SupportedAndUnsupported) int64 { return x.Happiness }, func(x *SupportedAndUnsupported, v int64) { x.Happiness = v }, "Happiness"),`,
-				`NewInt32Field(func(x SupportedAndUnsupported) int32 { return x.ID }, func(x *SupportedAndUnsupported, v int32) { x.ID = v }, "ID"),`,
-				`NewInt32OptionalField(func(x SupportedAndUnsupported) *int32 { return x.Age }, func(x *SupportedAndUnsupported, v *int32) { x.Age = v }, "Age"),`,
-				`NewUint64OptionalField(func(x SupportedAndUnsupported) *uint64 { return x.Anniversary }, func(x *SupportedAndUnsupported, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
+			expected: []parse.Field{
+				{Type: "SupportedAndUnsupported", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldName: "Happiness", ColumnName: "Happiness", Category: "numeric"},
+				{Type: "SupportedAndUnsupported", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "ID", Category: "numeric"},
+				{Type: "SupportedAndUnsupported", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", ColumnName: "Age", Category: "numericOptional"},
+				{Type: "SupportedAndUnsupported", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", ColumnName: "Anniversary", Category: "numericOptional"},
 			},
 			errors: []error{
 				fmt.Errorf("unsupported type: T1"),
@@ -76,48 +76,48 @@ func TestFields(t *testing.T) {
 		{
 			name: "embedded",
 			typ:  "Person",
-			expected: []string{
-				`NewInt32Field(func(x Person) int32 { return x.ID }, func(x *Person, v int32) { x.ID = v }, "ID"),`,
-				`NewInt32OptionalField(func(x Person) *int32 { return x.Age }, func(x *Person, v *int32) { x.Age = v }, "Age"),`,
-				`NewInt64Field(func(x Person) int64 { return x.Happiness }, func(x *Person, v int64) { x.Happiness = v }, "Happiness"),`,
-				`NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, func(x *Person, v *int64) { x.Sadness = v }, "Sadness"),`,
-				`NewStringField(func(x Person) string { return x.Code }, func(x *Person, v string) { x.Code = v }, "Code"),`,
-				`NewFloat32Field(func(x Person) float32 { return x.Funkiness }, func(x *Person, v float32) { x.Funkiness = v }, "Funkiness"),`,
-				`NewFloat32OptionalField(func(x Person) *float32 { return x.Lameness }, func(x *Person, v *float32) { x.Lameness = v }, "Lameness"),`,
-				`NewBoolOptionalField(func(x Person) *bool { return x.Keen }, func(x *Person, v *bool) { x.Keen = v }, "Keen"),`,
-				`NewUint32Field(func(x Person) uint32 { return x.Birthday }, func(x *Person, v uint32) { x.Birthday = v }, "Birthday"),`,
-				`NewUint64OptionalField(func(x Person) *uint64 { return x.Anniversary }, func(x *Person, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
+			expected: []parse.Field{
+				{Type: "Person", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "ID", Category: "numeric"},
+				{Type: "Person", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", ColumnName: "Age", Category: "numericOptional"},
+				{Type: "Person", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldName: "Happiness", ColumnName: "Happiness", Category: "numeric"},
+				{Type: "Person", FieldType: "Int64OptionalField", ParquetType: "Int64Type", TypeName: "*int64", FieldName: "Sadness", ColumnName: "Sadness", Category: "numericOptional"},
+				{Type: "Person", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldName: "Code", ColumnName: "Code", Category: "string"},
+				{Type: "Person", FieldType: "Float32Field", ParquetType: "Float32Type", TypeName: "float32", FieldName: "Funkiness", ColumnName: "Funkiness", Category: "numeric"},
+				{Type: "Person", FieldType: "Float32OptionalField", ParquetType: "Float32Type", TypeName: "*float32", FieldName: "Lameness", ColumnName: "Lameness", Category: "numericOptional"},
+				{Type: "Person", FieldType: "BoolOptionalField", ParquetType: "BoolType", TypeName: "*bool", FieldName: "Keen", ColumnName: "Keen", Category: "boolOptional"},
+				{Type: "Person", FieldType: "Uint32Field", ParquetType: "Uint32Type", TypeName: "uint32", FieldName: "Birthday", ColumnName: "Birthday", Category: "numeric"},
+				{Type: "Person", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", ColumnName: "Anniversary", Category: "numericOptional"},
 			},
 		},
 		{
 			name: "embedded preserve order",
 			typ:  "NewOrderPerson",
-			expected: []string{
-				`NewInt64Field(func(x NewOrderPerson) int64 { return x.Happiness }, func(x *NewOrderPerson, v int64) { x.Happiness = v }, "Happiness"),`,
-				`NewInt64OptionalField(func(x NewOrderPerson) *int64 { return x.Sadness }, func(x *NewOrderPerson, v *int64) { x.Sadness = v }, "Sadness"),`,
-				`NewStringField(func(x NewOrderPerson) string { return x.Code }, func(x *NewOrderPerson, v string) { x.Code = v }, "Code"),`,
-				`NewFloat32Field(func(x NewOrderPerson) float32 { return x.Funkiness }, func(x *NewOrderPerson, v float32) { x.Funkiness = v }, "Funkiness"),`,
-				`NewFloat32OptionalField(func(x NewOrderPerson) *float32 { return x.Lameness }, func(x *NewOrderPerson, v *float32) { x.Lameness = v }, "Lameness"),`,
-				`NewBoolOptionalField(func(x NewOrderPerson) *bool { return x.Keen }, func(x *NewOrderPerson, v *bool) { x.Keen = v }, "Keen"),`,
-				`NewUint32Field(func(x NewOrderPerson) uint32 { return x.Birthday }, func(x *NewOrderPerson, v uint32) { x.Birthday = v }, "Birthday"),`,
-				`NewInt32Field(func(x NewOrderPerson) int32 { return x.ID }, func(x *NewOrderPerson, v int32) { x.ID = v }, "ID"),`,
-				`NewInt32OptionalField(func(x NewOrderPerson) *int32 { return x.Age }, func(x *NewOrderPerson, v *int32) { x.Age = v }, "Age"),`,
-				`NewUint64OptionalField(func(x NewOrderPerson) *uint64 { return x.Anniversary }, func(x *NewOrderPerson, v *uint64) { x.Anniversary = v }, "Anniversary"),`,
+			expected: []parse.Field{
+				{Type: "NewOrderPerson", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldName: "Happiness", ColumnName: "Happiness", Category: "numeric"},
+				{Type: "NewOrderPerson", FieldType: "Int64OptionalField", ParquetType: "Int64Type", TypeName: "*int64", FieldName: "Sadness", ColumnName: "Sadness", Category: "numericOptional"},
+				{Type: "NewOrderPerson", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldName: "Code", ColumnName: "Code", Category: "string"},
+				{Type: "NewOrderPerson", FieldType: "Float32Field", ParquetType: "Float32Type", TypeName: "float32", FieldName: "Funkiness", ColumnName: "Funkiness", Category: "numeric"},
+				{Type: "NewOrderPerson", FieldType: "Float32OptionalField", ParquetType: "Float32Type", TypeName: "*float32", FieldName: "Lameness", ColumnName: "Lameness", Category: "numericOptional"},
+				{Type: "NewOrderPerson", FieldType: "BoolOptionalField", ParquetType: "BoolType", TypeName: "*bool", FieldName: "Keen", ColumnName: "Keen", Category: "boolOptional"},
+				{Type: "NewOrderPerson", FieldType: "Uint32Field", ParquetType: "Uint32Type", TypeName: "uint32", FieldName: "Birthday", ColumnName: "Birthday", Category: "numeric"},
+				{Type: "NewOrderPerson", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "ID", Category: "numeric"},
+				{Type: "NewOrderPerson", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", ColumnName: "Age", Category: "numericOptional"},
+				{Type: "NewOrderPerson", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", ColumnName: "Anniversary", Category: "numericOptional"},
 			},
 		},
 		{
 			name: "tags",
 			typ:  "Tagged",
-			expected: []string{
-				`NewInt32Field(func(x Tagged) int32 { return x.ID }, func(x *Tagged, v int32) { x.ID = v }, "id"),`,
-				`NewStringField(func(x Tagged) string { return x.Name }, func(x *Tagged, v string) { x.Name = v }, "name"),`,
+			expected: []parse.Field{
+				{Type: "Tagged", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric"},
+				{Type: "Tagged", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldName: "Name", ColumnName: "name", Category: "string"},
 			},
 		},
 		{
 			name: "omit tag",
 			typ:  "IgnoreMe",
-			expected: []string{
-				`NewInt32Field(func(x IgnoreMe) int32 { return x.ID }, func(x *IgnoreMe, v int32) { x.ID = v }, "id"),`,
+			expected: []parse.Field{
+				{Type: "IgnoreMe", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric"},
 			},
 		},
 	}

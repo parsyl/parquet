@@ -12,25 +12,26 @@ import (
 
 const letters = "abcdefghijklmnopqrstuvwxyz"
 
-type field struct {
-	fieldName string
-	typeName  string
-	funcName  string
-	tagName   string
-	omit      bool
-	embedded  bool
-	err       error
+type Field struct {
+	Type        string
+	FieldName   string
+	TypeName    string
+	FieldType   string
+	ParquetType string
+	ColumnName  string
+	Category    string
 }
 
-func (f field) getFieldName() string {
-	if f.tagName != "" {
-		return f.tagName
-	}
-	return f.fieldName
+type field struct {
+	Field    Field
+	tagName  string
+	omit     bool
+	embedded bool
+	err      error
 }
 
 type Result struct {
-	Fields []string
+	Fields []Field
 	Errors []error
 }
 
@@ -67,7 +68,7 @@ func Fields(typ, pth string) (*Result, error) {
 		if f.err != nil {
 			errs = append(errs, f.err)
 		} else if f.err == nil && f.embedded {
-			embeddedFields := fields[f.typeName]
+			embeddedFields := fields[f.Field.TypeName]
 			out = append(out[:i], append(embeddedFields, out[i:]...)...)
 			i += len(embeddedFields)
 		} else if f.err == nil {
@@ -77,7 +78,7 @@ func Fields(typ, pth string) (*Result, error) {
 	}
 
 	return &Result{
-		Fields: formatFields(fullTyp, out),
+		Fields: getFields(fullTyp, out),
 		Errors: errs,
 	}, nil
 }
@@ -87,11 +88,17 @@ func getType(typ string) string {
 	return parts[len(parts)-1]
 }
 
-func formatFields(typ string, fields []field) []string {
-	out := make([]string, 0, len(fields))
+func getFields(typ string, fields []field) []Field {
+	out := make([]Field, 0, len(fields))
 	for _, f := range fields {
 		if !f.omit {
-			out = append(out, fmt.Sprintf(`%s(func(x %s) %s { return x.%s }, func(x *%s, v %s) { x.%s = v }, "%s"),`, f.funcName, typ, f.typeName, f.fieldName, typ, f.typeName, f.fieldName, f.getFieldName()))
+			f.Field.Type = typ
+			if f.tagName != "" {
+				f.Field.ColumnName = f.tagName
+			} else {
+				f.Field.ColumnName = f.Field.FieldName
+			}
+			out = append(out, f.Field)
 		}
 	}
 	return out
@@ -117,7 +124,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 					f := getField(x.Names[0].Name, x)
 					fields[k] = append(fields[k], f)
 				} else if len(x.Names) == 0 && !isPrivate(x) {
-					fields[k] = append(fields[k], field{embedded: true, typeName: fmt.Sprintf("%s", x.Type)})
+					fields[k] = append(fields[k], field{embedded: true, Field: Field{TypeName: fmt.Sprintf("%s", x.Type)}})
 				}
 			}
 			return true
@@ -153,7 +160,8 @@ func getField(name string, x ast.Node) field {
 		err = fmt.Errorf("unsupported type: %s", name)
 	}
 
-	return field{fieldName: name, typeName: getTypeName(typ, optional), funcName: lookupType(typ, optional), tagName: tag, omit: tag == "-", err: err}
+	fn, cat, pt := lookupTypeAndCategory(typ, optional)
+	return field{Field: Field{FieldName: name, TypeName: getTypeName(typ, optional), FieldType: fn, ParquetType: pt, Category: cat}, tagName: tag, omit: tag == "-", err: err}
 }
 
 func parseTag(t string) string {
@@ -173,27 +181,32 @@ func getTypeName(s string, optional bool) string {
 	return fmt.Sprintf("%s%s", star, s)
 }
 
-func lookupType(name string, optional bool) string {
+func lookupTypeAndCategory(name string, optional bool) (string, string, string) {
 	var op string
 	if optional {
 		op = "Optional"
 	}
 	f, ok := types[name]
 	if !ok {
-		return ""
+		return "", "", ""
 	}
-	return fmt.Sprintf(f, op)
+	return fmt.Sprintf(f.name, op, "Field"), fmt.Sprintf(f.category, op), fmt.Sprintf(f.name, "", "Type")
 }
 
-var types = map[string]string{
-	"int32":   "NewInt32%sField",
-	"uint32":  "NewUint32%sField",
-	"int64":   "NewInt64%sField",
-	"uint64":  "NewUint64%sField",
-	"float32": "NewFloat32%sField",
-	"float64": "NewFloat64%sField",
-	"bool":    "NewBool%sField",
-	"string":  "NewString%sField",
+type fieldType struct {
+	name     string
+	category string
+}
+
+var types = map[string]fieldType{
+	"int32":   {"Int32%s%s", "numeric%s"},
+	"uint32":  {"Uint32%s%s", "numeric%s"},
+	"int64":   {"Int64%s%s", "numeric%s"},
+	"uint64":  {"Uint64%s%s", "numeric%s"},
+	"float32": {"Float32%s%s", "numeric%s"},
+	"float64": {"Float64%s%s", "numeric%s"},
+	"bool":    {"Bool%s%s", "bool%s"},
+	"string":  {"String%s%s", "string%s"},
 }
 
 type visitorFunc func(n ast.Node) ast.Visitor
