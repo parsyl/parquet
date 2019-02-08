@@ -36,8 +36,8 @@ and ParquetReader.  Next, make use of the writer and reader:
     		log.Fatal(err)
     	}    	
 
-		//MaxPageSize defines the number of rows in each column chunk
-    	w, err := NewParquetWriter(f, MaxPageSize(1000))
+		//MaxPageSize optionally defines the number of rows in each column chunk (default is 1000)
+    	w, err := NewParquetWriter(f, MaxPageSize(10000))
     	if err != nil {
     		log.Fatal(err)
     	}
