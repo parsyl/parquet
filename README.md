@@ -37,42 +37,42 @@ and ParquetReader.  Next, make use of the writer and reader:
 package main
 
 func main() {
-	var buf bytes.Buffer
-	// MaxPageSize optionally defines the number of rows in each column chunk (default is 1000)
-	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
-	if err != nil {
-		log.Fatal(err)
-	}
+    var buf bytes.Buffer
+    // MaxPageSize optionally defines the number of rows in each column chunk (default is 1000)
+    w, err := NewParquetWriter(&buf, MaxPageSize(10000))
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	w.Add(Person{ID: 1, Age: getAge(30)})
-	w.Add(Person{ID: 2})
+    w.Add(Person{ID: 1, Age: getAge(30)})
+    w.Add(Person{ID: 2})
 
-	// Each call to write creates a new parquet row group.
-	if err := w.Write(); err != nil {
-		log.Fatal(err)
-	}
+    // Each call to write creates a new parquet row group.
+    if err := w.Write(); err != nil {
+        log.Fatal(err)
+    }
 
-	// Close must be called when you are done.  It writes
+    // Close must be called when you are done.  It writes
     // the parquet metadata at the end of the file.
-	if err := w.Close(); err != nil {
-		log.Fatal(err)
-	}
+    if err := w.Close(); err != nil {
+        log.Fatal(err)
+    }
 
-	r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
-	if err != nil {
-		log.Fatal(err)
-	}
+    r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	enc := json.NewEncoder(os.Stdout)
-	for r.Next() {
-		var p Person
-		r.Scan(&p)
-		enc.Encode(p)
-	}
+    enc := json.NewEncoder(os.Stdout)
+    for r.Next() {
+        var p Person
+        r.Scan(&p)
+        enc.Encode(p)
+    }
 
-	if err := r.Error(); err != nil {
-		log.Fatal(err)
-	}
+    if err := r.Error(); err != nil {
+        log.Fatal(err)
+    }
 }
 
 func getAge(a int32) *int32 { return &a }
