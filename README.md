@@ -37,39 +37,28 @@ and ParquetReader.  Next, make use of the writer and reader:
 package main
 
 func main() {
-	f, err := os.Create("people.parquet")
-	if err != nil {
-		log.Fatal(err)
-	}    	
-
-	//MaxPageSize optionally defines the number of rows in each column chunk (default is 1000)
-	w, err := NewParquetWriter(f, MaxPageSize(10000))
+	var buf bytes.Buffer
+	// MaxPageSize optionally defines the number of rows in each column chunk (default is 1000)
+	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	w.Add(Person{ID:1, Age: getAge(30)})
-	w.Add(Person{ID:2})
+	w.Add(Person{ID: 1, Age: getAge(30)})
+	w.Add(Person{ID: 2})
 
-	//Each call to write creates a new parquet row group.
+	// Each call to write creates a new parquet row group.
 	if err := w.Write(); err != nil {
 		log.Fatal(err)
 	}
 
+	// Close must be called when you are done.  It writes
+    // the parquet metadata at the end of the file.
 	if err := w.Close(); err != nil {
 		log.Fatal(err)
 	}
 
-	f.Close()
-
-	//now read the data back
-	f, err = os.Open("people.parquet")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	r, err := NewParquetReader(f)
+	r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,7 +75,7 @@ func main() {
 	}
 }
 
-func getAge(a int32) *int32 {return &a}
+func getAge(a int32) *int32 { return &a }
 ```
 
 See [this](./examples/people) for a complete example of how to use it.

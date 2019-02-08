@@ -13,5 +13,5 @@
 *.out
 
 *.parquet
-*.py
 examples/people/parquet.go
+examples/people/read.py
