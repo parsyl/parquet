@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 	"strings"
@@ -76,12 +78,23 @@ func main() {
 		}
 	}
 
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, i)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gocode, err := format.Source(buf.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	f, err := os.Create("parquet.go")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = tmpl.Execute(f, i)
+	_, err = f.Write(gocode)
 	if err != nil {
 		log.Fatal(err)
 	}
