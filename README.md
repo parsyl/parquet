@@ -36,6 +36,11 @@ and ParquetReader.  Next, make use of the writer and reader:
 ```go
 package main
 
+import (
+    "os"
+    "encoding/json"
+)
+
 func main() {
     var buf bytes.Buffer
     // MaxPageSize optionally defines the number of rows in each column chunk (default is 1000)
