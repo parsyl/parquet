@@ -37,7 +37,7 @@ and ParquetReader.  Next, make use of the writer and reader:
 package main
 
 import (
-    "os"
+    "bytes"
     "encoding/json"
 )
 
