@@ -43,7 +43,7 @@ and ParquetReader.  Next, make use of the writer and reader:
     	}
 
     	w.Add(Person{ID:1, Age: getAge(30)})
-        w.Add(Person{ID:2})
+		w.Add(Person{ID:2})
 
 		//Each call to write creates a new parquet row group.
     	if err := w.Write(); err != nil {
