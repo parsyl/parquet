@@ -101,7 +101,7 @@ Each of these types may be a pointer to indicate that the data is optional.  The
 struct can also embed another struct:
 
 	type Being struct {
-      	ID  int32  `parquet:"id"`
+		ID  int32  `parquet:"id"`
 		Age *int32 `parquet:"age"`
 	}
 
@@ -116,6 +116,6 @@ excluded from parquet you can tag it with a dash or make it private like so:
 	type Being struct {
       	ID  int32  `parquet:"id"`
 		Password string`parquet:"-"` //will not be written to parquet
-        age int32                    //will not be written to parquet
+		age int32                    //will not be written to parquet
 	}
 
