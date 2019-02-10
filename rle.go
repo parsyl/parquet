@@ -86,7 +86,7 @@ func ReadLevels(r io.Reader) ([]int64, int, error) {
 			res = append(res, buf...)
 
 		} else {
-			buf, err := readBitPacked(newReader, header, bitWidth)
+			buf, err := readRLEBitPacked(newReader, header, bitWidth)
 			if err != nil {
 				return res, 0, err
 			}
@@ -96,82 +96,60 @@ func ReadLevels(r io.Reader) ([]int64, int, error) {
 	return res, int(l + 4), nil
 }
 
-func readBitPacked(r io.Reader, header uint64, bitWidth uint64) ([]int64, error) {
-	var err error
-	numGroup := (header >> 1)
-	cnt := numGroup * 8
-	byteCnt := cnt * bitWidth / 8
-
-	out := make([]int64, 0, cnt)
-
-	if cnt == 0 {
-		return out, nil
+func readRLEBitPacked(r io.Reader, header, width uint64) ([]int64, error) {
+	nGroups := header >> 1
+	count := nGroups * 8
+	if width == 0 {
+		return make([]int64, count), nil
 	}
 
-	if bitWidth == 0 {
-		for i := 0; i < int(cnt); i++ {
-			out = append(out, int64(0))
-		}
-		return out, err
-	}
-	bytesBuf := make([]byte, byteCnt)
-	if _, err = r.Read(bytesBuf); err != nil {
-		return out, err
+	byteCount := (width * count) / 8
+	rawBytes := make([]byte, byteCount)
+	if _, err := r.Read(rawBytes); err != nil {
+		return nil, err
 	}
 
-	i := 0
-	var cur, used uint64
-	neededBits := bitWidth
+	currentByte := 0
+	data := uint64(rawBytes[currentByte])
+	mask := uint64((1 << width) - 1)
 	left := uint64(8)
-	b := uint64(bytesBuf[i])
-	for i < len(bytesBuf) {
-		if left >= neededBits {
-			cur |= ((b >> used) & ((1 << neededBits) - 1)) << (bitWidth - neededBits)
-			out = append(out, int64(cur))
-			left -= neededBits
-			used += neededBits
-			neededBits = bitWidth
-			cur = 0
-			if left <= 0 && i+1 < len(bytesBuf) {
-				i += 1
-				b = uint64(bytesBuf[i])
-				left = 8
-				used = 0
-			}
-		} else {
-			cur |= (b >> used) << (bitWidth - neededBits)
-			i += 1
-			if i < len(bytesBuf) {
-				b = uint64(bytesBuf[i])
-			}
-			neededBits -= left
-			left = 8
-			used = 0
+	right := uint64(0)
+	out := make([]int64, 0, count)
+	total := uint64(len(rawBytes) * 8)
+	for total >= width {
+		if right >= 8 {
+			right -= 8
+			left -= 8
+			data >>= 8
+		} else if left-right >= width {
+			out = append(out, int64((data>>right)&mask))
+			total -= width
+			right += width
+		} else if currentByte+1 < len(rawBytes) {
+			currentByte++
+			data |= uint64(rawBytes[currentByte] << left)
+			left += 8
 		}
 	}
-	return out, err
+	return out, nil
 }
 
 func readRLE(r io.Reader, header uint64, bitWidth uint64) ([]int64, error) {
-	var err error
-	var out []int64
+	count := header >> 1
+	zeroData := make([]byte, 4)
 	width := (bitWidth + 7) / 8
 	data := make([]byte, width)
-	if width > 0 {
-		if _, err = r.Read(data); err != nil {
-			return out, err
-		}
+	if _, err := r.Read(data); err != nil {
+		return nil, err
 	}
-	for len(data) < 4 {
-		data = append(data, byte(0))
+
+	data = append(data, zeroData[len(data):]...)
+	value := int64(binary.LittleEndian.Uint32(data))
+	out := make([]int64, count)
+	for i := 0; i < int(count); i++ {
+		out[i] = value
 	}
-	val := int64(binary.LittleEndian.Uint32(data))
-	c := header >> 1
-	out = make([]int64, c)
-	for i := 0; i < int(c); i++ {
-		out[i] = val
-	}
-	return out, err
+	return out, nil
 }
 
 const (
