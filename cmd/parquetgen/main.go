@@ -186,14 +186,14 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 		return
 	}
 
-	var val {{removeStar .TypeName}}
 	if f.Defs[0] == 1 {
+        var val {{removeStar .TypeName}}
 		v := f.vals[0]
 		f.vals = f.vals[1:]
 		val = v
+        f.read(r, &val)
 	}
 	f.Defs = f.Defs[1:]
-	f.read(r, &val)
 }
 {{end}}`
 
@@ -347,14 +347,14 @@ func (f *StringOptionalField) Scan(r *{{.Type}}) {
 		return
 	}
 
-	var val *string
 	if f.Defs[0] == 1 {
+		var val *string
 		v := f.vals[0]
 		f.vals = f.vals[1:]
 		val = &v
+        f.read(r, val)
 	}
 	f.Defs = f.Defs[1:]
-	f.read(r, val)
 }
 
 func (f *StringOptionalField) Add(r {{.Type}}) {
@@ -505,9 +505,9 @@ func (f *BoolOptionalField) Scan(r *{{.Type}}) {
 		v := f.vals[0]
 		f.vals = f.vals[1:]
 		val = &v
+		f.read(r, val)
 	}
 	f.Defs = f.Defs[1:]
-	f.read(r, val)
 }
 
 func (f *BoolOptionalField) Add(r {{.Type}}) {
