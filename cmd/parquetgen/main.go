@@ -25,6 +25,18 @@ var funcs = template.FuncMap{
 	"removeStar": func(s string) string {
 		return strings.Replace(s, "*", "", 1)
 	},
+	"dedupe": func(fields []parse.Field) []parse.Field {
+		seen := map[string]bool{}
+		out := make([]parse.Field, 0, len(fields))
+		for _, f := range fields {
+			_, ok := seen[f.FieldType]
+			if !ok {
+				out = append(out, f)
+				seen[f.FieldType] = true
+			}
+		}
+		return out
+	},
 }
 
 type fieldType struct {
@@ -55,12 +67,11 @@ func main() {
 		log.Fatal("not generating parquet.go (-ignore set to false), err: ", result.Errors)
 	}
 
-	tmpl, err := template.New("output").Parse(tpl)
+	tmpl := template.New("output").Funcs(funcs)
+	tmpl, err = tmpl.Parse(tpl)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	tmpl.Funcs(funcs)
 
 	for _, t := range []string{
 		requiredTpl,
@@ -797,7 +808,7 @@ func (p *ParquetReader) Scan(x *{{.Type}}) {
 	}
 }
 
-{{range .Fields}}
+{{range dedupe .Fields}}
 {{if eq .Category "numeric"}}
 {{ template "requiredField" .}}
 {{end}}
