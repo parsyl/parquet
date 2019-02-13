@@ -753,6 +753,13 @@ func (p *ParquetReader) Error() error {
 }
 
 func (p *ParquetReader) readRowGroup() error {
+	p.rowGroupCursor = 0
+
+	if len(p.rowGroups) == 0 {
+		p.rowGroupCount = 0
+		return nil
+	}
+
 	rg := p.rowGroups[0]
 	p.fields = getFields(Fields())
 	p.rowGroupCount = rg.Rows
