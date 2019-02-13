@@ -174,3 +174,59 @@ func readUint64(r io.Reader) (uint64, error) {
 		shift += 7
 	}
 }
+
+type RLE struct {
+	bitWidth            int
+	prev                int
+	repeats             int
+	bufCount            int
+	buf                 [8]int
+	bitPackedGroupCount int
+
+	packer
+}
+
+func (r *RLE) write(val int) error {
+	if val == r.prev {
+		r.repeats++
+
+		if r.repeats >= 8 {
+			return nil
+		}
+	} else {
+		if r.repeats >= 8 {
+			return r.writeRLERun()
+		}
+		r.repeats = 1
+		r.prev = val
+	}
+	r.buf[r.bufCount] = val
+	r.bufCount++
+
+	if r.bufCount == 8 {
+		return r.writeBitPackedRun()
+	}
+
+	return nil
+}
+
+func (r *RLE) writeRLERun() error {
+	return nil
+}
+
+func (r *RLE) writeBitPackedRun() error {
+	if r.bitPackedGroupCount >= 63 {
+		r.endBitPackedRun()
+	}
+
+	if r.bitPackedRunHeaderPointer == -1 {
+		//baos.write(0)???
+		//r.bitPackedRunHeaderPointer = r.baos.index
+	}
+
+	r.packer.pack(buf, 0)
+}
+
+func (r *RLE) endBitPackedRun() {
+
+}
