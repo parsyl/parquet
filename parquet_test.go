@@ -90,26 +90,19 @@ func TestParquet(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var buf bytes.Buffer
 			w, err := NewParquetWriter(&buf)
-			if !assert.Nil(t, err, tc.name) {
-				return
-			}
+			assert.Nil(t, err, tc.name)
 			for _, p := range tc.input {
 				w.Add(p)
 			}
+
 			err = w.Write()
-			if !assert.Nil(t, err, tc.name) {
-				return
-			}
+			assert.Nil(t, err, tc.name)
+
 			err = w.Close()
-			if !assert.Nil(t, err, tc.name) {
-				return
-			}
+			assert.Nil(t, err, tc.name)
 
 			r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
-			if !assert.Nil(t, err) {
-				return
-			}
-
+			assert.Nil(t, err)
 			expected := tc.expected
 			if expected == nil {
 				expected = tc.input
