@@ -32,57 +32,82 @@ type Person struct {
 func TestParquet(t *testing.T) {
 	type testCase struct {
 		name  string
-		input []Person
+		input [][]Person
 		//if expected is nil then input is used for the assertions
-		expected []Person
+		expected [][]Person
 	}
 
 	testCases := []testCase{
 		{
 			name: "single person",
-			input: []Person{
-				{Being: Being{ID: 1, Age: pint32(0)}},
+			input: [][]Person{
+				{{Being: Being{ID: 1, Age: pint32(0)}}},
 			},
 		},
 		{
 			name: "multiple people",
-			input: []Person{
-				{Being: Being{ID: 1, Age: pint32(-10)}},
-				{Happiness: 55},
-				{Sadness: pint64(1)},
-				{Code: pstring("10!01")},
-				{Funkiness: 0.2},
-				{Lameness: pfloat32(-0.4)},
-				{Keen: pbool(true)},
-				{Birthday: 55},
-				{Anniversary: puint64(1010010)},
-				{Secret: "hush hush"},
-				{Keen: pbool(false)},
-				{Sleepy: true},
+			input: [][]Person{
+				{
+					{Being: Being{ID: 1, Age: pint32(-10)}},
+					{Happiness: 55},
+					{Sadness: pint64(1)},
+					{Code: pstring("10!01")},
+					{Funkiness: 0.2},
+					{Lameness: pfloat32(-0.4)},
+					{Keen: pbool(true)},
+					{Birthday: 55},
+					{Anniversary: puint64(1010010)},
+					{Secret: "hush hush"},
+					{Keen: pbool(false)},
+					{Sleepy: true},
+				},
 			},
-			expected: []Person{
-				{Being: Being{ID: 1, Age: pint32(-10)}},
-				{Happiness: 55},
-				{Sadness: pint64(1)},
-				{Code: pstring("10!01")},
-				{Funkiness: 0.2},
-				{Lameness: pfloat32(-0.4)},
-				{Keen: pbool(true)},
-				{Birthday: 55},
-				{Anniversary: puint64(1010010)},
-				{Secret: ""},
-				{Keen: pbool(false)},
-				{Sleepy: true},
+			expected: [][]Person{
+				{
+					{Being: Being{ID: 1, Age: pint32(-10)}},
+					{Happiness: 55},
+					{Sadness: pint64(1)},
+					{Code: pstring("10!01")},
+					{Funkiness: 0.2},
+					{Lameness: pfloat32(-0.4)},
+					{Keen: pbool(true)},
+					{Birthday: 55},
+					{Anniversary: puint64(1010010)},
+					{Secret: ""},
+					{Keen: pbool(false)},
+					{Sleepy: true},
+				},
 			},
 		},
 		{
 			name: "boolean optional",
-			input: []Person{
-				{Keen: nil},
-				{Keen: pbool(true)},
-				{Keen: nil},
-				{Keen: pbool(false)},
-				{Keen: nil},
+			input: [][]Person{
+				{
+					{Keen: nil},
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+				},
+			},
+		},
+		{
+			name: "boolean optional multiple row groups",
+			input: [][]Person{
+				{
+					{Keen: nil},
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+				},
+				{
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+					{Keen: pbool(true)},
+				},
 			},
 		},
 	}
@@ -91,12 +116,12 @@ func TestParquet(t *testing.T) {
 			var buf bytes.Buffer
 			w, err := NewParquetWriter(&buf)
 			assert.Nil(t, err, tc.name)
-			for _, p := range tc.input {
-				w.Add(p)
+			for _, rowgroup := range tc.input {
+				for _, p := range rowgroup {
+					w.Add(p)
+				}
+				assert.Nil(t, w.Write(), tc.name)
 			}
-
-			err = w.Write()
-			assert.Nil(t, err, tc.name)
 
 			err = w.Close()
 			assert.Nil(t, err, tc.name)
@@ -112,14 +137,33 @@ func TestParquet(t *testing.T) {
 			for r.Next() {
 				var p Person
 				r.Scan(&p)
-				assert.Equal(t, expected[i], p, fmt.Sprintf("%s-%d", tc.name, i))
+				exp := getExpected(expected, i)
+				assert.Equal(t, *exp, p, fmt.Sprintf("%s-%d", tc.name, i))
 				i++
 			}
 
 			assert.Nil(t, r.Error(), tc.name)
-			assert.Equal(t, i, len(expected), tc.name)
+			assert.Equal(t, i, getLen(expected), tc.name)
 		})
 	}
+}
+
+func getLen(peeps [][]Person) int {
+	var l int
+	for _, rg := range peeps {
+		l += len(rg)
+	}
+	return l
+}
+
+func getExpected(peeps [][]Person, i int) *Person {
+	for _, rg := range peeps {
+		if i < len(rg) {
+			return &rg[i]
+		}
+		i -= len(rg)
+	}
+	return nil
 }
 
 func pint32(i int32) *int32       { return &i }
