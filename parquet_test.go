@@ -35,6 +35,7 @@ func TestParquet(t *testing.T) {
 		input [][]Person
 		//if expected is nil then input is used for the assertions
 		expected [][]Person
+		pageSize int
 	}
 
 	testCases := []testCase{
@@ -80,7 +81,58 @@ func TestParquet(t *testing.T) {
 			},
 		},
 		{
+			name:     "multiple people multiple row groups small page size",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Being: Being{ID: 1, Age: pint32(-10)}},
+					{Happiness: 55},
+					{Sadness: pint64(1)},
+					{Code: pstring("10!01")},
+					{Funkiness: 0.2},
+				},
+				{
+					{Lameness: pfloat32(-0.4)},
+					{Keen: pbool(true)},
+					{Birthday: 55},
+					{Anniversary: puint64(1010010)},
+					{Secret: "hush hush"},
+					{Keen: pbool(false)},
+					{Sleepy: true},
+				},
+			},
+			expected: [][]Person{
+				{
+					{Being: Being{ID: 1, Age: pint32(-10)}},
+					{Happiness: 55},
+					{Sadness: pint64(1)},
+					{Code: pstring("10!01")},
+					{Funkiness: 0.2},
+					{Lameness: pfloat32(-0.4)},
+					{Keen: pbool(true)},
+					{Birthday: 55},
+					{Anniversary: puint64(1010010)},
+					{Secret: ""},
+					{Keen: pbool(false)},
+					{Sleepy: true},
+				},
+			},
+		},
+		{
 			name: "boolean optional",
+			input: [][]Person{
+				{
+					{Keen: nil},
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+				},
+			},
+		},
+		{
+			name:     "boolean optional small page size",
+			pageSize: 2,
 			input: [][]Person{
 				{
 					{Keen: nil},
@@ -110,11 +162,75 @@ func TestParquet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "boolean optional multiple row groups small page size",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Keen: nil},
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+				},
+				{
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+					{Keen: pbool(true)},
+				},
+			},
+		},
+		{
+			name:     "boolean multiple row groups small page size",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Sleepy: false},
+					{Sleepy: true},
+					{Sleepy: true},
+					{Sleepy: false},
+					{Sleepy: true},
+				},
+				{
+					{Sleepy: true},
+					{Sleepy: true},
+					{Sleepy: false},
+					{Sleepy: true},
+					{Sleepy: true},
+				},
+			},
+		},
+		{
+			name:     "optional string multiple row groups small page size",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Code: pstring("a")},
+					{Code: pstring("b")},
+					{Code: pstring("c")},
+					{Code: pstring("d")},
+					{Code: pstring("e")},
+				},
+				{
+					{Code: pstring("f")},
+					{Code: pstring("g")},
+					{Code: pstring("h")},
+					{Code: pstring("i")},
+					{Code: pstring("j")},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			fmt.Println(tc.name)
+			if tc.pageSize == 0 {
+				tc.pageSize = 100
+			}
 			var buf bytes.Buffer
-			w, err := NewParquetWriter(&buf)
+			w, err := NewParquetWriter(&buf, MaxPageSize(tc.pageSize))
 			assert.Nil(t, err, tc.name)
 			for _, rowgroup := range tc.input {
 				for _, p := range rowgroup {

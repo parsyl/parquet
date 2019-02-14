@@ -355,12 +355,16 @@ func StringType(se *sch.SchemaElement) {
 	se.Type = &t
 }
 
-func GetBools(r io.Reader, n int) ([]bool, error) {
+func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
+	fmt.Println("page sizes", pageSizes)
+	sizes := getSizes(pageSizes)
+	fmt.Println("sizes", sizes)
 	var index int
 	var vals [8]uint32
 	data, _ := ioutil.ReadAll(r)
+	fmt.Printf("data: %x, n: %d\n", data, n)
 	out := make([]bool, n)
-
+	var size int
 	for i := 0; i < n; i++ {
 		if index == 0 {
 			if len(data) == 0 {
@@ -368,11 +372,37 @@ func GetBools(r io.Reader, n int) ([]bool, error) {
 			}
 			vals = unpack8uint32(data[:1])
 			data = data[1:]
+			size = sizes[0]
+			sizes = sizes[1:]
+			fmt.Println("new size", size)
+			fmt.Println("vals", vals)
 		}
+		fmt.Println("index", index)
 		out[i] = vals[index] == 1
-		index = (index + 1) % 8
+		index = (index + 1) % size
 	}
+	fmt.Println("out", out)
 	return out, nil
+}
+
+func getSizes(sizes []int) []int {
+	var out []int
+	for _, s := range sizes {
+		if s > 8 {
+			for s > 0 {
+				if s > 8 {
+					out = append(out, 8)
+					s -= 8
+				} else {
+					out = append(out, s)
+					s = 0
+				}
+			}
+		} else {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func unpack8uint32(data []byte) [8]uint32 {
