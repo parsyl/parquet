@@ -18,6 +18,7 @@ var (
 	pkg    = flag.String("package", "", "package name")
 	imp    = flag.String("import", "", "the type's import statement (only if it doesn't live in 'package')")
 	pth    = flag.String("input", "", "path to the go file that defines -type")
+	outPth = flag.String("output", "parquet.go", "name of the file that is produced (defaults to parquet.go)")
 	ignore = flag.Bool("ignore", true, "ignore unsupported fields in -type")
 )
 
@@ -100,7 +101,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	f, err := os.Create("parquet.go")
+	f, err := os.Create(*outPth)
 	if err != nil {
 		log.Fatal(err)
 	}
