@@ -755,7 +755,7 @@ func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos pa
 		return err
 	}
 
-	v, err := parquet.GetBools(rr, f.Values()-len(f.vals))
+	v, err := parquet.GetBools(rr, f.Values()-len(f.vals), pos.N)
 	f.vals = append(f.vals, v...)
 	return err
 }
@@ -972,6 +972,7 @@ func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Po
 		return err
 	}
 
-	f.vals, err = parquet.GetBools(rr, int(pos.N))
+	vals, err := parquet.GetBools(rr, int(pos.N), pos.N)
+	f.vals = append(f.vals, vals...)
 	return err
 }

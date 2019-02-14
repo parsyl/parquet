@@ -53,7 +53,7 @@ func New(fields ...Field) *Metadata {
 func (m *Metadata) StartRowGroup(fields ...Field) {
 	m.rowGroups = append(m.rowGroups, RowGroup{
 		fields:  schemaElements(fields),
-		columns: make(map[string]sch.ColumnChunk),
+		columns: make(map[string][]sch.ColumnChunk),
 	})
 }
 
@@ -100,7 +100,6 @@ func (m *Metadata) updateRowGroup(col string, dataLen, compressedLen, headerLen,
 	}
 
 	rg := m.rowGroups[i-1]
-
 	rg.rowGroup.NumRows += int64(count)
 	err := rg.updateColumnChunk(col, dataLen+headerLen, compressedLen+headerLen, count, m.schema)
 	m.rowGroups[i-1] = rg
@@ -142,22 +141,37 @@ func (m *Metadata) Footer(w io.Writer) error {
 				continue
 			}
 
-			ch, ok := mrg.columns[col.Name]
+			chs, ok := mrg.columns[col.Name]
 
 			if !ok {
 				return fmt.Errorf("unknown column %s", col.Name)
 			}
 
-			ch.FileOffset = pos
-			ch.MetaData.DataPageOffset = pos
-			rg.TotalByteSize += ch.MetaData.TotalCompressedSize
-			rg.Columns = append(rg.Columns, &ch)
-			pos += ch.MetaData.TotalCompressedSize
-
+			for _, ch := range chs {
+				ch.FileOffset = pos
+				ch.MetaData.DataPageOffset = pos
+				rg.TotalByteSize += ch.MetaData.TotalCompressedSize
+				rg.Columns = append(rg.Columns, &sch.ColumnChunk{
+					FilePath:   ch.FilePath,
+					FileOffset: ch.FileOffset,
+					MetaData: &sch.ColumnMetaData{
+						Type:                  ch.MetaData.Type,
+						NumValues:             ch.MetaData.NumValues,
+						PathInSchema:          ch.MetaData.PathInSchema,
+						TotalUncompressedSize: ch.MetaData.TotalUncompressedSize,
+						TotalCompressedSize:   ch.MetaData.TotalCompressedSize,
+					},
+				})
+				pos += ch.MetaData.TotalCompressedSize
+			}
 		}
 
 		rg.NumRows = rg.NumRows / int64(len(mrg.fields.schema)-1)
-		f.RowGroups = append(f.RowGroups, &rg)
+		f.RowGroups = append(f.RowGroups, &sch.RowGroup{
+			Columns:       rg.Columns,
+			TotalByteSize: rg.TotalByteSize,
+			NumRows:       rg.NumRows,
+		})
 	}
 
 	buf, err := m.ts.Write(context.TODO(), f)
@@ -176,7 +190,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 type RowGroup struct {
 	fields   schema
 	rowGroup sch.RowGroup
-	columns  map[string]sch.ColumnChunk
+	columns  map[string][]sch.ColumnChunk
 	child    *RowGroup
 
 	Rows int64
@@ -187,28 +201,25 @@ func (r *RowGroup) Columns() []*sch.ColumnChunk {
 }
 
 func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count int, fields schema) error {
-	ch, ok := r.columns[col]
-	if !ok {
-		t, err := columnType(col, fields)
-		if err != nil {
-			return err
-		}
-
-		ch = sch.ColumnChunk{
-			MetaData: &sch.ColumnMetaData{
-				Type:         t,
-				Encodings:    []sch.Encoding{sch.Encoding_PLAIN},
-				PathInSchema: []string{col},
-				Codec:        sch.CompressionCodec_SNAPPY,
-			},
-		}
+	chs := r.columns[col]
+	t, err := columnType(col, fields)
+	if err != nil {
+		return err
 	}
 
-	ch.MetaData.NumValues += int64(count)
+	ch := sch.ColumnChunk{
+		MetaData: &sch.ColumnMetaData{
+			NumValues:             int64(count),
+			Type:                  t,
+			TotalUncompressedSize: int64(dataLen),
+			TotalCompressedSize:   int64(compressedLen),
+			Encodings:             []sch.Encoding{sch.Encoding_PLAIN},
+			PathInSchema:          []string{col},
+			Codec:                 sch.CompressionCodec_SNAPPY,
+		},
+	}
 
-	ch.MetaData.TotalUncompressedSize += int64(dataLen)
-	ch.MetaData.TotalCompressedSize += int64(compressedLen)
-	r.columns[col] = ch
+	r.columns[col] = append(chs, ch)
 	return nil
 }
 
@@ -355,18 +366,21 @@ func StringType(se *sch.SchemaElement) {
 	se.Type = &t
 }
 
-func GetBools(r io.Reader, n int) ([]bool, error) {
+func GetBools(r io.Reader, n, pageSize int) ([]bool, error) {
+	if n == 0 {
+		return []bool{}, nil
+	}
+
 	var index int
 	var vals [8]uint32
 	data, _ := ioutil.ReadAll(r)
 	out := make([]bool, n)
-
 	for i := 0; i < n; i++ {
 		if index == 0 {
 			if len(data) == 0 {
 				return nil, errors.New("not enough data to decode all values")
 			}
-			vals = unpack8uint32(data[:1])
+			vals = unpack8uint32(data[0])
 			data = data[1:]
 		}
 		out[i] = vals[index] == 1
@@ -375,15 +389,15 @@ func GetBools(r io.Reader, n int) ([]bool, error) {
 	return out, nil
 }
 
-func unpack8uint32(data []byte) [8]uint32 {
+func unpack8uint32(data byte) [8]uint32 {
 	var a [8]uint32
-	a[0] = uint32((data[0]>>0)&1) << 0
-	a[1] = uint32((data[0]>>1)&1) << 0
-	a[2] = uint32((data[0]>>2)&1) << 0
-	a[3] = uint32((data[0]>>3)&1) << 0
-	a[4] = uint32((data[0]>>4)&1) << 0
-	a[5] = uint32((data[0]>>5)&1) << 0
-	a[6] = uint32((data[0]>>6)&1) << 0
-	a[7] = uint32((data[0]>>7)&1) << 0
+	a[0] = uint32((data >> 0) & 1)
+	a[1] = uint32((data >> 1) & 1)
+	a[2] = uint32((data >> 2) & 1)
+	a[3] = uint32((data >> 3) & 1)
+	a[4] = uint32((data >> 4) & 1)
+	a[5] = uint32((data >> 5) & 1)
+	a[6] = uint32((data >> 6) & 1)
+	a[7] = uint32((data >> 7) & 1)
 	return a
 }
