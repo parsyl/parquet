@@ -110,24 +110,21 @@ func TestParquet(t *testing.T) {
 				return
 			}
 
-			newPeeps := make([]Person, 0, r.Rows())
-			for r.Next() {
-				var p Person
-				r.Scan(&p)
-				newPeeps = append(newPeeps, p)
-			}
-
-			if !assert.Equal(t, len(tc.input), len(newPeeps), tc.name) {
-				return
-			}
-
 			expected := tc.expected
 			if expected == nil {
 				expected = tc.input
 			}
-			for i, p := range expected {
-				assert.Equal(t, p, newPeeps[i], fmt.Sprintf("%s-%d", tc.name, i))
+
+			var i int
+			for r.Next() {
+				var p Person
+				r.Scan(&p)
+				assert.Equal(t, expected[i], p, fmt.Sprintf("%s-%d", tc.name, i))
+				i++
 			}
+
+			assert.Nil(t, r.Error(), tc.name)
+			assert.Equal(t, i, len(expected), tc.name)
 		})
 	}
 }
