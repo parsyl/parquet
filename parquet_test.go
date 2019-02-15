@@ -183,6 +183,24 @@ func TestParquet(t *testing.T) {
 			},
 		},
 		{
+			name:     "boolean optional more than eight in a page",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Keen: nil},
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: pbool(false)},
+					{Keen: nil},
+					{Keen: pbool(true)},
+				},
+			},
+		},
+		{
 			name:     "boolean multiple row groups small page size",
 			pageSize: 2,
 			input: [][]Person{
@@ -194,6 +212,23 @@ func TestParquet(t *testing.T) {
 					{Sleepy: true},
 				},
 				{
+					{Sleepy: true},
+					{Sleepy: true},
+					{Sleepy: false},
+					{Sleepy: true},
+					{Sleepy: true},
+				},
+			},
+		},
+		{
+			name: "boolean more than eight in a page",
+			input: [][]Person{
+				{
+					{Sleepy: false},
+					{Sleepy: true},
+					{Sleepy: true},
+					{Sleepy: false},
+					{Sleepy: true},
 					{Sleepy: true},
 					{Sleepy: true},
 					{Sleepy: false},
