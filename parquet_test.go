@@ -119,6 +119,70 @@ func TestParquet(t *testing.T) {
 			},
 		},
 		{
+			name: "numeric optional",
+			input: [][]Person{
+				{
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(1)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(-2)}},
+					{Being: Being{Age: nil}},
+				},
+			},
+		},
+		{
+			name:     "numeric optional small page size",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(3)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(-4)}},
+					{Being: Being{Age: nil}},
+				},
+			},
+		},
+		{
+			name: "numeric optional multiple row groups",
+			input: [][]Person{
+				{
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(5)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(-6)}},
+					{Being: Being{Age: nil}},
+				},
+				{
+					{Being: Being{Age: pint32(7)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(-8)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(9)}},
+				},
+			},
+		},
+		{
+			name:     "numeric optional multiple row groups small page size",
+			pageSize: 3,
+			input: [][]Person{
+				{
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(5)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(-6)}},
+					{Being: Being{Age: nil}},
+				},
+				{
+					{Being: Being{Age: pint32(7)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(-8)}},
+					{Being: Being{Age: nil}},
+					{Being: Being{Age: pint32(9)}},
+				},
+			},
+		},
+		{
 			name: "boolean optional",
 			input: [][]Person{
 				{
@@ -254,6 +318,27 @@ func TestParquet(t *testing.T) {
 					{Code: pstring("h")},
 					{Code: pstring("i")},
 					{Code: pstring("j")},
+				},
+			},
+		},
+		{
+			name:     "optional string multiple row groups small page size with nil values",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Code: pstring("a")},
+					{Code: pstring("b")},
+					{Code: nil},
+					{Code: pstring("c")},
+					{Code: nil},
+				},
+				{
+					{Code: nil},
+					{Code: pstring("d")},
+					{Code: pstring("e")},
+					{Code: pstring("f")},
+					{Code: nil},
+					{Code: pstring("g")},
 				},
 			},
 		},
