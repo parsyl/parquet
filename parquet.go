@@ -3,7 +3,6 @@ package parquet
 import (
 	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -356,50 +355,40 @@ func StringType(se *sch.SchemaElement) {
 }
 
 func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
-	sizes := getSizes(pageSizes)
-	var index int
 	var vals [8]uint32
 	data, _ := ioutil.ReadAll(r)
-	out := make([]bool, n)
-	var size int
-	for i := 0; i < n; i++ {
-		if index == 0 {
-			if len(data) == 0 {
-				return nil, errors.New("not enough data to decode all values")
-			}
-			vals = unpack8uint32(data[0])
-			data = data[1:]
-			size = sizes[0]
-			sizes = sizes[1:]
+	out := make([]bool, 0, n)
+	for _, nVals := range pageSizes {
+		if nVals == 0 {
+			continue
 		}
-		out[i] = vals[index] == 1
-		if size > 0 {
-			index = (index + 1) % size
-		} else {
-			index = 0
+
+		l := (nVals / 8)
+		if nVals%8 > 0 {
+			l++
+		}
+
+		var i int
+		chunk := data[:l]
+		data = data[l:]
+		for _, b := range chunk {
+			vals = unpack8uint32(b)
+			m := min(nVals, 8)
+			for j := 0; j < m; j++ {
+				out = append(out, vals[j] == 1)
+			}
+			i += m
+			nVals -= m
 		}
 	}
 	return out, nil
 }
 
-func getSizes(sizes []int) []int {
-	var out []int
-	for _, s := range sizes {
-		if s > 8 {
-			for s > 0 {
-				if s > 8 {
-					out = append(out, 8)
-					s -= 8
-				} else {
-					out = append(out, s)
-					s = 0
-				}
-			}
-		} else {
-			out = append(out, s)
-		}
+func min(a, b int) int {
+	if a < b {
+		return a
 	}
-	return out
+	return b
 }
 
 func unpack8uint32(data byte) [8]uint32 {

@@ -3,6 +3,7 @@ package parquet_test
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -265,6 +266,21 @@ func TestParquet(t *testing.T) {
 			},
 		},
 		{
+			name:     "boolean optional large amount small page size",
+			pageSize: 2,
+			input:    getOptBools(31),
+		},
+		{
+			name:     "boolean optional really large amount small page size",
+			pageSize: 2,
+			input:    getOptBools(3001),
+		},
+		{
+			name:     "boolean optional really large amount large page size",
+			pageSize: 3000,
+			input:    getOptBools(3001),
+		},
+		{
 			name:     "boolean multiple row groups small page size",
 			pageSize: 2,
 			input: [][]Person{
@@ -411,3 +427,29 @@ func pbool(b bool) *bool          { return &b }
 func pstring(s string) *string    { return &s }
 func pfloat32(f float32) *float32 { return &f }
 func pfloat64(f float64) *float64 { return &f }
+
+func getOptBools(count int) [][]Person {
+	var out [][]Person
+	var rg []Person
+	for i := 0; i < count; i++ {
+		if i > 0 && i%100 == 0 {
+			out = append(out, rg)
+			rg = []Person{}
+		}
+		r := rand.Intn(3)
+		var b *bool
+		switch r {
+		case 1:
+			x := true
+			b = &x
+		case 3:
+			x := false
+			b = &x
+		}
+		rg = append(rg, Person{Keen: b})
+	}
+	if len(rg) > 0 {
+		out = append(out, rg)
+	}
+	return out
+}

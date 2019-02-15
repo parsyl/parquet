@@ -375,7 +375,6 @@ func (f *Int32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos p
 	if err != nil {
 		return err
 	}
-
 	v := make([]int32, f.Values()-len(f.vals))
 	err = binary.Read(rr, binary.LittleEndian, &v)
 	f.vals = append(f.vals, v...)
@@ -764,7 +763,6 @@ func (f *BoolOptionalField) Scan(r *Person) {
 	if len(f.Defs) == 0 {
 		return
 	}
-
 	var val *bool
 	if f.Defs[0] == 1 {
 		v := f.vals[0]
