@@ -368,6 +368,8 @@ func TestParquet(t *testing.T) {
 				expected = tc.input
 			}
 
+			assert.Equal(t, getLen(expected), int(r.Rows()), tc.name)
+
 			var i int
 			for r.Next() {
 				var p Person
