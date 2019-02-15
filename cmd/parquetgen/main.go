@@ -161,7 +161,7 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, err := f.DoRead(r, meta, pos)
+	rr, _, err := f.DoRead(r, meta, pos)
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, err := f.DoRead(r, meta, pos)
+	rr, _, err := f.DoRead(r, meta, pos)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
 }
 
 func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, err := f.DoRead(r, meta, pos)
+	rr, _, err := f.DoRead(r, meta, pos)
 	if err != nil {
 		return err
 	}
@@ -383,7 +383,7 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 
 func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
 	start := len(f.Defs)
-	rr, err := f.DoRead(r, meta, pos)
+	rr, _, err := f.DoRead(r, meta, pos)
 	if err != nil {
 		return err
 	}
@@ -456,12 +456,12 @@ func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 }
 
 func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, err := f.DoRead(r, meta, pos)
+	rr, sizes, err := f.DoRead(r, meta, pos)
 	if err != nil {
 		return err
 	}
 
-	f.vals, err = parquet.GetBools(rr, int(pos.N))
+	f.vals, err = parquet.GetBools(rr, int(pos.N), sizes)
 	return err
 }
 {{end}}`
@@ -486,12 +486,12 @@ func (f *BoolOptionalField) Schema() parquet.Field {
 }
 
 func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, err := f.DoRead(r, meta, pos)
+	rr, sizes, err := f.DoRead(r, meta, pos)
 	if err != nil {
 		return err
 	}
 
-	v, err := parquet.GetBools(rr, f.Values()-len(f.vals))
+	v, err := parquet.GetBools(rr, f.Values()-len(f.vals), sizes)
 	f.vals = append(f.vals, v...)
 	return err
 }

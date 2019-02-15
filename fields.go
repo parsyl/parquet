@@ -25,30 +25,32 @@ func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
-func (f *RequiredField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (io.Reader, error) {
+func (f *RequiredField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
-
+	var sizes []int
 	for nRead < pos.N {
 		ph, err := meta.PageHeader(r)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
+
+		sizes = append(sizes, int(ph.DataPageHeader.NumValues))
 
 		compressed := make([]byte, ph.CompressedPageSize)
 		if _, err := r.Read(compressed); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		data, err := snappy.Decode(nil, compressed)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		out = append(out, data...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
 
-	return bytes.NewBuffer(out), nil
+	return bytes.NewBuffer(out), sizes, nil
 }
 
 func (f *RequiredField) Name() string {
@@ -65,8 +67,12 @@ func NewOptionalField(col string) OptionalField {
 }
 
 func (f *OptionalField) Values() int {
+	return valsFromDefs(f.Defs)
+}
+
+func valsFromDefs(defs []int64) int {
 	var out int
-	for _, d := range f.Defs {
+	for _, d := range defs {
 		if d == 1 {
 			out++
 		}
@@ -96,37 +102,37 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
-func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (io.Reader, error) {
+func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
-
+	var sizes []int
 	for nRead < pos.N {
 		ph, err := meta.PageHeader(r)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		compressed := make([]byte, ph.CompressedPageSize)
 		if _, err := r.Read(compressed); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		uncompressed, err := snappy.Decode(nil, compressed)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		defs, l, err := ReadLevels(bytes.NewBuffer(uncompressed))
 
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		f.Defs = append(f.Defs, defs...)
+		sizes = append(sizes, valsFromDefs(defs))
 		out = append(out, uncompressed[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
-
-	return bytes.NewBuffer(out), nil
+	return bytes.NewBuffer(out), sizes, nil
 }
 
 func (f *OptionalField) Name() string {
