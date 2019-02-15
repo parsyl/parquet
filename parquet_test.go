@@ -281,6 +281,16 @@ func TestParquet(t *testing.T) {
 			input:    getOptBools(3001),
 		},
 		{
+			name:     "boolean really large amount large page size",
+			pageSize: 3000,
+			input:    getBools(3001),
+		},
+		{
+			name:     "boolean really large amount small page size",
+			pageSize: 3,
+			input:    getBools(3001),
+		},
+		{
 			name:     "boolean multiple row groups small page size",
 			pageSize: 2,
 			input: [][]Person{
@@ -439,14 +449,36 @@ func getOptBools(count int) [][]Person {
 		r := rand.Intn(3)
 		var b *bool
 		switch r {
-		case 1:
+		case 0:
 			x := true
 			b = &x
-		case 3:
+		case 1:
 			x := false
 			b = &x
 		}
 		rg = append(rg, Person{Keen: b})
+	}
+	if len(rg) > 0 {
+		out = append(out, rg)
+	}
+	return out
+}
+
+func getBools(count int) [][]Person {
+	var out [][]Person
+	var rg []Person
+	for i := 0; i < count; i++ {
+		if i > 0 && i%100 == 0 {
+			out = append(out, rg)
+			rg = []Person{}
+		}
+		r := rand.Intn(2)
+		var b bool
+		switch r {
+		case 0:
+			b = true
+		}
+		rg = append(rg, Person{Sleepy: b})
 	}
 	if len(rg) > 0 {
 		out = append(out, rg)
