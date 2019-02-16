@@ -76,24 +76,28 @@ func ReadLevels(in io.Reader) ([]int64, int, error) {
 	}
 
 	r := bytes.NewReader(buf)
+
+	var header uint64
+	var vals []int64
+	var err error
 	for r.Len() > 0 {
-		header, err := readUint64(r)
+		header, err = readUint64(r)
 		if err != nil {
 			return out, 0, err
 		}
 		if header&1 == 0 {
-			buf, err := readRLE(r, header, width)
+			vals, err = readRLE(r, header, width)
 			if err != nil {
 				return out, 0, err
 			}
-			out = append(out, buf...)
+			out = append(out, vals...)
 
 		} else {
-			buf, err := readRLEBitPacked(r, header, width)
+			vals, err = readRLEBitPacked(r, header, width)
 			if err != nil {
 				return out, 0, err
 			}
-			out = append(out, buf...)
+			out = append(out, vals...)
 		}
 	}
 	return out, int(l + 4), nil
