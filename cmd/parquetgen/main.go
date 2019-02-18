@@ -564,7 +564,7 @@ type ParquetWriter struct {
 	max int
 
 	meta *parquet.Metadata
-	w    *parquet.WriteCounter
+	w    io.Writer
 }
 
 func Fields() []Field {
@@ -580,7 +580,7 @@ func NewParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*Parquet
 func newParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*ParquetWriter, error) {
 	p := &ParquetWriter{
 		max:    1000,
-		w:      parquet.NewWriteCounter(w),
+		w:      w,
 		fields: Fields(),
 	}
 

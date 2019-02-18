@@ -82,7 +82,7 @@ func valsFromDefs(defs []int64) int {
 
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int) error {
 	buf := bytes.Buffer{}
-	wc := &WriteCounter{w: &buf}
+	wc := &writeCounter{w: &buf}
 
 	err := WriteLevels(wc, f.Defs)
 	if err != nil {
@@ -139,31 +139,31 @@ func (f *OptionalField) Name() string {
 	return f.col
 }
 
-type WriteCounter struct {
+type writeCounter struct {
 	n int64
 	w io.Writer
 }
 
-func NewWriteCounter(w io.Writer) *WriteCounter {
-	return &WriteCounter{w: w}
+func NewWriteCounter(w io.Writer) *writeCounter {
+	return &writeCounter{w: w}
 }
 
-func (w *WriteCounter) Write(p []byte) (int, error) {
+func (w *writeCounter) Write(p []byte) (int, error) {
 	n, err := w.w.Write(p)
 	w.n += int64(n)
 	return n, err
 }
 
-type ReadCounter struct {
+type readCounter struct {
 	n int64
 	r io.ReadSeeker
 }
 
-func (r *ReadCounter) Seek(o int64, w int) (int64, error) {
+func (r *readCounter) Seek(o int64, w int) (int64, error) {
 	return r.r.Seek(o, w)
 }
 
-func (r *ReadCounter) Read(p []byte) (int, error) {
+func (r *readCounter) Read(p []byte) (int, error) {
 	n, err := r.r.Read(p)
 	r.n += int64(n)
 	return n, err
