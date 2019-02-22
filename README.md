@@ -131,7 +131,7 @@ type Being struct {
 Parquetgen is the command that go generate should call in
 order to generate the code for your custom type:
 
-```shell
+```console
 $ parquetgen --help
 Usage of parquetgen:
   -ignore
