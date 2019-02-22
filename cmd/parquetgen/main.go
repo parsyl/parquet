@@ -15,7 +15,7 @@ import (
 
 var (
 	typ    = flag.String("type", "", "name of the struct that will used for writing and reading")
-	pkg    = flag.String("package", "", "the package where the -type lives")
+	pkg    = flag.String("package", "", "package of the generated code")
 	imp    = flag.String("import", "", "import statement of -type if it doesn't live in -package")
 	pth    = flag.String("input", "", "path to the go file that defines -type")
 	outPth = flag.String("output", "parquet.go", "name of the file that is produced, defaults to parquet.go")

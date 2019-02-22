@@ -143,7 +143,7 @@ Usage of parquetgen:
   -output string
     	name of the file that is produced, defaults to parquet.go (default "parquet.go")
   -package string
-    	the package where the -type lives
+    	package of the generated code
   -type string
     	name of the struct that will used for writing and reading
 ```
