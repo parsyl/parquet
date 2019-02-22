@@ -126,3 +126,24 @@ type Being struct {
 }
 ```
 
+## Parquetgen
+
+Parquetgen is the command that go generate should call in
+order to generate the code for your custom type:
+
+```shell
+$ parquetgen --help
+Usage of parquetgen:
+  -ignore
+    	ignore unsupported fields in -type, otherwise log.Fatal is called when an unsupported type is encountered (default true)
+  -import string
+    	import statement of -type if it doesn't live in -package
+  -input string
+    	path to the go file that defines -type
+  -output string
+    	name of the file that is produced, defaults to parquet.go (default "parquet.go")
+  -package string
+    	the package where the -type lives
+  -type string
+    	name of the struct that will used for writing and reading
+```

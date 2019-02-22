@@ -132,12 +132,12 @@ func TestParquet(t *testing.T) {
 			input: getPeople(100, 5000),
 		},
 		{
-			name:     "lots of people, small page size",
+			name:     "lots of people small page size",
 			pageSize: 5,
 			input:    getPeople(100, 5000),
 		},
 		{
-			name:     "lots of people, small row group size",
+			name:     "lots of people small row group size",
 			pageSize: 100,
 			input:    getPeople(5, 5000),
 		},

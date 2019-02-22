@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	typ    = flag.String("type", "", "type name")
-	pkg    = flag.String("package", "", "package name")
-	imp    = flag.String("import", "", "the type's import statement (only if it doesn't live in 'package')")
+	typ    = flag.String("type", "", "name of the struct that will used for writing and reading")
+	pkg    = flag.String("package", "", "the package where the -type lives")
+	imp    = flag.String("import", "", "import statement of -type if it doesn't live in -package")
 	pth    = flag.String("input", "", "path to the go file that defines -type")
-	outPth = flag.String("output", "parquet.go", "name of the file that is produced (defaults to parquet.go)")
-	ignore = flag.Bool("ignore", true, "ignore unsupported fields in -type")
+	outPth = flag.String("output", "parquet.go", "name of the file that is produced, defaults to parquet.go")
+	ignore = flag.Bool("ignore", true, "ignore unsupported fields in -type, otherwise log.Fatal is called when an unsupported type is encountered")
 )
 
 var funcs = template.FuncMap{
