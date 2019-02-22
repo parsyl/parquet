@@ -2,7 +2,11 @@ package parquet
 
 import (
 	"bytes"
+
 	"fmt"
+
+	"encoding/binary"
+
 	"io"
 
 	"github.com/golang/snappy"
@@ -10,6 +14,48 @@ import (
 )
 
 // RequiredField writes the raw data for required columns
+type IntStats struct {
+	len int
+}
+
+func NewIntStats(len int) IntStats {
+	return IntStats{len}
+}
+
+func (i IntStats) Statistics(min, max int64) *sch.Statistics {
+	return &sch.Statistics{
+		MinValue: i.minmax(min),
+		MaxValue: i.minmax(min),
+	}
+}
+
+func (i IntStats) minmax(val int64) []byte {
+	buf := make([]byte, i.len)
+	n := binary.PutVarint(buf, int64(val))
+	return buf[:n]
+}
+
+type UintStats struct {
+	len int
+}
+
+func NewUintStats(len int) UintStats {
+	return UintStats{len}
+}
+
+func (i UintStats) Statistics(min, max uint64) *sch.Statistics {
+	return &sch.Statistics{
+		MinValue: i.minmax(min),
+		MaxValue: i.minmax(min),
+	}
+}
+
+func (i UintStats) minmax(val uint64) []byte {
+	buf := make([]byte, i.len)
+	n := binary.PutUvarint(buf, uint64(val))
+	return buf[:n]
+}
+
 type RequiredField struct {
 	col         string
 	compression sch.CompressionCodec
@@ -37,9 +83,9 @@ func RequiredFieldUncompressed(r *RequiredField) {
 }
 
 // DoWrite writes the actual raw data.
-func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int) error {
+func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats *sch.Statistics) error {
 	l, cl, vals := compress(f.compression, vals)
-	if err := meta.WritePageHeader(w, f.col, l, cl, count, f.compression); err != nil {
+	if err := meta.WritePageHeader(w, f.col, l, cl, count, f.compression, stats); err != nil {
 		return err
 	}
 
@@ -119,7 +165,7 @@ func valsFromDefs(defs []int64) int {
 
 // DoWrite is called by all optional field types to write the definition levels
 // and raw data to the io.Writer
-func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int) error {
+func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats *sch.Statistics) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 	err := writeLevels(wc, f.Defs)
@@ -129,12 +175,21 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 
 	wc.Write(vals)
 	l, cl, vals := compress(f.compression, buf.Bytes())
-	if err := meta.WritePageHeader(w, f.col, l, cl, len(f.Defs), f.compression); err != nil {
+	if err := meta.WritePageHeader(w, f.col, l, cl, len(f.Defs), f.compression, stats); err != nil {
 		return err
 	}
-
 	_, err = w.Write(vals)
 	return err
+}
+
+func (f *OptionalField) NilCount() *int64 {
+	var out int64
+	for _, v := range f.Defs {
+		if v == 0 {
+			out++
+		}
+	}
+	return &out
 }
 
 // DoRead is called by all optional fields.  It reads the definition levels and uses

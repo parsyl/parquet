@@ -22,12 +22,40 @@ func (f *{{.FieldType}}) Schema() parquet.Field {
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
+
+	min := {{removeStar .TypeName}}({{maxType .}})
+	var max {{removeStar .TypeName}}
 	for _, v := range f.vals {
+		min, max = f.minMax(v, min, max)
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
+}
+
+func (f *{{.FieldType}}) minMax(val, min, max {{removeStar .TypeName}}) ({{removeStar .TypeName}}, {{removeStar .TypeName}}) {
+	if val < min {
+		min = val
+	}
+	if val > max {
+		max = val
+	}
+	return min, max
+}
+
+func (f *{{.FieldType}}) stats(min, max {{removeStar .TypeName}}) *sch.Statistics {
+	return &sch.Statistics{
+		MinValue:  f.minMaxBytes(min),
+		MaxValue:  f.minMaxBytes(max),
+		NullCount: f.NilCount(),
+	}
+}
+
+func (f *{{.FieldType}}) minMaxBytes(val {{removeStar .TypeName}}) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {

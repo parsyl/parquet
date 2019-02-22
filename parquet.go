@@ -79,7 +79,7 @@ func (m *Metadata) RowGroups() []RowGroup {
 }
 
 // WritePageHeader is called when no more data is written to a column chunk
-func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedLen, count int, comp sch.CompressionCodec) error {
+func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedLen, count int, comp sch.CompressionCodec, stats *sch.Statistics) error {
 	m.rows += int64(count)
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
@@ -90,6 +90,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedL
 			Encoding:                sch.Encoding_PLAIN,
 			DefinitionLevelEncoding: sch.Encoding_RLE,
 			RepetitionLevelEncoding: sch.Encoding_RLE,
+			Statistics:              stats,
 		},
 	}
 
@@ -428,3 +429,10 @@ func getMetaDataSize(r io.ReadSeeker) (int, error) {
 	var size uint32
 	return int(size), binary.Read(r, binary.LittleEndian, &size)
 }
+
+func Pint32(i int32) *int32       { return &i }
+func Puint32(i uint32) *uint32    { return &i }
+func Pint64(i int64) *int64       { return &i }
+func Puint64(i uint64) *uint64    { return &i }
+func Pfloat32(f float32) *float32 { return &f }
+func Pfloat64(f float64) *float64 { return &f }
