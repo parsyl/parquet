@@ -3,13 +3,21 @@ package parquet_test
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 //go:generate parquetgen -input parquet_test.go -type Person -package parquet_test -output parquet_generated_test.go
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 type Being struct {
 	ID  int32  `parquet:"id"`
@@ -118,6 +126,20 @@ func TestParquet(t *testing.T) {
 					{Sleepy: true},
 				},
 			},
+		},
+		{
+			name:  "lots of people",
+			input: getPeople(100, 5000),
+		},
+		{
+			name:     "lots of people, small page size",
+			pageSize: 5,
+			input:    getPeople(100, 5000),
+		},
+		{
+			name:     "lots of people, small row group size",
+			pageSize: 100,
+			input:    getPeople(5, 5000),
 		},
 		{
 			name: "numeric optional",
@@ -472,16 +494,87 @@ func getBools(count int) [][]Person {
 			out = append(out, rg)
 			rg = []Person{}
 		}
-		r := rand.Intn(2)
-		var b bool
-		switch r {
-		case 0:
-			b = true
-		}
-		rg = append(rg, Person{Sleepy: b})
+		rg = append(rg, Person{Sleepy: rand.Intn(2) == 1})
 	}
 	if len(rg) > 0 {
 		out = append(out, rg)
 	}
 	return out
+}
+
+func randString(n int) *string {
+	if rand.Intn(2) == 0 {
+		return nil
+	}
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	s := string(b)
+	return &s
+}
+
+func getPeople(rgSize, n int) [][]Person {
+	var out [][]Person
+	var rg []Person
+	for i := 0; i < n; i++ {
+		if i > 0 && i%rgSize == 0 {
+			out = append(out, rg)
+			rg = []Person{}
+		}
+		rg = append(rg, newPerson(i))
+	}
+
+	if len(rg) > 0 {
+		out = append(out, rg)
+	}
+	return out
+}
+
+func newPerson(i int) Person {
+	var age *int32
+	if i%2 == 0 {
+		a := int32(20 + i%5)
+		age = &a
+	}
+
+	var sadness *int64
+	if i%3 == 0 {
+		s := int64(i + 5)
+		sadness = &s
+	}
+
+	var lameness *float32
+	if rand.Intn(2) == 0 {
+		l := rand.Float32()
+		lameness = &l
+	}
+
+	var keen *bool
+	if i%5 == 0 {
+		b := true
+		keen = &b
+	}
+
+	var anv *uint64
+	if i%3 == 0 {
+		x := math.MaxUint64 - uint64(i*100)
+		anv = &x
+	}
+
+	return Person{
+		Being: Being{
+			ID:  int32(i),
+			Age: age,
+		},
+		Happiness:   int64(i * 2),
+		Sadness:     sadness,
+		Code:        randString(8),
+		Funkiness:   rand.Float32(),
+		Lameness:    lameness,
+		Keen:        keen,
+		Birthday:    uint32(i * 1000),
+		Anniversary: anv,
+	}
 }

@@ -87,7 +87,10 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedL
 		return err
 	}
 
-	m.updateRowGroup(col, dataLen, compressedLen, len(buf), count)
+	if err := m.updateRowGroup(col, dataLen, compressedLen, len(buf), count); err != nil {
+		return err
+	}
+
 	_, err = w.Write(buf)
 	return err
 }
