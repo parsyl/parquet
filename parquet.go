@@ -275,30 +275,26 @@ func (m *Metadata) PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
 	return pg, err
 }
 
-func (m *Metadata) getSize(r io.ReadSeeker) (int, error) {
-	_, err := r.Seek(-8, io.SeekEnd)
-	if err != nil {
-		return 0, err
-	}
-
-	var size uint32
-	return int(size), binary.Read(r, binary.LittleEndian, &size)
-}
-
-func (m *Metadata) ReadFooter(r io.ReadSeeker) error {
+func ReadFooter(r io.ReadSeeker) (*sch.FileMetaData, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
-	size, err := m.getSize(r)
+	size, err := getSize(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	_, err = r.Seek(-int64(size+8), io.SeekEnd)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	m.metadata = sch.NewFileMetaData()
-	return m.metadata.Read(p)
+	m := sch.NewFileMetaData()
+	return m, m.Read(p)
+}
+
+func (m *Metadata) ReadFooter(r io.ReadSeeker) error {
+	meta, err := ReadFooter(r)
+	m.metadata = meta
+	return err
 }
 
 type FieldFunc func(*sch.SchemaElement)
@@ -405,4 +401,14 @@ func unpack8uint32(data byte) [8]uint32 {
 	a[6] = uint32((data>>6)&1) << 0
 	a[7] = uint32((data>>7)&1) << 0
 	return a
+}
+
+func getSize(r io.ReadSeeker) (int, error) {
+	_, err := r.Seek(-8, io.SeekEnd)
+	if err != nil {
+		return 0, err
+	}
+
+	var size uint32
+	return int(size), binary.Read(r, binary.LittleEndian, &size)
 }
