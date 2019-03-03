@@ -19,8 +19,8 @@ func (f *BoolOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, sizes, err := f.DoRead(r, meta, pos)
+func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, sizes, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}

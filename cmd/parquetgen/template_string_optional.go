@@ -58,14 +58,14 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
+func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
 	start := len(f.Defs)
-	rr, _, err := f.DoRead(r, meta, pos)
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	for j := 0; j < pos.N; j++ {
+	for j := 0; j < pg.N; j++ {
 		if f.Defs[start+j] == 0 {
 			continue
 		}

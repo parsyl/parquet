@@ -39,13 +39,13 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *{{.FieldType}}) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *{{.FieldType}}) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	v := make([]{{.TypeName}}, int(pos.N))
+	v := make([]{{.TypeName}}, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
 	f.vals = append(f.vals, v...)
 	return err

@@ -27,11 +27,11 @@ func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
-func (f *RequiredField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (io.Reader, []int, error) {
+func (f *RequiredField) DoRead(r io.ReadSeeker, meta *Metadata, pg Page) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
 	var sizes []int
-	for nRead < pos.N {
+	for nRead < pg.N {
 		ph, err := meta.PageHeader(r)
 		if err != nil {
 			return nil, nil, err
@@ -39,24 +39,9 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (i
 
 		sizes = append(sizes, int(ph.DataPageHeader.NumValues))
 
-		var data []byte
-		if pos.Codec == sch.CompressionCodec_SNAPPY {
-			compressed := make([]byte, ph.CompressedPageSize)
-			if _, err := r.Read(compressed); err != nil {
-				return nil, nil, err
-			}
-
-			data, err = snappy.Decode(nil, compressed)
-			if err != nil {
-				return nil, nil, err
-			}
-		} else if pos.Codec == sch.CompressionCodec_UNCOMPRESSED {
-			data = make([]byte, ph.UncompressedPageSize)
-			if _, err := r.Read(data); err != nil {
-				return nil, nil, err
-			}
-		} else {
-			return nil, nil, fmt.Errorf("unsupported column chunk codec: %s", pos.Codec)
+		data, err := pageData(r, ph, pg)
+		if err != nil {
+			return nil, nil, err
 		}
 
 		out = append(out, data...)
@@ -115,34 +100,19 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
-func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (io.Reader, []int, error) {
+func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pg Page) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
 	var sizes []int
-	for nRead < pos.N {
+	for nRead < pg.N {
 		ph, err := meta.PageHeader(r)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		var data []byte
-		if pos.Codec == sch.CompressionCodec_SNAPPY {
-			compressed := make([]byte, ph.CompressedPageSize)
-			if _, err := r.Read(compressed); err != nil {
-				return nil, nil, err
-			}
-
-			data, err = snappy.Decode(nil, compressed)
-			if err != nil {
-				return nil, nil, err
-			}
-		} else if pos.Codec == sch.CompressionCodec_UNCOMPRESSED {
-			data = make([]byte, ph.UncompressedPageSize)
-			if _, err := r.Read(data); err != nil {
-				return nil, nil, err
-			}
-		} else {
-			return nil, nil, fmt.Errorf("unsupported column chunk codec: %s", pos.Codec)
+		data, err := pageData(r, ph, pg)
+		if err != nil {
+			return nil, nil, err
 		}
 
 		defs, l, err := ReadLevels(bytes.NewBuffer(data))
@@ -190,4 +160,30 @@ func (r *readCounter) Read(p []byte) (int, error) {
 	n, err := r.r.Read(p)
 	r.n += int64(n)
 	return n, err
+}
+
+func pageData(r io.ReadSeeker, ph *sch.PageHeader, pg Page) ([]byte, error) {
+	var data []byte
+	switch pg.Codec {
+	case sch.CompressionCodec_SNAPPY:
+		compressed := make([]byte, ph.CompressedPageSize)
+		if _, err := r.Read(compressed); err != nil {
+			return nil, err
+		}
+
+		var err error
+		data, err = snappy.Decode(nil, compressed)
+		if err != nil {
+			return nil, err
+		}
+	case sch.CompressionCodec_UNCOMPRESSED:
+		data = make([]byte, ph.UncompressedPageSize)
+		if _, err := r.Read(data); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported column chunk codec: %s", pg.Codec)
+	}
+
+	return data, nil
 }

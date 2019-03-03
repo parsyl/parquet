@@ -47,13 +47,13 @@ func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, rawBuf, len(f.vals))
 }
 
-func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, sizes, err := f.DoRead(r, meta, pos)
+func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, sizes, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	f.vals, err = parquet.GetBools(rr, int(pos.N), sizes)
+	f.vals, err = parquet.GetBools(rr, int(pg.N), sizes)
 	return err
 }
 {{end}}`

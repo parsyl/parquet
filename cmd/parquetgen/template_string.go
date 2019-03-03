@@ -47,13 +47,13 @@ func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	for j := 0; j < pos.N; j++ {
+	for j := 0; j < pg.N; j++ {
 		var x int32
 		if err := binary.Read(rr, binary.LittleEndian, &x); err != nil {
 			return err

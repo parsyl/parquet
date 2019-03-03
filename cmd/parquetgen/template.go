@@ -145,7 +145,7 @@ type Field interface {
 	Write(w io.Writer, meta *parquet.Metadata) error
 	Schema() parquet.Field
 	Scan(r *{{.Type}})
-	Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error
+	Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error
 	Name() string
 }
 
@@ -178,7 +178,7 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 	}
 	pr.rows = meta.Rows()
 	var err error
-	pr.offsets, err = meta.Offsets()
+	pr.pages, err = meta.Pages()
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ type ParquetReader struct {
 	rows           int64
 	rowGroupCursor int64
 	rowGroupCount  int64
-	offsets        map[string][]parquet.Position
+	pages        map[string][]parquet.Page
 	meta           *parquet.Metadata
 	err            error
 
@@ -237,16 +237,16 @@ func (p *ParquetReader) readRowGroup() error {
 		if !ok {
 			return fmt.Errorf("unknown field: %s", name)
 		}
-		offsets := p.offsets[f.Name()]
-		if len(offsets) <= p.index {
+		pages := p.pages[f.Name()]
+		if len(pages) <= p.index {
 			break
 		}
 
-		o := offsets[0]
-		if err := f.Read(p.r, p.meta, o); err != nil {
+		pg := pages[0]
+		if err := f.Read(p.r, p.meta, pg); err != nil {
 			return fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
 		}
-		p.offsets[f.Name()] = p.offsets[f.Name()][1:]
+		p.pages[f.Name()] = p.pages[f.Name()][1:]
 	}
 	p.rowGroups = p.rowGroups[1:]
 	return nil

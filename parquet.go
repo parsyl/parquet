@@ -17,7 +17,9 @@ type Field struct {
 	RepetitionType FieldFunc
 }
 
-type Position struct {
+// Page keeps track of metadata for each ColumnChunk
+type Page struct {
+	// N is the number of values in the ColumnChunk
 	N      int
 	Size   int
 	Offset int64
@@ -245,11 +247,12 @@ func schemaElements(fields []Field) schema {
 	return schema{schema: out, lookup: m}
 }
 
-func (m *Metadata) Offsets() (map[string][]Position, error) {
+// Pages maps each column name to a Page
+func (m *Metadata) Pages() (map[string][]Page, error) {
 	if len(m.metadata.RowGroups) == 0 {
 		return nil, nil
 	}
-	out := map[string][]Position{}
+	out := map[string][]Page{}
 	for _, rg := range m.metadata.RowGroups {
 		for _, ch := range rg.Columns {
 			pth := ch.MetaData.PathInSchema
@@ -258,7 +261,7 @@ func (m *Metadata) Offsets() (map[string][]Position, error) {
 				return nil, fmt.Errorf("could not find schema for %v", pth)
 			}
 
-			pos := Position{
+			pos := Page{
 				N:      int(ch.MetaData.NumValues),
 				Offset: ch.FileOffset,
 				Size:   int(ch.MetaData.TotalCompressedSize),

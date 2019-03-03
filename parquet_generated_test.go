@@ -150,7 +150,7 @@ type Field interface {
 	Write(w io.Writer, meta *parquet.Metadata) error
 	Schema() parquet.Field
 	Scan(r *Person)
-	Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error
+	Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error
 	Name() string
 }
 
@@ -183,7 +183,7 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 	}
 	pr.rows = meta.Rows()
 	var err error
-	pr.offsets, err = meta.Offsets()
+	pr.pages, err = meta.Pages()
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ type ParquetReader struct {
 	rows           int64
 	rowGroupCursor int64
 	rowGroupCount  int64
-	offsets        map[string][]parquet.Position
+	pages          map[string][]parquet.Page
 	meta           *parquet.Metadata
 	err            error
 
@@ -242,16 +242,16 @@ func (p *ParquetReader) readRowGroup() error {
 		if !ok {
 			return fmt.Errorf("unknown field: %s", name)
 		}
-		offsets := p.offsets[f.Name()]
-		if len(offsets) <= p.index {
+		pages := p.pages[f.Name()]
+		if len(pages) <= p.index {
 			break
 		}
 
-		o := offsets[0]
-		if err := f.Read(p.r, p.meta, o); err != nil {
+		pg := pages[0]
+		if err := f.Read(p.r, p.meta, pg); err != nil {
 			return fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
 		}
-		p.offsets[f.Name()] = p.offsets[f.Name()][1:]
+		p.pages[f.Name()] = p.pages[f.Name()][1:]
 	}
 	p.rowGroups = p.rowGroups[1:]
 	return nil
@@ -325,13 +325,13 @@ func (f *Int32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Int32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Int32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	v := make([]int32, int(pos.N))
+	v := make([]int32, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
 	f.vals = append(f.vals, v...)
 	return err
@@ -370,8 +370,8 @@ func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Int32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Int32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
@@ -445,13 +445,13 @@ func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Int64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Int64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	v := make([]int64, int(pos.N))
+	v := make([]int64, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
 	f.vals = append(f.vals, v...)
 	return err
@@ -490,8 +490,8 @@ func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Int64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Int64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
@@ -584,14 +584,14 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
+func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
 	start := len(f.Defs)
-	rr, _, err := f.DoRead(r, meta, pos)
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	for j := 0; j < pos.N; j++ {
+	for j := 0; j < pg.N; j++ {
 		if f.Defs[start+j] == 0 {
 			continue
 		}
@@ -648,13 +648,13 @@ func (f *Float32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Float32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Float32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	v := make([]float32, int(pos.N))
+	v := make([]float32, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
 	f.vals = append(f.vals, v...)
 	return err
@@ -693,8 +693,8 @@ func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error 
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Float32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Float32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
@@ -749,8 +749,8 @@ func (f *BoolOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, sizes, err := f.DoRead(r, meta, pos)
+func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, sizes, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
@@ -837,13 +837,13 @@ func (f *Uint32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Uint32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Uint32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	v := make([]uint32, int(pos.N))
+	v := make([]uint32, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
 	f.vals = append(f.vals, v...)
 	return err
@@ -882,8 +882,8 @@ func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
 }
 
-func (f *Uint64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, _, err := f.DoRead(r, meta, pos)
+func (f *Uint64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
@@ -966,12 +966,12 @@ func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, rawBuf, len(f.vals))
 }
 
-func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pos parquet.Position) error {
-	rr, sizes, err := f.DoRead(r, meta, pos)
+func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, sizes, err := f.DoRead(r, meta, pg)
 	if err != nil {
 		return err
 	}
 
-	f.vals, err = parquet.GetBools(rr, int(pos.N), sizes)
+	f.vals, err = parquet.GetBools(rr, int(pg.N), sizes)
 	return err
 }
