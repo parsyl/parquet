@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/format"
@@ -16,6 +17,7 @@ import (
 )
 
 var (
+	footer       = flag.Bool("footer", false, "print the footer of a parquet file and exit")
 	typ          = flag.String("type", "", "name of the struct that will used for writing and reading")
 	pkg          = flag.String("package", "", "package of the generated code")
 	imp          = flag.String("import", "", "import statement of -type if it doesn't live in -package")
@@ -79,11 +81,30 @@ func main() {
 		log.Fatal("choose -parquet or -input, but not both")
 	}
 
-	if *parq == "" {
+	if *footer {
+		readFooter()
+	} else if *parq == "" {
 		fromStruct(*pth)
 	} else {
 		fromParquet()
 	}
+}
+
+func readFooter() {
+	pf, err := os.Open(*parq)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	footer, err := parquet.ReadFooter(pf)
+	if err != nil {
+		log.Fatal("couldn't read footer: ", err)
+	}
+
+	pf.Close()
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	enc.Encode(footer)
 }
 
 func fromParquet() {

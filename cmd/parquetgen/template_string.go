@@ -5,10 +5,10 @@ type StringField struct {
 	parquet.RequiredField
 	vals []string
 	val  func(r {{.Type}}) string
-	read func(r {{.Type}}, v string)
+	read func(r *{{.Type}}, v string)
 }
 
-func NewStringField(val func(r {{.Type}}) string, read func(r {{.Type}}, v string), col string) *StringField {
+func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v string), col string) *StringField {
 	return &StringField{
 		val:           val,
 		read:          read,
@@ -20,7 +20,7 @@ func (f *StringField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *StringField) Scan(r {{.Type}}) {
+func (f *StringField) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
