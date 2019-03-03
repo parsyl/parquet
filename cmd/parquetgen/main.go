@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	footer       = flag.Bool("footer", false, "print the footer of a parquet file and exit")
+	footer       = flag.Bool("footer", false, "print the footer of a parquet file (-parquet) and exit")
 	typ          = flag.String("type", "", "name of the struct that will used for writing and reading")
 	pkg          = flag.String("package", "", "package of the generated code")
 	imp          = flag.String("import", "", "import statement of -type if it doesn't live in -package")
