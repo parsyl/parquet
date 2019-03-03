@@ -148,6 +148,8 @@ order to generate the code for your custom type:
 ```console
 $ parquetgen --help
 Usage of parquetgen:
+  -footer
+    	print the footer of a parquet file and exit
   -ignore
     	ignore unsupported fields in -type, otherwise log.Fatal is called when an unsupported type is encountered (default true)
   -import string
