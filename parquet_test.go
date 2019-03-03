@@ -65,6 +65,22 @@ func BenchmarkRead(b *testing.B) {
 	}
 }
 
+func BenchmarkWrite(b *testing.B) {
+	var buf bytes.Buffer
+	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
+	assert.Nil(b, err, "benchmark write")
+	input := getPeople(b.N, b.N)
+	rg := input[0]
+
+	for i := 0; i < b.N; i++ {
+		p := rg[i]
+		w.Add(p)
+	}
+
+	err = w.Close()
+	assert.Nil(b, err, "benchmark write")
+}
+
 func TestParquet(t *testing.T) {
 	type testCase struct {
 		name  string
