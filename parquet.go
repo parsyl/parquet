@@ -128,7 +128,6 @@ func (m *Metadata) Rows() int64 {
 
 // Footer writes the FileMetaData at the end of the file.
 func (m *Metadata) Footer(w io.Writer) error {
-
 	f := &sch.FileMetaData{
 		Version:   1,
 		Schema:    m.schema.schema,
@@ -143,13 +142,8 @@ func (m *Metadata) Footer(w io.Writer) error {
 			continue
 		}
 
-		for _, col := range mrg.fields.schema {
-			if col.Name == "root" {
-				continue
-			}
-
+		for _, col := range mrg.fields.schema[1:] {
 			ch, ok := mrg.columns[col.Name]
-
 			if !ok {
 				return fmt.Errorf("unknown column %s", col.Name)
 			}
@@ -210,7 +204,6 @@ func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count i
 	}
 
 	ch.MetaData.NumValues += int64(count)
-
 	ch.MetaData.TotalUncompressedSize += int64(dataLen)
 	ch.MetaData.TotalCompressedSize += int64(compressedLen)
 	r.columns[col] = ch
@@ -247,7 +240,7 @@ func schemaElements(fields []Field) schema {
 	return schema{schema: out, lookup: m}
 }
 
-// Pages maps each column name to a Page
+// Pages maps each column name its Pages
 func (m *Metadata) Pages() (map[string][]Page, error) {
 	if len(m.metadata.RowGroups) == 0 {
 		return nil, nil
@@ -396,16 +389,17 @@ func min(a, b int) int {
 }
 
 func unpack8uint32(data byte) [8]uint32 {
-	var a [8]uint32
-	a[0] = uint32((data>>0)&1) << 0
-	a[1] = uint32((data>>1)&1) << 0
-	a[2] = uint32((data>>2)&1) << 0
-	a[3] = uint32((data>>3)&1) << 0
-	a[4] = uint32((data>>4)&1) << 0
-	a[5] = uint32((data>>5)&1) << 0
-	a[6] = uint32((data>>6)&1) << 0
-	a[7] = uint32((data>>7)&1) << 0
-	return a
+	x := uint32(data)
+	return [8]uint32{
+		(x >> 0) & 1,
+		(x >> 1) & 1,
+		(x >> 2) & 1,
+		(x >> 3) & 1,
+		(x >> 4) & 1,
+		(x >> 5) & 1,
+		(x >> 6) & 1,
+		(x >> 7) & 1,
+	}
 }
 
 func getSize(r io.ReadSeeker) (int, error) {
