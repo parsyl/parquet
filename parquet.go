@@ -352,7 +352,7 @@ func StringType(se *sch.SchemaElement) {
 }
 
 func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
-	var vals [8]uint32
+	var vals [8]bool
 	data, _ := ioutil.ReadAll(r)
 	out := make([]bool, 0, n)
 	for _, nVals := range pageSizes {
@@ -369,10 +369,10 @@ func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
 		chunk := data[:l]
 		data = data[l:]
 		for _, b := range chunk {
-			vals = unpack8uint32(b)
+			vals = unpackBools(b)
 			m := min(nVals, 8)
 			for j := 0; j < m; j++ {
-				out = append(out, vals[j] == 1)
+				out = append(out, vals[j])
 			}
 			i += m
 			nVals -= m
@@ -388,17 +388,17 @@ func min(a, b int) int {
 	return b
 }
 
-func unpack8uint32(data byte) [8]uint32 {
-	x := uint32(data)
-	return [8]uint32{
-		(x >> 0) & 1,
-		(x >> 1) & 1,
-		(x >> 2) & 1,
-		(x >> 3) & 1,
-		(x >> 4) & 1,
-		(x >> 5) & 1,
-		(x >> 6) & 1,
-		(x >> 7) & 1,
+func unpackBools(data byte) [8]bool {
+	x := uint8(data)
+	return [8]bool{
+		(x>>0)&1 == 1,
+		(x>>1)&1 == 1,
+		(x>>2)&1 == 1,
+		(x>>3)&1 == 1,
+		(x>>4)&1 == 1,
+		(x>>5)&1 == 1,
+		(x>>6)&1 == 1,
+		(x>>7)&1 == 1,
 	}
 }
 

@@ -38,6 +38,33 @@ type Person struct {
 	Sleepy      bool
 }
 
+func BenchmarkRead(b *testing.B) {
+	var buf bytes.Buffer
+	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
+	assert.Nil(b, err, "benchmark read")
+	input := getPeople(100000, b.N)
+	for _, rowgroup := range input {
+		for _, p := range rowgroup {
+			w.Add(p)
+		}
+		assert.Nil(b, w.Write(), "benchmark read")
+	}
+
+	err = w.Close()
+	assert.Nil(b, err, "benchmark read")
+
+	r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+	assert.Nil(b, err)
+
+	for i := 0; i < b.N; i++ {
+		if !r.Next() {
+			b.Fatal("unexpected end of Next()")
+		}
+		var p Person
+		r.Scan(&p)
+	}
+}
+
 func TestParquet(t *testing.T) {
 	type testCase struct {
 		name  string
