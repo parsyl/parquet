@@ -153,6 +153,10 @@ Usage of parquetgen:
     	name of the file that is produced, defaults to parquet.go (default "parquet.go")
   -package string
     	package of the generated code
+  -parquet string
+    	path to a parquet file (if you are generating code based on an existing parquet file)
+  -struct-output string
+    	name of the file that is produced, defaults to parquet.go (default "generated_struct.go")
   -type string
     	name of the struct that will used for writing and reading
 ```

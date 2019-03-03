@@ -22,7 +22,7 @@ var (
 	pth          = flag.String("input", "", "path to the go file that defines -type")
 	outPth       = flag.String("output", "parquet.go", "name of the file that is produced, defaults to parquet.go")
 	ignore       = flag.Bool("ignore", true, "ignore unsupported fields in -type, otherwise log.Fatal is called when an unsupported type is encountered")
-	parq         = flag.String("parquet", "", "path to a parquet file")
+	parq         = flag.String("parquet", "", "path to a parquet file (if you are generating code based on an existing parquet file)")
 	structOutPth = flag.String("struct-output", "generated_struct.go", "name of the file that is produced, defaults to parquet.go")
 
 	parquetTypes = map[string]string{
@@ -74,6 +74,11 @@ type fieldType struct {
 
 func main() {
 	flag.Parse()
+
+	if *pth != "" && *parq != "" {
+		log.Fatal("choose -parquet or -input, but not both")
+	}
+
 	if *parq == "" {
 		fromStruct(*pth)
 	} else {
