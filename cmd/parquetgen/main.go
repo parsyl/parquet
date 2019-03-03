@@ -91,6 +91,10 @@ func main() {
 }
 
 func readFooter() {
+	if *parq == "" {
+		log.Fatal("-parquet is required with -footer")
+	}
+
 	pf, err := os.Open(*parq)
 	if err != nil {
 		log.Fatal(err)
