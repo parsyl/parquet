@@ -12,6 +12,9 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-*.parquet
+
 examples/people/parquet.go
+examples/people/people.parquet
 examples/people/read.py
+examples/via_parquet/generated_struct.go
+examples/via_parquet/parquet.go
