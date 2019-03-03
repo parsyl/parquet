@@ -148,14 +148,14 @@ order to generate the code for your custom type:
 ```console
 $ parquetgen --help
 Usage of parquetgen:
-  -footer
-    	print the footer of a parquet file (-parquet) and exit
   -ignore
     	ignore unsupported fields in -type, otherwise log.Fatal is called when an unsupported type is encountered (default true)
   -import string
     	import statement of -type if it doesn't live in -package
   -input string
     	path to the go file that defines -type
+  -metadata
+    	print the metadata of a parquet file (-parquet) and exit
   -output string
     	name of the file that is produced, defaults to parquet.go (default "parquet.go")
   -package string

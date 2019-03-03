@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	footer       = flag.Bool("footer", false, "print the footer of a parquet file (-parquet) and exit")
+	metadata     = flag.Bool("metadata", false, "print the metadata of a parquet file (-parquet) and exit")
 	typ          = flag.String("type", "", "name of the struct that will used for writing and reading")
 	pkg          = flag.String("package", "", "package of the generated code")
 	imp          = flag.String("import", "", "import statement of -type if it doesn't live in -package")
@@ -81,7 +81,7 @@ func main() {
 		log.Fatal("choose -parquet or -input, but not both")
 	}
 
-	if *footer {
+	if *metadata {
 		readFooter()
 	} else if *parq == "" {
 		fromStruct(*pth)
@@ -100,7 +100,7 @@ func readFooter() {
 		log.Fatal(err)
 	}
 
-	footer, err := parquet.ReadFooter(pf)
+	footer, err := parquet.ReadMetaData(pf)
 	if err != nil {
 		log.Fatal("couldn't read footer: ", err)
 	}
@@ -117,7 +117,7 @@ func fromParquet() {
 		log.Fatal(err)
 	}
 
-	footer, err := parquet.ReadFooter(pf)
+	footer, err := parquet.ReadMetaData(pf)
 	if err != nil {
 		log.Fatal("couldn't read footer: ", err)
 	}
