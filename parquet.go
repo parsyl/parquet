@@ -126,6 +126,7 @@ func (m *Metadata) Rows() int64 {
 	return m.metadata.NumRows
 }
 
+// Footer writes the FileMetaData at the end of the file.
 func (m *Metadata) Footer(w io.Writer) error {
 
 	f := &sch.FileMetaData{
@@ -158,7 +159,6 @@ func (m *Metadata) Footer(w io.Writer) error {
 			rg.TotalByteSize += ch.MetaData.TotalCompressedSize
 			rg.Columns = append(rg.Columns, &ch)
 			pos += ch.MetaData.TotalCompressedSize
-
 		}
 
 		rg.NumRows = rg.NumRows / int64(len(mrg.fields.schema)-1)
@@ -261,13 +261,13 @@ func (m *Metadata) Pages() (map[string][]Page, error) {
 				return nil, fmt.Errorf("could not find schema for %v", pth)
 			}
 
-			pos := Page{
+			pg := Page{
 				N:      int(ch.MetaData.NumValues),
 				Offset: ch.FileOffset,
 				Size:   int(ch.MetaData.TotalCompressedSize),
 				Codec:  ch.MetaData.Codec,
 			}
-			out[se.Name] = append(out[se.Name], pos)
+			out[se.Name] = append(out[se.Name], pg)
 		}
 	}
 	return out, nil

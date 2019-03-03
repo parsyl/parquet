@@ -8,10 +8,9 @@ limitations.  The PageType of each PageHeader must be DATA_PAGE and the Codec
 (defined in ColumnMetaData) must be PLAIN or SNAPPY. Also, the parquet file's
 schema must consist of the currently [supported types](#supported-types).  But
 wait, there's more.  Some of the encodings, like DELTA_BINARY_PACKED, BIT_PACKED,
-PLAIN_DICTIONARY, BIT_PACKED, and DELTA_BYTE_ARRAY are also not supported.  I would
-guess there are other parquet options that will cause problems since there are
-so many possibilities.
-
+PLAIN_DICTIONARY, and DELTA_BYTE_ARRAY are also not supported.  I would guess
+there are other parquet options that will cause problems since there are so many
+possibilities.
 
 ## Installation
 
