@@ -21,6 +21,7 @@ type Position struct {
 	N      int
 	Size   int
 	Offset int64
+	Codec  sch.CompressionCodec
 }
 
 type schema struct {
@@ -261,6 +262,7 @@ func (m *Metadata) Offsets() (map[string][]Position, error) {
 				N:      int(ch.MetaData.NumValues),
 				Offset: ch.FileOffset,
 				Size:   int(ch.MetaData.TotalCompressedSize),
+				Codec:  ch.MetaData.Codec,
 			}
 			out[se.Name] = append(out[se.Name], pos)
 		}
