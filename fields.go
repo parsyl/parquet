@@ -2,9 +2,11 @@ package parquet
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 
 	"github.com/golang/snappy"
+	sch "github.com/parsyl/parquet/generated"
 )
 
 type RequiredField struct {
@@ -37,15 +39,26 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (i
 
 		sizes = append(sizes, int(ph.DataPageHeader.NumValues))
 
-		compressed := make([]byte, ph.CompressedPageSize)
-		if _, err := r.Read(compressed); err != nil {
-			return nil, nil, err
+		var data []byte
+		if pos.Codec == sch.CompressionCodec_SNAPPY {
+			compressed := make([]byte, ph.CompressedPageSize)
+			if _, err := r.Read(compressed); err != nil {
+				return nil, nil, err
+			}
+
+			data, err = snappy.Decode(nil, compressed)
+			if err != nil {
+				return nil, nil, err
+			}
+		} else if pos.Codec == sch.CompressionCodec_UNCOMPRESSED {
+			data = make([]byte, ph.UncompressedPageSize)
+			if _, err := r.Read(data); err != nil {
+				return nil, nil, err
+			}
+		} else {
+			return nil, nil, fmt.Errorf("unsupported column chunk codec: %s", pos.Codec)
 		}
 
-		data, err := snappy.Decode(nil, compressed)
-		if err != nil {
-			return nil, nil, err
-		}
 		out = append(out, data...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
@@ -112,24 +125,34 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pos Position) (i
 			return nil, nil, err
 		}
 
-		compressed := make([]byte, ph.CompressedPageSize)
-		if _, err := r.Read(compressed); err != nil {
-			return nil, nil, err
+		var data []byte
+		if pos.Codec == sch.CompressionCodec_SNAPPY {
+			compressed := make([]byte, ph.CompressedPageSize)
+			if _, err := r.Read(compressed); err != nil {
+				return nil, nil, err
+			}
+
+			data, err = snappy.Decode(nil, compressed)
+			if err != nil {
+				return nil, nil, err
+			}
+		} else if pos.Codec == sch.CompressionCodec_UNCOMPRESSED {
+			data = make([]byte, ph.UncompressedPageSize)
+			if _, err := r.Read(data); err != nil {
+				return nil, nil, err
+			}
+		} else {
+			return nil, nil, fmt.Errorf("unsupported column chunk codec: %s", pos.Codec)
 		}
 
-		uncompressed, err := snappy.Decode(nil, compressed)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		defs, l, err := ReadLevels(bytes.NewBuffer(uncompressed))
+		defs, l, err := ReadLevels(bytes.NewBuffer(data))
 
 		if err != nil {
 			return nil, nil, err
 		}
 		f.Defs = append(f.Defs, defs...)
 		sizes = append(sizes, valsFromDefs(defs))
-		out = append(out, uncompressed[l:]...)
+		out = append(out, data[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
 	return bytes.NewBuffer(out), sizes, nil
