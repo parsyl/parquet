@@ -13,6 +13,7 @@ import (
 
 	"github.com/parsyl/parquet"
 	sch "github.com/parsyl/parquet/generated"
+	"github.com/parsyl/parquet/internal/cases"
 	"github.com/parsyl/parquet/internal/parse"
 )
 
@@ -40,8 +41,8 @@ var (
 		"removeStar": func(s string) string {
 			return strings.Replace(s, "*", "", 1)
 		},
-		"titlecase": func(s string) string {
-			return strings.Title(s)
+		"camelcase": func(s string) string {
+			return cases.Camel(s)
 		},
 		"dedupe": func(fields []parse.Field) []parse.Field {
 			seen := map[string]bool{}

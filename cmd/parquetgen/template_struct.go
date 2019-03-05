@@ -10,4 +10,4 @@ type {{.StructName}} struct { {{range .Fields}}
 	{{template "structField" .}}{{end}}
 }`
 
-var structFieldTpl = fmt.Sprintf(`{{define "structField"}}{{titlecase .Name}} {{.Type}} %sparquet:"{{.Name}}"%s{{end}}`, "`", "`") // darn, can't escape backticks
+var structFieldTpl = fmt.Sprintf(`{{define "structField"}}{{camelcase .Name}} {{.Type}} %sparquet:"{{.Name}}"%s{{end}}`, "`", "`") // darn, can't escape backticks
