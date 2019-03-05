@@ -15,9 +15,12 @@ type testCase struct {
 func TestCamelCase(t *testing.T) {
 	testCases := []testCase{
 		{"HelloWorld!", "HelloWorld!"},
+		{"helloWorld!", "HelloWorld!"},
 		{"hello_world!", "HelloWorld!"},
 		{"hello_world_dammit", "HelloWorldDammit"},
 		{"hello_world_", "HelloWorld"},
+		{"_hello_world", "HelloWorld"},
+		{"_hello_world_", "HelloWorld"},
 		{"hello", "Hello"},
 	}
 
