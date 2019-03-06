@@ -22,6 +22,9 @@ func TestCamelCase(t *testing.T) {
 		{"_hello_world", "HelloWorld"},
 		{"_hello_world_", "HelloWorld"},
 		{"hello", "Hello"},
+		{"id", "ID"},
+		{"user_id", "UserID"},
+		{"identification", "Identification"},
 	}
 
 	for i, tc := range testCases {
