@@ -248,7 +248,7 @@ func getFieldType(se *sch.SchemaElement) string {
 	s := se.Type.String()
 	out, ok := parquetTypes[s]
 	if !ok {
-		log.Fatal("unsupported parquet schema type: %s", s)
+		log.Fatalf("unsupported parquet schema type: %s", s)
 	}
 
 	if se.RepetitionType != nil && *se.RepetitionType == sch.FieldRepetitionType_REPEATED {
