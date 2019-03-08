@@ -1,5 +1,7 @@
 package rle
 
+import "fmt"
+
 type BytePacker interface {
 	Pack([]int64, int, []byte, int)
 }
@@ -18,7 +20,7 @@ type RLE struct {
 	toBytesCalled             bool
 }
 
-func newRLE(width int32) *RLE {
+func New(width int32) *RLE {
 	r := &RLE{
 		baos:           []byte{},
 		bitWidth:       width,
@@ -42,7 +44,7 @@ func (r *RLE) reset(clearBuf bool) {
 	r.toBytesCalled = false
 }
 
-func (r *RLE) write(value int64) {
+func (r *RLE) Write(value int64) {
 	if value == r.previousValue {
 		// keep track of how many times we've seen this value
 		// consecutively
@@ -127,6 +129,59 @@ func (r *RLE) endPreviousBitPackedRun() {
 	r.bitPackedGroupCount = 0
 }
 
+func (r *RLE) writeRLERun() error {
+	r.endPreviousBitPackedRun()
+	// write the rle-header (lsb of 0 signifies a rle run)
+
+	r.baos = r.leb128(r.repeatCount<<1, r.baos)
+	// write the repeated-value
+	x, err := r.writeIntLittleEndianPaddedOnBitWidth(r.previousValue, r.bitWidth)
+	if err != nil {
+		return err
+	}
+	r.baos = append(r.baos, x...)
+	//BytesUtils.writeIntLittleEndianPaddedOnBitWidth(baos, previousValue, bitWidth);
+
+	// reset the repeat count
+	r.repeatCount = 0
+
+	// throw away all the buffered values, they were just repeats and they've been written
+	r.numBufferedValues = 0
+	return nil
+}
+
+func (r *RLE) writeIntLittleEndianPaddedOnBitWidth(v int64, bitWidth int32) ([]byte, error) {
+	bytesWidth := (bitWidth + 7) / 8
+	switch bytesWidth {
+	case 0:
+		return nil, nil
+	case 1:
+		return []byte{
+			byte(uint(v>>0) & 0xFF),
+		}, nil
+	case 2:
+		return []byte{
+			byte(uint(v>>0) & 0xFF),
+			byte(uint(v>>8) & 0xFF),
+		}, nil
+	case 3:
+		return []byte{
+			byte(uint(v>>0) & 0xFF),
+			byte(uint(v>>8) & 0xFF),
+			byte(uint(v>>16) & 0xFF),
+		}, nil
+	case 4:
+		return []byte{
+			byte(uint(v>>0) & 0xFF),
+			byte(uint(v>>8) & 0xFF),
+			byte(uint(v>>16) & 0xFF),
+			byte(uint(v>>24) & 0xFF),
+		}, nil
+	default:
+		return nil, fmt.Errorf("Encountered value (%d) that requires more than 4 bytes", v)
+	}
+}
+
 func (r *RLE) leb128(value int, out []byte) []byte {
 	for (value & 0xFFFFFF80) != 0 {
 		out = append(out, byte((value&0x7F)|0x80))
@@ -135,17 +190,6 @@ func (r *RLE) leb128(value int, out []byte) []byte {
 	return append(out, byte(value&0x7F))
 }
 
-func (r *RLE) writeRLERun() {
-	r.endPreviousBitPackedRun()
-	// write the rle-header (lsb of 0 signifies a rle run)
-
-	r.baos = r.leb128(r.repeatCount<<1, r.baos)
-	// write the repeated-value
-	//BytesUtils.writeIntLittleEndianPaddedOnBitWidth(baos, previousValue, bitWidth);
-
-	// reset the repeat count
-	r.repeatCount = 0
-
-	// throw away all the buffered values, they were just repeats and they've been written
-	r.numBufferedValues = 0
+func (r *RLE) Bytes() []byte {
+	return r.baos
 }
