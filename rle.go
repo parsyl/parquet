@@ -3,6 +3,7 @@ package parquet
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"math/bits"
 )
@@ -36,6 +37,7 @@ func writeRLE(levels []int64, width int32) []byte {
 		for reps < l && levels[reps] == levels[i] {
 			reps++
 		}
+
 		var buf bytes.Buffer
 		binary.Write(&buf, binary.LittleEndian, levels[i])
 		val = buf.Bytes()
@@ -82,6 +84,7 @@ func ReadLevels(in io.Reader) ([]int64, int, error) {
 	var err error
 	for r.Len() > 0 {
 		header, err = readUint64(r)
+		fmt.Printf("header: %d, %d\n", header, header&1)
 		if err != nil {
 			return out, 0, err
 		}

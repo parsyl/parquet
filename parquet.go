@@ -275,7 +275,7 @@ func (m *Metadata) PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
 
 func ReadMetaData(r io.ReadSeeker) (*sch.FileMetaData, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
-	size, err := getSize(r)
+	size, err := getMetaDataSize(r)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func unpackBools(data byte) [8]bool {
 	}
 }
 
-func getSize(r io.ReadSeeker) (int, error) {
+func getMetaDataSize(r io.ReadSeeker) (int, error) {
 	_, err := r.Seek(-8, io.SeekEnd)
 	if err != nil {
 		return 0, err

@@ -261,6 +261,20 @@ func TestParquet(t *testing.T) {
 			},
 		},
 		{
+			name:     "boolean optional lots of repetition",
+			pageSize: 5,
+			input: [][]Person{
+				{
+					{Keen: pbool(true)},
+					{Keen: pbool(true)},
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: nil},
+					{Keen: nil},
+				},
+			},
+		},
+		{
 			name:     "boolean optional small page size",
 			pageSize: 2,
 			input: [][]Person{
