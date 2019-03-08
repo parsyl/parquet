@@ -1,13 +1,18 @@
 package rle
 
-import "fmt"
+import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
+	"io"
+)
 
-type BytePacker interface {
-	Pack([]int64, int, []byte, int)
-}
+const (
+	mask1 = uint64(0x7F)
+	mask2 = uint64(0x80)
+)
 
 type RLE struct {
-	packer                    BytePacker
 	baos                      []byte
 	bitWidth                  int32
 	packBuffer                []byte
@@ -97,7 +102,7 @@ func (r *RLE) writeOrAppendBitPackedRun() {
 		r.bitPackedRunHeaderPointer = len(r.baos) - 1
 	}
 
-	r.packer.Pack(r.bufferedValues, 0, r.packBuffer, 0)
+	r.pack()
 	r.baos = append(r.baos, r.packBuffer...)
 
 	// empty the buffer, they've all been written
@@ -132,15 +137,13 @@ func (r *RLE) endPreviousBitPackedRun() {
 func (r *RLE) writeRLERun() error {
 	r.endPreviousBitPackedRun()
 	// write the rle-header (lsb of 0 signifies a rle run)
-
-	r.baos = r.leb128(r.repeatCount<<1, r.baos)
+	r.baos = append(r.baos, r.leb128(r.repeatCount<<1)...)
 	// write the repeated-value
 	x, err := r.writeIntLittleEndianPaddedOnBitWidth(r.previousValue, r.bitWidth)
 	if err != nil {
 		return err
 	}
 	r.baos = append(r.baos, x...)
-	//BytesUtils.writeIntLittleEndianPaddedOnBitWidth(baos, previousValue, bitWidth);
 
 	// reset the repeat count
 	r.repeatCount = 0
@@ -182,7 +185,8 @@ func (r *RLE) writeIntLittleEndianPaddedOnBitWidth(v int64, bitWidth int32) ([]b
 	}
 }
 
-func (r *RLE) leb128(value int, out []byte) []byte {
+func (r *RLE) leb128(value int) []byte {
+	var out []byte
 	for (value & 0xFFFFFF80) != 0 {
 		out = append(out, byte((value&0x7F)|0x80))
 		value = int(uint(value) >> 7)
@@ -191,5 +195,148 @@ func (r *RLE) leb128(value int, out []byte) []byte {
 }
 
 func (r *RLE) Bytes() []byte {
+	if r.repeatCount >= 8 {
+		r.writeRLERun()
+	} else if r.numBufferedValues > 0 {
+		for i := r.numBufferedValues; i < 8; i++ {
+			r.bufferedValues[i] = 0
+		}
+		r.writeOrAppendBitPackedRun()
+		r.endPreviousBitPackedRun()
+	} else {
+		r.endPreviousBitPackedRun()
+	}
+
+	r.toBytesCalled = true
 	return r.baos
+}
+
+//func (r *RLE) pack(in []int64, inPos int, out, outPos int) byte {
+func (r *RLE) pack() {
+	r.packBuffer = []byte{
+		(byte(r.bufferedValues[0]&1) |
+			byte((r.bufferedValues[1]&1)<<1) |
+			byte((r.bufferedValues[2]&1)<<2) |
+			byte((r.bufferedValues[3]&1)<<3) |
+			byte((r.bufferedValues[4]&1)<<4) |
+			byte((r.bufferedValues[5]&1)<<5) |
+			byte((r.bufferedValues[6]&1)<<6) |
+			byte((r.bufferedValues[7]&1)<<7)) & 255,
+	}
+}
+
+// Read reads the RLE encoded definition levels
+func (r *RLE) Read(in io.Reader) ([]int64, int, error) {
+	var out []int64
+	var l uint16
+	if err := binary.Read(in, binary.LittleEndian, &l); err != nil {
+		return out, 0, err
+	}
+
+	fmt.Println("making buf", l)
+	buf := make([]byte, l)
+	if _, err := in.Read(buf); err != nil {
+		return out, 0, err
+	}
+
+	rr := bytes.NewReader(buf)
+
+	var header uint64
+	var vals []int64
+	var err error
+	for rr.Len() > 0 {
+		header, err = readUint64(rr)
+		fmt.Printf("header: %d, %d\n", header, header&1)
+		if err != nil {
+			return out, 0, err
+		}
+		if header&1 == 0 {
+			vals, err = readRLE(rr, header, uint64(r.bitWidth))
+			if err != nil {
+				return out, 0, err
+			}
+			out = append(out, vals...)
+
+		} else {
+			vals, err = readRLEBitPacked(rr, header, uint64(r.bitWidth))
+			if err != nil {
+				return out, 0, err
+			}
+			out = append(out, vals...)
+		}
+	}
+	return out, int(l + 4), nil
+}
+
+func readRLEBitPacked(r io.Reader, header, width uint64) ([]int64, error) {
+	count := (header >> 1) * 8
+	if width == 0 {
+		return make([]int64, count), nil
+	}
+
+	byteCount := (width * count) / 8
+	rawBytes := make([]byte, byteCount)
+	if _, err := r.Read(rawBytes); err != nil {
+		return nil, err
+	}
+
+	current := 0
+	data := uint64(rawBytes[current])
+	mask := uint64((1 << width) - 1)
+	left := uint64(8)
+	right := uint64(0)
+	out := make([]int64, 0, count)
+	total := uint64(len(rawBytes) * 8)
+	for total >= width {
+		if right >= 8 {
+			right -= 8
+			left -= 8
+			data >>= 8
+		} else if left-right >= width {
+			out = append(out, int64((data>>right)&mask))
+			total -= width
+			right += width
+		} else if current+1 < len(rawBytes) {
+			current++
+			data |= uint64(rawBytes[current] << left)
+			left += 8
+		}
+	}
+	return out, nil
+}
+
+func readRLE(r io.Reader, header uint64, bitWidth uint64) ([]int64, error) {
+	count := header >> 1
+	zeroData := make([]byte, 4)
+	width := (bitWidth + 7) / 8
+	data := make([]byte, width)
+	if _, err := r.Read(data); err != nil {
+		return nil, err
+	}
+
+	data = append(data, zeroData[len(data):]...)
+	value := int64(binary.LittleEndian.Uint32(data))
+	out := make([]int64, count)
+	for i := 0; i < int(count); i++ {
+		out[i] = value
+	}
+	return out, nil
+}
+
+func readUint64(r io.Reader) (uint64, error) {
+	var err error
+	var out, shift, x uint64
+	b := make([]byte, 1)
+	for {
+		_, err = r.Read(b)
+		if err != nil {
+			return out, err
+		}
+		x = uint64(b[0])
+		out |= (x & mask1) << shift
+		if (x & mask2) == 0 {
+			return out, nil
+		}
+		shift += 7
+	}
 }
