@@ -14,6 +14,7 @@ type testCase struct {
 	width int32
 	name  string
 	in    []int64
+	out   []byte
 }
 
 func TestRLE(t *testing.T) {
@@ -41,7 +42,6 @@ func TestRLE(t *testing.T) {
 			for _, x := range tc.in {
 				r.Write(x)
 			}
-
 			vals, _, err := r.Read(bytes.NewReader(r.Bytes()))
 			if assert.NoError(t, err, tc.name) {
 				assert.Equal(t, tc.in, vals, tc.name)

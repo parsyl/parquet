@@ -98,7 +98,7 @@ func (r *RLE) writeOrAppendBitPackedRun() {
 	if r.bitPackedRunHeaderPointer == -1 {
 		// this is a new bit-packed-run, allocate a byte for the header
 		// and keep a "pointer" to it so that it can be mutated later
-		r.baos = append(r.baos, byte(0)) // write a sentinel value
+		r.baos = append(r.baos, 0) // write a sentinel value
 		r.bitPackedRunHeaderPointer = len(r.baos) - 1
 	}
 
@@ -208,10 +208,11 @@ func (r *RLE) Bytes() []byte {
 	}
 
 	r.toBytesCalled = true
-	return r.baos
+	var b bytes.Buffer
+	binary.Write(&b, binary.LittleEndian, int32(len(r.baos)))
+	return append(b.Bytes(), r.baos...)
 }
 
-//func (r *RLE) pack(in []int64, inPos int, out, outPos int) byte {
 func (r *RLE) pack() {
 	r.packBuffer = []byte{
 		(byte(r.bufferedValues[0]&1) |
@@ -256,7 +257,6 @@ func (r *RLE) Read(in io.Reader) ([]int64, int, error) {
 				return out, 0, err
 			}
 			out = append(out, vals...)
-
 		} else {
 			vals, err = readRLEBitPacked(rr, header, uint64(r.bitWidth))
 			if err != nil {
@@ -270,6 +270,7 @@ func (r *RLE) Read(in io.Reader) ([]int64, int, error) {
 
 func readRLEBitPacked(r io.Reader, header, width uint64) ([]int64, error) {
 	count := (header >> 1) * 8
+	fmt.Println("read bit packed", count)
 	if width == 0 {
 		return make([]int64, count), nil
 	}
