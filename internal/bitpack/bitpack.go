@@ -149,7 +149,3 @@ func unpackThree(vals []byte) []int64 {
 		int64((vals[2] & (32 + 64 + 128)) >> 5),
 	}
 }
-
-func Unack(b byte) []int64 {
-
-}

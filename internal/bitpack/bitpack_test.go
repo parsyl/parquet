@@ -43,7 +43,7 @@ func TestPackAndUnpack(t *testing.T) {
 			b := bitpack.Pack(tc.width, tc.ints)
 			assert.Equal(t, tc.bytes, b)
 			n := bitpack.Unpack(tc.width, b)
-			assert.Equal(t, tc.ints, n)
+			assert.Equal(t, tc.ints, n[:len(tc.ints)])
 		})
 	}
 }

@@ -82,7 +82,7 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 
-	err := WriteLevels(wc, f.Defs)
+	err := writeLevels(wc, f.Defs)
 	if err != nil {
 		return err
 	}
@@ -115,12 +115,11 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pg Page) (io.Rea
 			return nil, nil, err
 		}
 
-		defs, l, err := ReadLevels(bytes.NewBuffer(data))
-
+		defs, l, err := readLevels(bytes.NewBuffer(data))
 		if err != nil {
 			return nil, nil, err
 		}
-		f.Defs = append(f.Defs, defs...)
+		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
 		sizes = append(sizes, valsFromDefs(defs))
 		out = append(out, data[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)

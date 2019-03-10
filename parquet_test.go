@@ -38,49 +38,6 @@ type Person struct {
 	Sleepy      bool
 }
 
-func BenchmarkRead(b *testing.B) {
-	var buf bytes.Buffer
-	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
-	assert.Nil(b, err, "benchmark read")
-	input := getPeople(100000, b.N)
-	for _, rowgroup := range input {
-		for _, p := range rowgroup {
-			w.Add(p)
-		}
-		assert.Nil(b, w.Write(), "benchmark read")
-	}
-
-	err = w.Close()
-	assert.Nil(b, err, "benchmark read")
-
-	r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
-	assert.Nil(b, err)
-
-	for i := 0; i < b.N; i++ {
-		if !r.Next() {
-			b.Fatal("unexpected end of Next()")
-		}
-		var p Person
-		r.Scan(&p)
-	}
-}
-
-func BenchmarkWrite(b *testing.B) {
-	var buf bytes.Buffer
-	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
-	assert.Nil(b, err, "benchmark write")
-	input := getPeople(b.N, b.N)
-	rg := input[0]
-
-	for i := 0; i < b.N; i++ {
-		p := rg[i]
-		w.Add(p)
-	}
-
-	err = w.Close()
-	assert.Nil(b, err, "benchmark write")
-}
-
 func TestParquet(t *testing.T) {
 	type testCase struct {
 		name  string
@@ -448,8 +405,8 @@ func TestParquet(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%03d %s", i, tc.name), func(t *testing.T) {
 			if tc.pageSize == 0 {
 				tc.pageSize = 100
 			}
@@ -634,4 +591,47 @@ func newPerson(i int) Person {
 		Birthday:    uint32(i * 1000),
 		Anniversary: anv,
 	}
+}
+
+func BenchmarkRead(b *testing.B) {
+	var buf bytes.Buffer
+	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
+	assert.Nil(b, err, "benchmark read")
+	input := getPeople(100000, b.N)
+	for _, rowgroup := range input {
+		for _, p := range rowgroup {
+			w.Add(p)
+		}
+		assert.Nil(b, w.Write(), "benchmark read")
+	}
+
+	err = w.Close()
+	assert.Nil(b, err, "benchmark read")
+
+	r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+	assert.Nil(b, err)
+
+	for i := 0; i < b.N; i++ {
+		if !r.Next() {
+			b.Fatal("unexpected end of Next()")
+		}
+		var p Person
+		r.Scan(&p)
+	}
+}
+
+func BenchmarkWrite(b *testing.B) {
+	var buf bytes.Buffer
+	w, err := NewParquetWriter(&buf, MaxPageSize(10000))
+	assert.Nil(b, err, "benchmark write")
+	input := getPeople(b.N, b.N)
+	rg := input[0]
+
+	for i := 0; i < b.N; i++ {
+		p := rg[i]
+		w.Add(p)
+	}
+
+	err = w.Close()
+	assert.Nil(b, err, "benchmark write")
 }

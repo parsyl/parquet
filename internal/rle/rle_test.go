@@ -34,6 +34,16 @@ func TestRLE(t *testing.T) {
 			width: 3,
 			in:    mod(3, 100),
 		},
+		{
+			name:  "single value",
+			width: 1,
+			in:    []int64{1},
+		},
+		{
+			name:  "odd number of non-repeated values",
+			width: 1,
+			in:    []int64{1, 0, 1, 1, 0},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -42,9 +52,12 @@ func TestRLE(t *testing.T) {
 			for _, x := range tc.in {
 				r.Write(x)
 			}
-			vals, _, err := r.Read(bytes.NewReader(r.Bytes()))
+			b := r.Bytes()
+			fmt.Printf("%08x\n", b)
+			vals, _, err := r.Read(bytes.NewReader(b))
+			fmt.Println("vals", vals, len(tc.in))
 			if assert.NoError(t, err, tc.name) {
-				assert.Equal(t, tc.in, vals, tc.name)
+				assert.Equal(t, tc.in, vals[:len(tc.in)], tc.name)
 			}
 		})
 	}
