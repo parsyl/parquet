@@ -13,3 +13,7 @@ func Pack(vals []int64) byte {
 		byte((vals[6]&1)<<6) |
 		byte((vals[7]&1)<<7)) & 255
 }
+
+func Unack(b byte) []int64 {
+
+}
