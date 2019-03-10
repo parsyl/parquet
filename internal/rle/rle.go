@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/parsyl/parquet/internal/bitpack"
 )
 
 const (
@@ -102,8 +104,7 @@ func (r *RLE) writeOrAppendBitPackedRun() {
 		r.bitPackedRunHeaderPointer = len(r.baos) - 1
 	}
 
-	r.pack()
-	r.baos = append(r.baos, r.packBuffer...)
+	r.baos = append(r.baos, bitpack.Pack(int(r.bitWidth), r.bufferedValues)...)
 
 	// empty the buffer, they've all been written
 	r.numBufferedValues = 0
@@ -211,19 +212,6 @@ func (r *RLE) Bytes() []byte {
 	var b bytes.Buffer
 	binary.Write(&b, binary.LittleEndian, int32(len(r.baos)))
 	return append(b.Bytes(), r.baos...)
-}
-
-func (r *RLE) pack() {
-	r.packBuffer = []byte{
-		(byte(r.bufferedValues[0]&1) |
-			byte((r.bufferedValues[1]&1)<<1) |
-			byte((r.bufferedValues[2]&1)<<2) |
-			byte((r.bufferedValues[3]&1)<<3) |
-			byte((r.bufferedValues[4]&1)<<4) |
-			byte((r.bufferedValues[5]&1)<<5) |
-			byte((r.bufferedValues[6]&1)<<6) |
-			byte((r.bufferedValues[7]&1)<<7)) & 255,
-	}
 }
 
 // Read reads the RLE encoded definition levels
