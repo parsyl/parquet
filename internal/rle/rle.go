@@ -15,142 +15,87 @@ const (
 )
 
 type RLE struct {
-	baos                      []byte
-	bitWidth                  int32
-	packBuffer                []byte
-	previousValue             int64
-	bufferedValues            []int64
-	numBufferedValues         int
-	repeatCount               int
-	bitPackedGroupCount       int
-	bitPackedRunHeaderPointer int
-	toBytesCalled             bool
+	// TODO: make out a buffer?
+	out           *writeBuffer
+	bitWidth      int32
+	packBuf       []byte
+	prev          int64
+	valBuf        []int64
+	bufCount      int
+	repeatCount   int
+	groupCount    int
+	headerPointer int
 }
 
-func New(width int32) *RLE {
+func New(width int32, size int) *RLE {
 	r := &RLE{
-		baos:           []byte{},
-		bitWidth:       width,
-		packBuffer:     make([]byte, int(width)),
-		bufferedValues: make([]int64, 8),
+		out:           newWriteBuffer(size),
+		bitWidth:      width,
+		packBuf:       make([]byte, int(width)),
+		valBuf:        make([]int64, 8),
+		headerPointer: -1,
 	}
-	r.reset(false)
 	return r
 }
 
-func (r *RLE) reset(clearBuf bool) {
-	if clearBuf {
-		r.baos = []byte{}
-	}
-
-	r.previousValue = 0
-	r.numBufferedValues = 0
-	r.repeatCount = 0
-	r.bitPackedGroupCount = 0
-	r.bitPackedRunHeaderPointer = -1
-	r.toBytesCalled = false
-}
-
 func (r *RLE) Write(value int64) {
-	if value == r.previousValue {
-		// keep track of how many times we've seen this value
-		// consecutively
+	if value == r.prev {
 		r.repeatCount++
-
 		if r.repeatCount >= 8 {
-			// we've seen this at least 8 times, we're
-			// certainly going to write an rle-run,
-			// so just keep on counting repeats for now
 			return
 		}
 	} else {
-		// This is a new value, check if it signals the end of
-		// an rle-run
 		if r.repeatCount >= 8 {
-			// it does! write an rle-run
 			r.writeRLERun()
 		}
-
-		// this is a new value so we've only seen it once
 		r.repeatCount = 1
-		// start tracking this value for repeats
-		r.previousValue = value
+		r.prev = value
 	}
+	r.valBuf[r.bufCount] = value
+	r.bufCount++
 
-	// We have not seen enough repeats to justify an rle-run yet,
-	// so buffer this value in case we decide to write a bit-packed-run
-	r.bufferedValues[r.numBufferedValues] = value
-	r.numBufferedValues++
-
-	if r.numBufferedValues == 8 {
-		// we've encountered less than 8 repeated values, so
-		// either start a new bit-packed-run or append to the
-		// current bit-packed-run
+	if r.bufCount == 8 {
 		r.writeOrAppendBitPackedRun()
 	}
 }
 
 func (r *RLE) writeOrAppendBitPackedRun() {
-	if r.bitPackedGroupCount >= 63 {
-		// we've packed as many values as we can for this run,
-		// end it and start a new one
+	if r.groupCount >= 63 {
 		r.endPreviousBitPackedRun()
 	}
 
-	if r.bitPackedRunHeaderPointer == -1 {
-		// this is a new bit-packed-run, allocate a byte for the header
-		// and keep a "pointer" to it so that it can be mutated later
-		r.baos = append(r.baos, 0) // write a sentinel value
-		r.bitPackedRunHeaderPointer = len(r.baos) - 1
+	if r.headerPointer == -1 {
+		r.out.Write([]byte{0})
+		r.headerPointer = r.out.Size() - 1
 	}
 
-	r.baos = append(r.baos, bitpack.Pack(int(r.bitWidth), r.bufferedValues)...)
-
-	// empty the buffer, they've all been written
-	r.numBufferedValues = 0
-
-	// clear the repeat count, as some repeated values
-	// may have just been bit packed into this run
+	r.out.Write(bitpack.Pack(int(r.bitWidth), r.valBuf))
+	r.bufCount = 0
 	r.repeatCount = 0
-
-	r.bitPackedGroupCount++
+	r.groupCount++
 }
 
 func (r *RLE) endPreviousBitPackedRun() {
-	if r.bitPackedRunHeaderPointer == -1 {
-		// we're not currently in a bit-packed-run
+	if r.headerPointer == -1 {
 		return
 	}
 
-	// create bit-packed-header, which needs to fit in 1 byte
-	bitPackHeader := byte((r.bitPackedGroupCount << 1) | 1)
-	// update this byte
-	r.baos[r.bitPackedRunHeaderPointer] = bitPackHeader
-
-	// mark that this run is over
-	r.bitPackedRunHeaderPointer = -1
-
-	// reset the number of groups
-	r.bitPackedGroupCount = 0
+	bitPackHeader := byte((r.groupCount << 1) | 1)
+	r.out.WriteAt([]byte{bitPackHeader}, r.headerPointer)
+	r.headerPointer = -1
+	r.groupCount = 0
 }
 
 func (r *RLE) writeRLERun() error {
 	r.endPreviousBitPackedRun()
-	// write the rle-header (lsb of 0 signifies a rle run)
-	h := r.leb128(r.repeatCount << 1)
-	r.baos = append(r.baos, h...)
-	// write the repeated-value
-	x, err := r.writeIntLittleEndianPaddedOnBitWidth(r.previousValue, r.bitWidth)
+	r.out.Write(r.leb128(r.repeatCount << 1))
+	x, err := r.writeIntLittleEndianPaddedOnBitWidth(r.prev, r.bitWidth)
 	if err != nil {
 		return err
 	}
-	r.baos = append(r.baos, x...)
-
-	// reset the repeat count
+	r.out.Write(x)
 	r.repeatCount = 0
-
-	// throw away all the buffered values, they were just repeats and they've been written
-	r.numBufferedValues = 0
+	r.bufCount = 0
 	return nil
 }
 
@@ -198,9 +143,9 @@ func (r *RLE) leb128(value int) []byte {
 func (r *RLE) Bytes() []byte {
 	if r.repeatCount >= 8 {
 		r.writeRLERun()
-	} else if r.numBufferedValues > 0 {
-		for i := r.numBufferedValues; i < 8; i++ {
-			r.bufferedValues[i] = 0
+	} else if r.bufCount > 0 {
+		for i := r.bufCount; i < 8; i++ {
+			r.valBuf[i] = 0
 		}
 		r.writeOrAppendBitPackedRun()
 		r.endPreviousBitPackedRun()
@@ -208,10 +153,9 @@ func (r *RLE) Bytes() []byte {
 		r.endPreviousBitPackedRun()
 	}
 
-	r.toBytesCalled = true
 	var b bytes.Buffer
-	binary.Write(&b, binary.LittleEndian, int32(len(r.baos)))
-	return append(b.Bytes(), r.baos...)
+	binary.Write(&b, binary.LittleEndian, int32(r.out.Size()))
+	return append(b.Bytes(), r.out.Bytes()...)
 }
 
 // Read reads the RLE encoded definition levels

@@ -48,14 +48,12 @@ func TestRLE(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d-%s", i, tc.name), func(t *testing.T) {
-			r := rle.New(tc.width)
+			r := rle.New(tc.width, len(tc.in))
 			for _, x := range tc.in {
 				r.Write(x)
 			}
 			b := r.Bytes()
-			fmt.Printf("%08x\n", b)
 			vals, _, err := r.Read(bytes.NewReader(b))
-			fmt.Println("vals", vals, len(tc.in))
 			if assert.NoError(t, err, tc.name) {
 				assert.Equal(t, tc.in, vals[:len(tc.in)], tc.name)
 			}
