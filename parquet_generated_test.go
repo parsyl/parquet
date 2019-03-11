@@ -36,6 +36,7 @@ func Fields() []Field {
 		NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, func(x *Person, v *int64) { x.Sadness = v }, "sadness"),
 		NewStringOptionalField(func(x Person) *string { return x.Code }, func(x *Person, v *string) { x.Code = v }, "code"),
 		NewFloat32Field(func(x Person) float32 { return x.Funkiness }, func(x *Person, v float32) { x.Funkiness = v }, "funkiness"),
+		NewFloat64Field(func(x Person) float64 { return x.Boldness }, func(x *Person, v float64) { x.Boldness = v }, "boldness"),
 		NewFloat32OptionalField(func(x Person) *float32 { return x.Lameness }, func(x *Person, v *float32) { x.Lameness = v }, "lameness"),
 		NewBoolOptionalField(func(x Person) *bool { return x.Keen }, func(x *Person, v *bool) { x.Keen = v }, "keen"),
 		NewUint32Field(func(x Person) uint32 { return x.Birthday }, func(x *Person, v uint32) { x.Birthday = v }, "birthday"),
@@ -661,6 +662,60 @@ func (f *Float32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.
 }
 
 func (f *Float32Field) Add(r Person) {
+	f.vals = append(f.vals, f.val(r))
+}
+
+type Float64Field struct {
+	vals []float64
+	parquet.RequiredField
+	val  func(r Person) float64
+	read func(r *Person, v float64)
+}
+
+func NewFloat64Field(val func(r Person) float64, read func(r *Person, v float64), col string) *Float64Field {
+	return &Float64Field{
+		val:           val,
+		read:          read,
+		RequiredField: parquet.NewRequiredField(col),
+	}
+}
+
+func (f *Float64Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Type: parquet.Float64Type, RepetitionType: parquet.RepetitionRequired}
+}
+
+func (f *Float64Field) Scan(r *Person) {
+	if len(f.vals) == 0 {
+		return
+	}
+	v := f.vals[0]
+	f.vals = f.vals[1:]
+	f.read(r, v)
+}
+
+func (f *Float64Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
+}
+
+func (f *Float64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, meta, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]float64, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Float64Field) Add(r Person) {
 	f.vals = append(f.vals, f.val(r))
 }
 

@@ -136,28 +136,9 @@ type writeCounter struct {
 	w io.Writer
 }
 
-func NewWriteCounter(w io.Writer) *writeCounter {
-	return &writeCounter{w: w}
-}
-
 func (w *writeCounter) Write(p []byte) (int, error) {
 	n, err := w.w.Write(p)
 	w.n += int64(n)
-	return n, err
-}
-
-type readCounter struct {
-	n int64
-	r io.ReadSeeker
-}
-
-func (r *readCounter) Seek(o int64, w int) (int64, error) {
-	return r.r.Seek(o, w)
-}
-
-func (r *readCounter) Read(p []byte) (int, error) {
-	n, err := r.r.Read(p)
-	r.n += int64(n)
 	return n, err
 }
 

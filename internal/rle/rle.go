@@ -27,15 +27,17 @@ type RLE struct {
 	headerPointer int
 }
 
-func New(width int32, size int) *RLE {
-	r := &RLE{
+func New(width int32, size int) (*RLE, error) {
+	if width > 3 {
+		return nil, fmt.Errorf("bitwidth %d is greater than 3 (highest supported)", width)
+	}
+	return &RLE{
 		out:           newWriteBuffer(size),
 		bitWidth:      width,
 		packBuf:       make([]byte, int(width)),
 		valBuf:        make([]int64, 8),
 		headerPointer: -1,
-	}
-	return r
+	}, nil
 }
 
 func (r *RLE) Write(value int64) {
@@ -113,21 +115,8 @@ func (r *RLE) writeIntLittleEndianPaddedOnBitWidth(v int64, bitWidth int32) ([]b
 			byte(uint(v>>0) & 0xFF),
 			byte(uint(v>>8) & 0xFF),
 		}, nil
-	case 3:
-		return []byte{
-			byte(uint(v>>0) & 0xFF),
-			byte(uint(v>>8) & 0xFF),
-			byte(uint(v>>16) & 0xFF),
-		}, nil
-	case 4:
-		return []byte{
-			byte(uint(v>>0) & 0xFF),
-			byte(uint(v>>8) & 0xFF),
-			byte(uint(v>>16) & 0xFF),
-			byte(uint(v>>24) & 0xFF),
-		}, nil
 	default:
-		return nil, fmt.Errorf("Encountered value (%d) that requires more than 4 bytes", v)
+		return nil, fmt.Errorf("Encountered value (%d) that requires more than 2 bytes", v)
 	}
 }
 
@@ -241,10 +230,6 @@ func readIntLittleEndianPaddedOnBitWidth(in io.Reader, bitWidth int) (uint64, er
 		return readIntLittleEndianOnOneByte(in)
 	case 2:
 		return readIntLittleEndianOnTwoBytes(in)
-	case 3:
-		return readIntLittleEndianOnThreeBytes(in)
-	case 4:
-		return readIntLittleEndian(in)
 	default:
 		return 0, fmt.Errorf("Encountered bitWidth (%d) that requires more than 4 bytes", bitWidth)
 	}
@@ -276,34 +261,6 @@ func readIntLittleEndianOnTwoBytes(in io.Reader) (uint64, error) {
 		return 0, io.EOF
 	}
 	return (uint64(b[1]) << 8) + (uint64(b[0]) << 0), nil
-}
-
-func readIntLittleEndianOnThreeBytes(in io.Reader) (uint64, error) {
-	b := make([]byte, 3)
-	_, err := in.Read(b)
-	if err != nil {
-		return 0, err
-	}
-
-	if (b[0] | b[1] | b[2]) < 0 {
-		return 0, io.EOF
-	}
-
-	return (uint64(b[2]) << 16) + (uint64(b[1]) << 8) + (uint64(b[0]) << 0), nil
-}
-
-func readIntLittleEndian(in io.Reader) (uint64, error) {
-	b := make([]byte, 4)
-	_, err := in.Read(b)
-	if err != nil {
-		return 0, err
-	}
-
-	if (b[0] | b[1] | b[2] | b[3]) < 0 {
-		return 0, io.EOF
-	}
-
-	return (uint64(b[3]) << 24) + (uint64(b[2]) << 16) + (uint64(b[1]) << 8) + (uint64(b[0]) << 0), nil
 }
 
 func readLEB128(r io.Reader) (uint64, error) {

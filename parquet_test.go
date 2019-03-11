@@ -30,6 +30,7 @@ type Person struct {
 	Sadness     *int64   `parquet:"sadness"`
 	Code        *string  `parquet:"code"`
 	Funkiness   float32  `parquet:"funkiness"`
+	Boldness    float64  `parquet:"boldness"`
 	Lameness    *float32 `parquet:"lameness"`
 	Keen        *bool    `parquet:"keen"`
 	Birthday    uint32   `parquet:"birthday"`
@@ -406,7 +407,7 @@ func TestParquet(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%03d %s", i, tc.name), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			if tc.pageSize == 0 {
 				tc.pageSize = 100
 			}
@@ -586,6 +587,7 @@ func newPerson(i int) Person {
 		Sadness:     sadness,
 		Code:        randString(8),
 		Funkiness:   rand.Float32(),
+		Boldness:    rand.Float64(),
 		Lameness:    lameness,
 		Keen:        keen,
 		Birthday:    uint32(i * 1000),
