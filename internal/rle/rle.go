@@ -65,11 +65,11 @@ func (r *RLE) writeOrAppendBitPackedRun() {
 	}
 
 	if r.headerPointer == -1 {
-		r.out.Write([]byte{0})
-		r.headerPointer = r.out.Size() - 1
+		r.out.write([]byte{0})
+		r.headerPointer = r.out.size() - 1
 	}
 
-	r.out.Write(bitpack.Pack(int(r.bitWidth), r.valBuf))
+	r.out.write(bitpack.Pack(int(r.bitWidth), r.valBuf))
 	r.bufCount = 0
 	r.repeatCount = 0
 	r.groupCount++
@@ -81,19 +81,19 @@ func (r *RLE) endPreviousBitPackedRun() {
 	}
 
 	bitPackHeader := byte((r.groupCount << 1) | 1)
-	r.out.WriteAt([]byte{bitPackHeader}, r.headerPointer)
+	r.out.writeAt([]byte{bitPackHeader}, r.headerPointer)
 	r.headerPointer = -1
 	r.groupCount = 0
 }
 
 func (r *RLE) writeRLERun() error {
 	r.endPreviousBitPackedRun()
-	r.out.Write(r.leb128(r.repeatCount << 1))
+	r.out.write(r.leb128(r.repeatCount << 1))
 	x, err := r.writeIntLittleEndianPaddedOnBitWidth(r.prev, r.bitWidth)
 	if err != nil {
 		return err
 	}
-	r.out.Write(x)
+	r.out.write(x)
 	r.repeatCount = 0
 	r.bufCount = 0
 	return nil
@@ -154,8 +154,8 @@ func (r *RLE) Bytes() []byte {
 	}
 
 	var b bytes.Buffer
-	binary.Write(&b, binary.LittleEndian, int32(r.out.Size()))
-	return append(b.Bytes(), r.out.Bytes()...)
+	binary.Write(&b, binary.LittleEndian, int32(r.out.size()))
+	return append(b.Bytes(), r.out.bytes()...)
 }
 
 // Read reads the RLE encoded definition levels
