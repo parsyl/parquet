@@ -110,11 +110,6 @@ func (r *RLE) writeIntLittleEndianPaddedOnBitWidth(v int64, bitWidth int32) ([]b
 		return []byte{
 			byte(uint(v>>0) & 0xFF),
 		}, nil
-	case 2:
-		return []byte{
-			byte(uint(v>>0) & 0xFF),
-			byte(uint(v>>8) & 0xFF),
-		}, nil
 	default:
 		return nil, fmt.Errorf("Encountered value (%d) that requires more than 2 bytes", v)
 	}
@@ -228,8 +223,6 @@ func readIntLittleEndianPaddedOnBitWidth(in io.Reader, bitWidth int) (uint64, er
 		return 0, nil
 	case 1:
 		return readIntLittleEndianOnOneByte(in)
-	case 2:
-		return readIntLittleEndianOnTwoBytes(in)
 	default:
 		return 0, fmt.Errorf("Encountered bitWidth (%d) that requires more than 4 bytes", bitWidth)
 	}
@@ -245,22 +238,6 @@ func readIntLittleEndianOnOneByte(in io.Reader) (uint64, error) {
 		return 0, io.EOF
 	}
 	return uint64(b[0]), nil
-}
-
-func readIntLittleEndianOnTwoBytes(in io.Reader) (uint64, error) {
-	b := make([]byte, 2)
-	_, err := in.Read(b)
-	if err != nil {
-		return 0, err
-	}
-	if b[0] < 0 {
-		return 0, io.EOF
-	}
-
-	if (b[0] | b[1]) < 0 {
-		return 0, io.EOF
-	}
-	return (uint64(b[1]) << 8) + (uint64(b[0]) << 0), nil
 }
 
 func readLEB128(r io.Reader) (uint64, error) {
