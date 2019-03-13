@@ -9,21 +9,37 @@ import (
 	sch "github.com/parsyl/parquet/generated"
 )
 
+// RequiredField writes the raw data for required columns
 type RequiredField struct {
-	col string
+	col         string
+	compression sch.CompressionCodec
 }
 
-func NewRequiredField(col string) RequiredField {
-	return RequiredField{col: col}
+// NewRequiredField creates a new required field.
+func NewRequiredField(col string, opts ...func(*RequiredField)) RequiredField {
+	r := RequiredField{col: col, compression: sch.CompressionCodec_SNAPPY}
+	for _, opt := range opts {
+		opt(&r)
+	}
+	return r
 }
 
+func RequiredFieldSnappy(r *RequiredField) {
+	r.compression = sch.CompressionCodec_SNAPPY
+}
+
+func RequiredFieldUncompressed(r *RequiredField) {
+	r.compression = sch.CompressionCodec_UNCOMPRESSED
+}
+
+// DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int) error {
-	compressed := snappy.Encode(nil, vals)
-	if err := meta.WritePageHeader(w, f.col, len(vals), len(compressed), count); err != nil {
+	l, cl, vals := compress(f.compression, vals)
+	if err := meta.WritePageHeader(w, f.col, l, cl, count, f.compression); err != nil {
 		return err
 	}
 
-	_, err := w.Write(compressed)
+	_, err := w.Write(vals)
 	return err
 }
 
@@ -56,12 +72,25 @@ func (f *RequiredField) Name() string {
 }
 
 type OptionalField struct {
-	Defs []int64
-	col  string
+	Defs        []int64
+	col         string
+	compression sch.CompressionCodec
 }
 
-func NewOptionalField(col string) OptionalField {
-	return OptionalField{col: col}
+func NewOptionalField(col string, opts ...func(*OptionalField)) OptionalField {
+	f := OptionalField{col: col, compression: sch.CompressionCodec_SNAPPY}
+	for _, opt := range opts {
+		opt(&f)
+	}
+	return f
+}
+
+func OptionalFieldSnappy(r *OptionalField) {
+	r.compression = sch.CompressionCodec_SNAPPY
+}
+
+func OptionalFieldUncompressed(o *OptionalField) {
+	o.compression = sch.CompressionCodec_UNCOMPRESSED
 }
 
 func (f *OptionalField) Values() int {
@@ -81,22 +110,18 @@ func valsFromDefs(defs []int64) int {
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
-
 	err := writeLevels(wc, f.Defs)
 	if err != nil {
 		return err
 	}
 
-	if _, err := wc.Write(vals); err != nil {
+	wc.Write(vals)
+	l, cl, vals := compress(f.compression, buf.Bytes())
+	if err := meta.WritePageHeader(w, f.col, l, cl, len(f.Defs), f.compression); err != nil {
 		return err
 	}
 
-	compressed := snappy.Encode(nil, buf.Bytes())
-	if err := meta.WritePageHeader(w, f.col, int(wc.n), len(compressed), len(f.Defs)); err != nil {
-		return err
-	}
-
-	_, err = w.Write(compressed)
+	_, err = w.Write(vals)
 	return err
 }
 
@@ -166,4 +191,18 @@ func pageData(r io.ReadSeeker, ph *sch.PageHeader, pg Page) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func compress(codec sch.CompressionCodec, vals []byte) (int, int, []byte) {
+	var l, cl int
+	switch codec {
+	case sch.CompressionCodec_SNAPPY:
+		l = len(vals)
+		vals = snappy.Encode(nil, vals)
+		cl = len(vals)
+	case sch.CompressionCodec_UNCOMPRESSED:
+		l = len(vals)
+		cl = len(vals)
+	}
+	return l, cl, vals
 }

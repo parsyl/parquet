@@ -7,11 +7,11 @@ var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField stru
 	read func(r *{{.Type}}, v *bool)
 }
 
-func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v *bool), col string) *BoolOptionalField {
+func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v *bool), col string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 

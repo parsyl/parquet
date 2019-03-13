@@ -407,45 +407,53 @@ func TestParquet(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			if tc.pageSize == 0 {
-				tc.pageSize = 100
-			}
-			var buf bytes.Buffer
-			w, err := NewParquetWriter(&buf, MaxPageSize(tc.pageSize))
-			assert.Nil(t, err, tc.name)
-			for _, rowgroup := range tc.input {
-				for _, p := range rowgroup {
-					w.Add(p)
+		for j, comp := range []string{"uncompressed", "snappy"} {
+			t.Run(fmt.Sprintf("%02d %s %s", 2*i+j, tc.name, comp), func(t *testing.T) {
+				if tc.pageSize == 0 {
+					tc.pageSize = 100
 				}
-				assert.Nil(t, w.Write(), tc.name)
-			}
+				var buf bytes.Buffer
+				w, err := NewParquetWriter(&buf, MaxPageSize(tc.pageSize), compressionTest[comp])
+				assert.Nil(t, err, tc.name)
+				for _, rowgroup := range tc.input {
+					for _, p := range rowgroup {
+						w.Add(p)
+					}
+					assert.Nil(t, w.Write(), tc.name)
+				}
 
-			err = w.Close()
-			assert.Nil(t, err, tc.name)
+				err = w.Close()
+				assert.Nil(t, err, tc.name)
 
-			r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
-			assert.Nil(t, err)
-			expected := tc.expected
-			if expected == nil {
-				expected = tc.input
-			}
+				r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+				assert.Nil(t, err)
+				expected := tc.expected
+				if expected == nil {
+					expected = tc.input
+				}
 
-			assert.Equal(t, getLen(expected), int(r.Rows()), tc.name)
+				assert.Equal(t, getLen(expected), int(r.Rows()), tc.name)
 
-			var i int
-			for r.Next() {
-				var p Person
-				r.Scan(&p)
-				exp := getExpected(expected, i)
-				assert.Equal(t, *exp, p, fmt.Sprintf("%s-%d", tc.name, i))
-				i++
-			}
+				var i int
+				for r.Next() {
+					var p Person
+					r.Scan(&p)
+					exp := getExpected(expected, i)
+					assert.Equal(t, *exp, p, fmt.Sprintf("%s-%d", tc.name, i))
+					i++
+				}
 
-			assert.Nil(t, r.Error(), tc.name)
-			assert.Equal(t, i, getLen(expected), tc.name)
-		})
+				assert.Nil(t, r.Error(), tc.name)
+				assert.Equal(t, i, getLen(expected), tc.name)
+			})
+		}
 	}
+
+}
+
+var compressionTest = map[string]func(*ParquetWriter) error{
+	"uncompressed": Uncompressed,
+	"snappy":       Snappy,
 }
 
 func getLen(peeps [][]Person) int {

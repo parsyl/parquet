@@ -11,6 +11,14 @@ import (
 	"github.com/parsyl/parquet"
 )
 
+type compression int
+
+const (
+	compressionUncompressed             = 0
+	compressionSnappy                   = 1
+	compressionUnknown      compression = -1
+)
+
 // ParquetWriter reprents a row group
 type ParquetWriter struct {
 	fields []Field
@@ -24,24 +32,47 @@ type ParquetWriter struct {
 	// a new set of column chunks is written
 	max int
 
-	meta *parquet.Metadata
-	w    io.Writer
+	meta        *parquet.Metadata
+	w           io.Writer
+	compression compression
 }
 
-func Fields() []Field {
+func Fields(compression compression) []Field {
 	return []Field{
-		NewInt32Field(func(x Person) int32 { return x.ID }, func(x *Person, v int32) { x.ID = v }, "id"),
-		NewInt32OptionalField(func(x Person) *int32 { return x.Age }, func(x *Person, v *int32) { x.Age = v }, "age"),
-		NewInt64Field(func(x Person) int64 { return x.Happiness }, func(x *Person, v int64) { x.Happiness = v }, "happiness"),
-		NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, func(x *Person, v *int64) { x.Sadness = v }, "sadness"),
-		NewStringOptionalField(func(x Person) *string { return x.Code }, func(x *Person, v *string) { x.Code = v }, "code"),
-		NewFloat32Field(func(x Person) float32 { return x.Funkiness }, func(x *Person, v float32) { x.Funkiness = v }, "funkiness"),
-		NewFloat64Field(func(x Person) float64 { return x.Boldness }, func(x *Person, v float64) { x.Boldness = v }, "boldness"),
-		NewFloat32OptionalField(func(x Person) *float32 { return x.Lameness }, func(x *Person, v *float32) { x.Lameness = v }, "lameness"),
-		NewBoolOptionalField(func(x Person) *bool { return x.Keen }, func(x *Person, v *bool) { x.Keen = v }, "keen"),
-		NewUint32Field(func(x Person) uint32 { return x.Birthday }, func(x *Person, v uint32) { x.Birthday = v }, "birthday"),
-		NewUint64OptionalField(func(x Person) *uint64 { return x.Anniversary }, func(x *Person, v *uint64) { x.Anniversary = v }, "anniversary"),
-		NewBoolField(func(x Person) bool { return x.Sleepy }, func(x *Person, v bool) { x.Sleepy = v }, "Sleepy"),
+		NewInt32Field(func(x Person) int32 { return x.ID }, func(x *Person, v int32) { x.ID = v }, "id", fieldCompression(compression)...),
+		NewInt32OptionalField(func(x Person) *int32 { return x.Age }, func(x *Person, v *int32) { x.Age = v }, "age", optionalFieldCompression(compression)...),
+		NewInt64Field(func(x Person) int64 { return x.Happiness }, func(x *Person, v int64) { x.Happiness = v }, "happiness", fieldCompression(compression)...),
+		NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, func(x *Person, v *int64) { x.Sadness = v }, "sadness", optionalFieldCompression(compression)...),
+		NewStringOptionalField(func(x Person) *string { return x.Code }, func(x *Person, v *string) { x.Code = v }, "code", optionalFieldCompression(compression)...),
+		NewFloat32Field(func(x Person) float32 { return x.Funkiness }, func(x *Person, v float32) { x.Funkiness = v }, "funkiness", fieldCompression(compression)...),
+		NewFloat64Field(func(x Person) float64 { return x.Boldness }, func(x *Person, v float64) { x.Boldness = v }, "boldness", fieldCompression(compression)...),
+		NewFloat32OptionalField(func(x Person) *float32 { return x.Lameness }, func(x *Person, v *float32) { x.Lameness = v }, "lameness", optionalFieldCompression(compression)...),
+		NewBoolOptionalField(func(x Person) *bool { return x.Keen }, func(x *Person, v *bool) { x.Keen = v }, "keen", optionalFieldCompression(compression)...),
+		NewUint32Field(func(x Person) uint32 { return x.Birthday }, func(x *Person, v uint32) { x.Birthday = v }, "birthday", fieldCompression(compression)...),
+		NewUint64OptionalField(func(x Person) *uint64 { return x.Anniversary }, func(x *Person, v *uint64) { x.Anniversary = v }, "anniversary", optionalFieldCompression(compression)...),
+		NewBoolField(func(x Person) bool { return x.Sleepy }, func(x *Person, v bool) { x.Sleepy = v }, "Sleepy", fieldCompression(compression)...),
+	}
+}
+
+func fieldCompression(c compression) []func(*parquet.RequiredField) {
+	switch c {
+	case compressionUncompressed:
+		return []func(*parquet.RequiredField){parquet.RequiredFieldUncompressed}
+	case compressionSnappy:
+		return []func(*parquet.RequiredField){parquet.RequiredFieldSnappy}
+	default:
+		return []func(*parquet.RequiredField){}
+	}
+}
+
+func optionalFieldCompression(c compression) []func(*parquet.OptionalField) {
+	switch c {
+	case compressionUncompressed:
+		return []func(*parquet.OptionalField){parquet.OptionalFieldUncompressed}
+	case compressionSnappy:
+		return []func(*parquet.OptionalField){parquet.OptionalFieldSnappy}
+	default:
+		return []func(*parquet.OptionalField){}
 	}
 }
 
@@ -51,9 +82,8 @@ func NewParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*Parquet
 
 func newParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*ParquetWriter, error) {
 	p := &ParquetWriter{
-		max:    1000,
-		w:      w,
-		fields: Fields(),
+		max: 1000,
+		w:   w,
 	}
 
 	for _, opt := range opts {
@@ -62,8 +92,9 @@ func newParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*Parquet
 		}
 	}
 
+	p.fields = Fields(p.compression)
 	if p.meta == nil {
-		ff := Fields()
+		ff := Fields(p.compression)
 		schema := make([]parquet.Field, len(ff))
 		for i, f := range ff {
 			schema[i] = f.Schema()
@@ -94,6 +125,23 @@ func withMeta(m *parquet.Metadata) func(*ParquetWriter) error {
 	}
 }
 
+func Uncompressed(p *ParquetWriter) error {
+	p.compression = compressionUncompressed
+	return nil
+}
+
+func Snappy(p *ParquetWriter) error {
+	p.compression = compressionSnappy
+	return nil
+}
+
+func withCompression(c compression) func(*ParquetWriter) error {
+	return func(p *ParquetWriter) error {
+		p.compression = c
+		return nil
+	}
+}
+
 func (p *ParquetWriter) Write() error {
 	for i, f := range p.fields {
 		if err := f.Write(p.w, p.meta); err != nil {
@@ -107,7 +155,7 @@ func (p *ParquetWriter) Write() error {
 		}
 	}
 
-	p.fields = Fields()
+	p.fields = Fields(p.compression)
 	p.child = nil
 	p.len = 0
 
@@ -132,7 +180,7 @@ func (p *ParquetWriter) Add(rec Person) {
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
-			p.child, _ = newParquetWriter(p.w, MaxPageSize(p.max), withMeta(p.meta))
+			p.child, _ = newParquetWriter(p.w, MaxPageSize(p.max), withMeta(p.meta), withCompression(p.compression))
 		}
 
 		p.child.Add(rec)
@@ -164,7 +212,7 @@ func getFields(ff []Field) map[string]Field {
 }
 
 func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetReader, error) {
-	ff := Fields()
+	ff := Fields(compressionUnknown)
 	pr := &ParquetReader{
 		r: r,
 	}
@@ -234,7 +282,7 @@ func (p *ParquetReader) readRowGroup() error {
 	}
 
 	rg := p.rowGroups[0]
-	p.fields = getFields(Fields())
+	p.fields = getFields(Fields(compressionUnknown))
 	p.rowGroupCount = rg.Rows
 	p.rowGroupCursor = 0
 	for _, col := range rg.Columns() {
@@ -295,11 +343,11 @@ type Int32Field struct {
 	read func(r *Person, v int32)
 }
 
-func NewInt32Field(val func(r Person) int32, read func(r *Person, v int32), col string) *Int32Field {
+func NewInt32Field(val func(r Person) int32, read func(r *Person, v int32), col string, opts ...func(*parquet.RequiredField)) *Int32Field {
 	return &Int32Field{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 
@@ -349,11 +397,11 @@ type Int32OptionalField struct {
 	val  func(r Person) *int32
 }
 
-func NewInt32OptionalField(val func(r Person) *int32, read func(r *Person, v *int32), col string) *Int32OptionalField {
+func NewInt32OptionalField(val func(r Person) *int32, read func(r *Person, v *int32), col string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
 	return &Int32OptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 
@@ -415,11 +463,11 @@ type Int64Field struct {
 	read func(r *Person, v int64)
 }
 
-func NewInt64Field(val func(r Person) int64, read func(r *Person, v int64), col string) *Int64Field {
+func NewInt64Field(val func(r Person) int64, read func(r *Person, v int64), col string, opts ...func(*parquet.RequiredField)) *Int64Field {
 	return &Int64Field{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 
@@ -469,11 +517,11 @@ type Int64OptionalField struct {
 	val  func(r Person) *int64
 }
 
-func NewInt64OptionalField(val func(r Person) *int64, read func(r *Person, v *int64), col string) *Int64OptionalField {
+func NewInt64OptionalField(val func(r Person) *int64, read func(r *Person, v *int64), col string, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
 	return &Int64OptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 
@@ -535,11 +583,11 @@ type StringOptionalField struct {
 	read func(r *Person, v *string)
 }
 
-func NewStringOptionalField(val func(r Person) *string, read func(r *Person, v *string), col string) *StringOptionalField {
+func NewStringOptionalField(val func(r Person) *string, read func(r *Person, v *string), col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 
@@ -618,11 +666,11 @@ type Float32Field struct {
 	read func(r *Person, v float32)
 }
 
-func NewFloat32Field(val func(r Person) float32, read func(r *Person, v float32), col string) *Float32Field {
+func NewFloat32Field(val func(r Person) float32, read func(r *Person, v float32), col string, opts ...func(*parquet.RequiredField)) *Float32Field {
 	return &Float32Field{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 
@@ -672,11 +720,11 @@ type Float64Field struct {
 	read func(r *Person, v float64)
 }
 
-func NewFloat64Field(val func(r Person) float64, read func(r *Person, v float64), col string) *Float64Field {
+func NewFloat64Field(val func(r Person) float64, read func(r *Person, v float64), col string, opts ...func(*parquet.RequiredField)) *Float64Field {
 	return &Float64Field{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 
@@ -726,11 +774,11 @@ type Float32OptionalField struct {
 	val  func(r Person) *float32
 }
 
-func NewFloat32OptionalField(val func(r Person) *float32, read func(r *Person, v *float32), col string) *Float32OptionalField {
+func NewFloat32OptionalField(val func(r Person) *float32, read func(r *Person, v *float32), col string, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
 	return &Float32OptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 
@@ -792,11 +840,11 @@ type BoolOptionalField struct {
 	read func(r *Person, v *bool)
 }
 
-func NewBoolOptionalField(val func(r Person) *bool, read func(r *Person, v *bool), col string) *BoolOptionalField {
+func NewBoolOptionalField(val func(r Person) *bool, read func(r *Person, v *bool), col string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 
@@ -861,11 +909,11 @@ type Uint32Field struct {
 	read func(r *Person, v uint32)
 }
 
-func NewUint32Field(val func(r Person) uint32, read func(r *Person, v uint32), col string) *Uint32Field {
+func NewUint32Field(val func(r Person) uint32, read func(r *Person, v uint32), col string, opts ...func(*parquet.RequiredField)) *Uint32Field {
 	return &Uint32Field{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 
@@ -915,11 +963,11 @@ type Uint64OptionalField struct {
 	val  func(r Person) *uint64
 }
 
-func NewUint64OptionalField(val func(r Person) *uint64, read func(r *Person, v *uint64), col string) *Uint64OptionalField {
+func NewUint64OptionalField(val func(r Person) *uint64, read func(r *Person, v *uint64), col string, opts ...func(*parquet.OptionalField)) *Uint64OptionalField {
 	return &Uint64OptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 
@@ -981,11 +1029,11 @@ type BoolField struct {
 	read func(r *Person, v bool)
 }
 
-func NewBoolField(val func(r Person) bool, read func(r *Person, v bool), col string) *BoolField {
+func NewBoolField(val func(r Person) bool, read func(r *Person, v bool), col string, opts ...func(*parquet.RequiredField)) *BoolField {
 	return &BoolField{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 

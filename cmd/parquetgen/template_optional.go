@@ -8,11 +8,11 @@ type {{.FieldType}} struct {
 	val  func(r {{.Type}}) {{.TypeName}}
 }
 
-func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string) *{{.FieldType}} {
+func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 

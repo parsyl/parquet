@@ -8,11 +8,11 @@ type StringOptionalField struct {
 	read func(r *{{.Type}}, v *string)
 }
 
-func NewStringOptionalField(val func(r {{.Type}}) *string, read func(r *{{.Type}}, v *string), col string) *StringOptionalField {
+func NewStringOptionalField(val func(r {{.Type}}) *string, read func(r *{{.Type}}, v *string), col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		val:           val,
 		read:          read,
-		OptionalField: parquet.NewOptionalField(col),
+		OptionalField: parquet.NewOptionalField(col, opts...),
 	}
 }
 

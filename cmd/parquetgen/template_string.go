@@ -8,11 +8,11 @@ type StringField struct {
 	read func(r *{{.Type}}, v string)
 }
 
-func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v string), col string) *StringField {
+func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v string), col string, opts ...func(*parquet.RequiredField)) *StringField {
 	return &StringField{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 

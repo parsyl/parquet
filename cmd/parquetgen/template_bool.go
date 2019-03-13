@@ -7,11 +7,11 @@ var boolTpl = `{{define "boolField"}}type BoolField struct {
 	read func(r *{{.Type}}, v bool)
 }
 
-func NewBoolField(val func(r {{.Type}}) bool, read func(r *{{.Type}}, v bool), col string) *BoolField {
+func NewBoolField(val func(r {{.Type}}) bool, read func(r *{{.Type}}, v bool), col string, opts ...func(*parquet.RequiredField)) *BoolField {
 	return &BoolField{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 

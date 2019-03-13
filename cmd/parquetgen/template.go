@@ -1,6 +1,6 @@
 package main
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}(func(x {{.Type}}) {{.TypeName}} { return x.{{.FieldName}} }, func(x *{{.Type}}, v {{.TypeName}}) { x.{{.FieldName}} = v }, "{{.ColumnName}}"),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}(func(x {{.Type}}) {{.TypeName}} { return x.{{.FieldName}} }, func(x *{{.Type}}, v {{.TypeName}}) { x.{{.FieldName}} = v }, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
 
 var tpl = `package {{.Package}}
 
@@ -14,6 +14,14 @@ import (
 
 	"github.com/parsyl/parquet"
 	{{.Import}}
+)
+
+type compression int
+
+const (
+	compressionUncompressed             = 0
+	compressionSnappy                   = 1
+	compressionUnknown      compression = -1
 )
 
 // ParquetWriter reprents a row group
@@ -31,11 +39,34 @@ type ParquetWriter struct {
 
 	meta *parquet.Metadata
 	w    io.Writer
+	compression compression
 }
 
-func Fields() []Field {
+func Fields(compression compression) []Field {
 	return []Field{ {{range .Fields}}
 		{{template "newField" .}}{{end}}
+	}
+}
+
+func fieldCompression(c compression) []func(*parquet.RequiredField) {
+	switch c {
+	case compressionUncompressed:
+		return []func(*parquet.RequiredField){parquet.RequiredFieldUncompressed}
+	case compressionSnappy:
+		return []func(*parquet.RequiredField){parquet.RequiredFieldSnappy}
+	default:
+		return []func(*parquet.RequiredField){}
+	}
+}
+
+func optionalFieldCompression(c compression) []func(*parquet.OptionalField) {
+	switch c {
+	case compressionUncompressed:
+		return []func(*parquet.OptionalField){parquet.OptionalFieldUncompressed}
+	case compressionSnappy:
+		return []func(*parquet.OptionalField){parquet.OptionalFieldSnappy}
+	default:
+		return []func(*parquet.OptionalField){}
 	}
 }
 
@@ -47,7 +78,6 @@ func newParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*Parquet
 	p := &ParquetWriter{
 		max:    1000,
 		w:      w,
-		fields: Fields(),
 	}
 
 	for _, opt := range opts {
@@ -56,8 +86,9 @@ func newParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*Parquet
 		}
 	}
 
+	p.fields = Fields(p.compression)
 	if p.meta == nil {
-		ff := Fields()
+		ff := Fields(p.compression)
 		schema := make([]parquet.Field, len(ff))
 		for i, f := range ff {
 			schema[i] = f.Schema()
@@ -88,6 +119,23 @@ func withMeta(m *parquet.Metadata) func(*ParquetWriter) error {
 	}
 }
 
+func Uncompressed(p *ParquetWriter) error {
+	p.compression = compressionUncompressed
+	return nil
+}
+
+func Snappy(p *ParquetWriter) error {
+	p.compression = compressionSnappy
+	return nil
+}
+
+func withCompression(c compression) func(*ParquetWriter) error {
+	return func(p *ParquetWriter) error {
+		p.compression = c
+		return nil
+	}
+}
+
 func (p *ParquetWriter) Write() error {
 	for i, f := range p.fields {
 		if err := f.Write(p.w, p.meta); err != nil {
@@ -101,7 +149,7 @@ func (p *ParquetWriter) Write() error {
 		}
 	}
 
-	p.fields = Fields()
+	p.fields = Fields(p.compression)
 	p.child = nil
 	p.len = 0
 
@@ -126,7 +174,7 @@ func (p *ParquetWriter) Add(rec {{.Type}}) {
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
-			p.child, _ = newParquetWriter(p.w, MaxPageSize(p.max), withMeta(p.meta))
+			p.child, _ = newParquetWriter(p.w, MaxPageSize(p.max), withMeta(p.meta), withCompression(p.compression))
 		}
 
 		p.child.Add(rec)
@@ -158,7 +206,7 @@ func getFields(ff []Field) map[string]Field {
 }
 
 func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetReader, error) {
-	ff := Fields()
+	ff := Fields(compressionUnknown)
 	pr := &ParquetReader{
 		r: r,
 	}
@@ -228,7 +276,7 @@ func (p *ParquetReader) readRowGroup() error {
 	}
 
 	rg := p.rowGroups[0]
-	p.fields = getFields(Fields())
+	p.fields = getFields(Fields(compressionUnknown))
 	p.rowGroupCount = rg.Rows
 	p.rowGroupCursor = 0
 	for _, col := range rg.Columns() {

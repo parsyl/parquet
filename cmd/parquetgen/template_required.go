@@ -8,11 +8,11 @@ type {{.FieldType}} struct {
 	read func(r *{{.Type}}, v {{.TypeName}})
 }
 
-func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string) *{{.FieldType}} {
+func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col),
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 

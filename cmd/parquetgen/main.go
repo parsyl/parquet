@@ -56,6 +56,12 @@ var (
 			}
 			return out
 		},
+		"compressionFunc": func(f parse.Field) string {
+			if strings.Contains(f.FieldType, "Optional") {
+				return "optionalFieldCompression"
+			}
+			return "fieldCompression"
+		},
 	}
 )
 

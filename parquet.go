@@ -71,7 +71,7 @@ func (m *Metadata) RowGroups() []RowGroup {
 }
 
 // WritePageHeader indicates you are done writing this columns's chunk
-func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedLen, count int) error {
+func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedLen, count int, comp sch.CompressionCodec) error {
 	m.rows += int64(count)
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
@@ -90,7 +90,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedL
 		return err
 	}
 
-	if err := m.updateRowGroup(col, dataLen, compressedLen, len(buf), count); err != nil {
+	if err := m.updateRowGroup(col, dataLen, compressedLen, len(buf), count, comp); err != nil {
 		return err
 	}
 
@@ -98,7 +98,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedL
 	return err
 }
 
-func (m *Metadata) updateRowGroup(col string, dataLen, compressedLen, headerLen, count int) error {
+func (m *Metadata) updateRowGroup(col string, dataLen, compressedLen, headerLen, count int, comp sch.CompressionCodec) error {
 	i := len(m.rowGroups)
 	if i == 0 {
 		return fmt.Errorf("no row groups, you must call StartRowGroup at least once")
@@ -107,7 +107,7 @@ func (m *Metadata) updateRowGroup(col string, dataLen, compressedLen, headerLen,
 	rg := m.rowGroups[i-1]
 
 	rg.rowGroup.NumRows += int64(count)
-	err := rg.updateColumnChunk(col, dataLen+headerLen, compressedLen+headerLen, count, m.schema)
+	err := rg.updateColumnChunk(col, dataLen+headerLen, compressedLen+headerLen, count, m.schema, comp)
 	m.rowGroups[i-1] = rg
 	return err
 }
@@ -185,7 +185,7 @@ func (r *RowGroup) Columns() []*sch.ColumnChunk {
 	return r.rowGroup.Columns
 }
 
-func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count int, fields schema) error {
+func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count int, fields schema, comp sch.CompressionCodec) error {
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)
@@ -198,7 +198,7 @@ func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count i
 				Type:         t,
 				Encodings:    []sch.Encoding{sch.Encoding_PLAIN},
 				PathInSchema: []string{col},
-				Codec:        sch.CompressionCodec_SNAPPY,
+				Codec:        comp,
 			},
 		}
 	}
