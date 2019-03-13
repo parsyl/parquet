@@ -24,10 +24,14 @@ func NewRequiredField(col string, opts ...func(*RequiredField)) RequiredField {
 	return r
 }
 
+// RequiredFieldSnappy sets the compression for a column to snappy
+// It is an optional arg to NewRequiredField
 func RequiredFieldSnappy(r *RequiredField) {
 	r.compression = sch.CompressionCodec_SNAPPY
 }
 
+// RequiredFieldUncompressed sets the compression to none
+// It is an optional arg to NewRequiredField
 func RequiredFieldUncompressed(r *RequiredField) {
 	r.compression = sch.CompressionCodec_UNCOMPRESSED
 }
@@ -85,14 +89,20 @@ func NewOptionalField(col string, opts ...func(*OptionalField)) OptionalField {
 	return f
 }
 
+// OptionalFieldSnappy sets the compression for a column to snappy
+// It is an optional arg to NewOptionalField
 func OptionalFieldSnappy(r *OptionalField) {
 	r.compression = sch.CompressionCodec_SNAPPY
 }
 
+// OptionalFieldUncompressed sets the compression to none
+// It is an optional arg to NewOptionalField
 func OptionalFieldUncompressed(o *OptionalField) {
 	o.compression = sch.CompressionCodec_UNCOMPRESSED
 }
 
+// Values reads the definition levels and uses them
+// to return the values from the page data.
 func (f *OptionalField) Values() int {
 	return valsFromDefs(f.Defs)
 }
@@ -107,6 +117,8 @@ func valsFromDefs(defs []int64) int {
 	return out
 }
 
+// DoWrite is called by all optional field types to write the definition levels
+// and raw data to the io.Writer
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
@@ -125,6 +137,8 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
+// DoRead is called by all optional fields.  It reads the definition levels and uses
+// them to interpret the raw data.
 func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pg Page) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
@@ -152,15 +166,20 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pg Page) (io.Rea
 	return bytes.NewBuffer(out), sizes, nil
 }
 
+// Name returns the column name of this field
 func (f *OptionalField) Name() string {
 	return f.col
 }
 
+// writeCounter keeps track of the number of bytes written
+// it is used for calls to binary.Write, which does not
+// return the number of bytes written.
 type writeCounter struct {
 	n int64
 	w io.Writer
 }
 
+// Write makes writeCounter an io.Writer
 func (w *writeCounter) Write(p []byte) (int, error) {
 	n, err := w.w.Write(p)
 	w.n += int64(n)

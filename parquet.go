@@ -11,6 +11,7 @@ import (
 	sch "github.com/parsyl/parquet/generated"
 )
 
+// Field holds the type information for a parquet column
 type Field struct {
 	Name           string
 	Type           FieldFunc
@@ -31,6 +32,9 @@ type schema struct {
 	lookup map[string]sch.SchemaElement
 }
 
+// Metadata keeps track of the things that need to
+// be kept track of in order to write the FileMetaData
+// at the end of the parquet file.
 type Metadata struct {
 	ts        *thrift.TSerializer
 	schema    schema
@@ -40,6 +44,8 @@ type Metadata struct {
 	metadata *sch.FileMetaData
 }
 
+// New returns a Metadata struct and reads the first row group
+// into memory.
 func New(fields ...Field) *Metadata {
 	ts := thrift.NewTSerializer()
 	ts.Protocol = thrift.NewTCompactProtocolFactory().GetProtocol(ts.Transport)
@@ -52,6 +58,7 @@ func New(fields ...Field) *Metadata {
 	return m
 }
 
+// StartRowGroup is called when starting a new row group
 func (m *Metadata) StartRowGroup(fields ...Field) {
 	m.rowGroups = append(m.rowGroups, RowGroup{
 		fields:  schemaElements(fields),
@@ -59,6 +66,7 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 	})
 }
 
+// RowGroups returns a summary of each schema.RowGroup
 func (m *Metadata) RowGroups() []RowGroup {
 	rgs := make([]RowGroup, len(m.metadata.RowGroups))
 	for i, rg := range m.metadata.RowGroups {
@@ -70,7 +78,7 @@ func (m *Metadata) RowGroups() []RowGroup {
 	return rgs
 }
 
-// WritePageHeader indicates you are done writing this columns's chunk
+// WritePageHeader is called when no more data is written to a column chunk
 func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedLen, count int, comp sch.CompressionCodec) error {
 	m.rows += int64(count)
 	ph := &sch.PageHeader{
@@ -172,6 +180,9 @@ func (m *Metadata) Footer(w io.Writer) error {
 	return binary.Write(w, binary.LittleEndian, uint32(n))
 }
 
+// RowGroup wraps schema.RowGroup and adds accounting functions
+// that are used to keep track of number of rows written, byte size,
+// etc.
 type RowGroup struct {
 	fields   schema
 	rowGroup sch.RowGroup
@@ -181,6 +192,7 @@ type RowGroup struct {
 	Rows int64
 }
 
+// Columns returns the Columns of the row group.
 func (r *RowGroup) Columns() []*sch.ColumnChunk {
 	return r.rowGroup.Columns
 }
@@ -266,6 +278,7 @@ func (m *Metadata) Pages() (map[string][]Page, error) {
 	return out, nil
 }
 
+// PageHeader reads the page header from a column page
 func (m *Metadata) PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	pg := &sch.PageHeader{}
@@ -273,6 +286,7 @@ func (m *Metadata) PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
 	return pg, err
 }
 
+// ReadMetaData reads the FileMetaData from the end of a parquet file
 func ReadMetaData(r io.ReadSeeker) (*sch.FileMetaData, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	size, err := getMetaDataSize(r)
@@ -289,12 +303,14 @@ func ReadMetaData(r io.ReadSeeker) (*sch.FileMetaData, error) {
 	return m, m.Read(p)
 }
 
+// ReadFooter reads the parquet metadata
 func (m *Metadata) ReadFooter(r io.ReadSeeker) error {
 	meta, err := ReadMetaData(r)
 	m.metadata = meta
 	return err
 }
 
+// FieldFunc is used to set some of the metadata for each column
 type FieldFunc func(*sch.SchemaElement)
 
 func RepetitionRequired(se *sch.SchemaElement) {
@@ -351,6 +367,7 @@ func StringType(se *sch.SchemaElement) {
 	se.Type = &t
 }
 
+// GetBools reads a byte array and turns each bit into a bool
 func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
 	var vals [8]bool
 	data, _ := ioutil.ReadAll(r)
