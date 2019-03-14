@@ -76,8 +76,9 @@ func NewParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*Parquet
 
 func newParquetWriter(w io.Writer, opts ...func(*ParquetWriter) error) (*ParquetWriter, error) {
 	p := &ParquetWriter{
-		max:    1000,
-		w:      w,
+		max:         1000,
+		w:           w,
+		compression: compressionSnappy,
 	}
 
 	for _, opt := range opts {
