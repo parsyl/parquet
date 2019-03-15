@@ -114,6 +114,18 @@ func MaxPageSize(m int) func(*ParquetWriter) error {
 	}
 }
 
+// Uncompressed ...
+func Uncompressed(p *ParquetWriter) error {
+	p.compression = compressionUncompressed
+	return nil
+}
+
+// Snappy ...
+func Snappy(p *ParquetWriter) error {
+	p.compression = compressionSnappy
+	return nil
+}
+
 func begin(p *ParquetWriter) error {
 	_, err := p.w.Write([]byte("PAR1"))
 	return err
@@ -124,16 +136,6 @@ func withMeta(m *parquet.Metadata) func(*ParquetWriter) error {
 		p.meta = m
 		return nil
 	}
-}
-
-func Uncompressed(p *ParquetWriter) error {
-	p.compression = compressionUncompressed
-	return nil
-}
-
-func Snappy(p *ParquetWriter) error {
-	p.compression = compressionSnappy
-	return nil
 }
 
 func withCompression(c compression) func(*ParquetWriter) error {

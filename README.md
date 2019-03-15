@@ -53,8 +53,7 @@ import (
 
 func main() {
     var buf bytes.Buffer
-    // MaxPageSize optionally defines the number of rows in each column chunk (default is 1000)
-    w, err := NewParquetWriter(&buf, MaxPageSize(10000))
+    w, err := NewParquetWriter(&buf)
     if err != nil {
         log.Fatal(err)
     }
@@ -91,6 +90,15 @@ func main() {
 }
 
 func getAge(a int32) *int32 { return &a }
+```
+
+NewParquetWriter has a couple of optional arguments available: MaxPageSize,
+Uncompressed, and Snappy.  For example, the following sets the page size (number
+of rows in a page before a new one is created) and sets the page data compression
+to snappy:
+
+```go
+    w, err := NewParquetWriter(&buf, MaxPageSize(10000), Snappy)
 ```
 
 See [this](./examples/people) for a complete example of how to generate the code
