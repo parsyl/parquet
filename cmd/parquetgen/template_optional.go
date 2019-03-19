@@ -3,9 +3,10 @@ package main
 var optionalTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
-	vals []{{removeStar .TypeName}}
-	read func(r *{{.Type}}, v {{.TypeName}})
-	val  func(r {{.Type}}) {{.TypeName}}
+	vals  []{{removeStar .TypeName}}
+	read  func(r *{{.Type}}, v {{.TypeName}})
+	val   func(r {{.Type}}) {{.TypeName}}
+	stats *{{.TypeName}}optionalStats
 }
 
 func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
@@ -13,6 +14,7 @@ func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type
 		val:           val,
 		read:          read,
 		OptionalField: parquet.NewOptionalField(col, opts...),
+		stats:         new{{camelCase .TypeName}}optionalStats(),
 	}
 }
 
@@ -22,40 +24,12 @@ func (f *{{.FieldType}}) Schema() parquet.Field {
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
-
-	min := {{removeStar .TypeName}}({{maxType .}})
-	var max {{removeStar .TypeName}}
 	for _, v := range f.vals {
-		min, max = f.minMax(v, min, max)
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
-}
-
-func (f *{{.FieldType}}) minMax(val, min, max {{removeStar .TypeName}}) ({{removeStar .TypeName}}, {{removeStar .TypeName}}) {
-	if val < min {
-		min = val
-	}
-	if val > max {
-		max = val
-	}
-	return min, max
-}
-
-func (f *{{.FieldType}}) stats(min, max {{removeStar .TypeName}}) *sch.Statistics {
-	return &sch.Statistics{
-		MinValue:  f.minMaxBytes(min),
-		MaxValue:  f.minMaxBytes(max),
-		NullCount: f.NilCount(),
-	}
-}
-
-func (f *{{.FieldType}}) minMaxBytes(val {{removeStar .TypeName}}) []byte {
-	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, val)
-	return buf.Bytes()
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
@@ -72,6 +46,7 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parque
 
 func (f *{{.FieldType}}) Add(r {{.Type}}) {
 	v := f.val(r)
+	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
 		f.Defs = append(f.Defs, 1)
@@ -93,5 +68,55 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
         f.read(r, &val)
 	}
 	f.Defs = f.Defs[1:]
+}
+{{end}}`
+
+var optionalStatsTpl = `{{define "optionalStats"}}
+type {{.TypeName}}optionalStats struct {
+	min {{.TypeName}}
+	max {{.TypeName}}
+	nilCount int64
+}
+
+func new{{camelCase .TypeName}}optionalStats() *int32stats {
+	return &{{.TypeName}}optionalStats{
+		min: {{.TypeName}}(math.Max{{camelCase .TypeName}}),
+	}
+}
+
+func (i *{{.TypeName}}optionalStats) add(val *{{.TypeName}}) {
+	if val == nil {
+		f.nilCount++
+		return
+	}
+
+	if *val < i.min {
+		i.min = *val
+	}
+	if *val > i.max {
+		i.max = *val
+	}
+}
+
+func (f *{{.TypeName}}optionalStats) bytes(val {{.TypeName}}) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *{{.TypeName}}optionalStats) NullCount() *int64 {
+	return &s.nilCount
+}
+
+func (f *{{.TypeName}}optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *{{.TypeName}}optionalStats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *{{.TypeName}}optionalStats) Max() []byte {
+	return f.bytes(f.max)
 }
 {{end}}`

@@ -13,7 +13,10 @@ import (
 	"encoding/binary"
 
 	"github.com/parsyl/parquet"
+	sch "github.com/parsyl/parquet/generated"
 	{{.Import}}
+	{{range imports .Fields}}{{.}}
+	{{end}}
 )
 
 type compression int
@@ -349,6 +352,27 @@ func (p *ParquetReader) Scan(x *{{.Type}}) {
 {{end}}
 {{if eq .Category "boolOptional"}}
 {{ template "boolOptionalField" .}}
+{{end}}
+{{end}}
+
+{{range dedupe .Fields}}
+{{if eq .Category "numeric"}}
+{{ template "requiredStats" .}}
+{{end}}
+{{if eq .Category "numericOptional"}}
+{{ template "optionalStats" .}}
+{{end}}
+{{if eq .Category "string"}}
+{{ template "stringStats" .}}
+{{end}}
+{{if eq .Category "stringOptional"}}
+{{ template "stringOptionalStats" .}}
+{{end}}
+{{if eq .Category "bool"}}
+{{ template "boolStats" .}}
+{{end}}
+{{if eq .Category "boolOptional"}}
+{{ template "boolOptionalStats" .}}
 {{end}}
 {{end}}
 `

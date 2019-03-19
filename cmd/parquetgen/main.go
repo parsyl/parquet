@@ -1,15 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 	"strings"
 	"text/template"
 
 	"github.com/parsyl/parquet"
+	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/cases"
 	"github.com/parsyl/parquet/internal/parse"
 )
@@ -38,21 +41,10 @@ var (
 		"removeStar": func(s string) string {
 			return strings.Replace(s, "*", "", 1)
 		},
-		"camelcase": func(s string) string {
+		"camelCase": func(s string) string {
 			return cases.Camel(s)
 		},
-		"dedupe": func(fields []parse.Field) []parse.Field {
-			seen := map[string]bool{}
-			out := make([]parse.Field, 0, len(fields))
-			for _, f := range fields {
-				_, ok := seen[f.FieldType]
-				if !ok {
-					out = append(out, f)
-					seen[f.FieldType] = true
-				}
-			}
-			return out
-		},
+		"dedupe": dedupe,
 		"compressionFunc": func(f parse.Field) string {
 			if strings.Contains(f.FieldType, "Optional") {
 				return "optionalFieldCompression"
@@ -89,18 +81,6 @@ var (
 				out = "math.MaxFloat32"
 			case "float64", "*float64":
 				out = "math.MaxFloat64"
-			}
-			return out
-		},
-		"dedupe": func(fields []parse.Field) []parse.Field {
-			seen := map[string]bool{}
-			out := make([]parse.Field, 0, len(fields))
-			for _, f := range fields {
-				_, ok := seen[f.FieldType]
-				if !ok {
-					out = append(out, f)
-					seen[f.FieldType] = true
-				}
 			}
 			return out
 		},
@@ -196,7 +176,118 @@ func fromParquet() {
 		StructName: *typ,
 		Fields:     fields,
 	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, n)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gocode, err := format.Source(buf.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f, err := os.Create(*structOutPth)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = f.Write(gocode)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	f.Close()
+	fromStruct(*structOutPth)
+}
+
+func fromStruct(pth string) {
+	result, err := parse.Fields(*typ, pth)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, err := range result.Errors {
+		log.Println(err)
+	}
+
+	if len(result.Errors) > 0 && !*ignore {
+		log.Fatal("not generating parquet.go (-ignore set to false), err: ", result.Errors)
+	}
+
+	i := input{
+		Package: *pkg,
+		Type:    *typ,
+		Import:  getImport(*imp),
+		Fields:  result.Fields,
+	}
+
+	tmpl := template.New("output").Funcs(funcs)
+	tmpl, err = tmpl.Parse(tpl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, t := range []string{
+		requiredTpl,
+		optionalTpl,
+		stringTpl,
+		stringOptionalTpl,
+		boolTpl,
+		boolOptionalTpl,
+		newFieldTpl,
+	} {
+		var err error
+		tmpl, err = tmpl.Parse(t)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, i)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gocode, err := format.Source(buf.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f, err := os.Create(*outPth)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = f.Write(gocode)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f.Close()
+}
+
+func getFieldType(se *sch.SchemaElement) string {
+	if se.Type == nil {
+		log.Fatal("nil parquet schema type")
+	}
+	s := se.Type.String()
+	out, ok := parquetTypes[s]
+	if !ok {
+		log.Fatalf("unsupported parquet schema type: %s", s)
+	}
+
+	if se.RepetitionType != nil && *se.RepetitionType == sch.FieldRepetitionType_REPEATED {
+		log.Fatalf("field %s is FieldRepetitionType_REPEATED, which is currently not supported", se.Name)
+	}
+
+	var star string
+	if se.RepetitionType != nil && *se.RepetitionType == sch.FieldRepetitionType_OPTIONAL {
+		star = "*"
+	}
+	return fmt.Sprintf("%s%s", star, out)
 }
 
 func getImport(i string) string {
@@ -211,4 +302,17 @@ type input struct {
 	Type    string
 	Import  string
 	Fields  []parse.Field
+}
+
+func dedupe(fields []parse.Field) []parse.Field {
+	seen := map[string]bool{}
+	out := make([]parse.Field, 0, len(fields))
+	for _, f := range fields {
+		_, ok := seen[f.FieldType]
+		if !ok {
+			out = append(out, f)
+			seen[f.FieldType] = true
+		}
+	}
+	return out
 }

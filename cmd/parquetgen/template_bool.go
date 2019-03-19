@@ -44,7 +44,7 @@ func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 		}
 	}
 
-	return f.DoWrite(w, meta, rawBuf, len(f.vals))
+	return f.DoWrite(w, meta, rawBuf, len(f.vals), newBoolStats())
 }
 
 func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
@@ -55,5 +55,29 @@ func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Pag
 
 	f.vals, err = parquet.GetBools(rr, int(pg.N), sizes)
 	return err
+}
+{{end}}`
+
+var boolStatsTpl = `{{define "boolStats"}}
+type boolStats struct {}
+
+func newboolStats() *boolStats {
+	return boolStats{}
+}
+
+func (b *boolStats) NullCount() *int64 {
+	return nil
+}
+
+func (b *boolStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (b *boolStats) Min() []byte {
+	return nil
+}
+
+func (b *boolStats) Max() []byte {
+	return nil
 }
 {{end}}`

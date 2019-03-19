@@ -55,7 +55,24 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		buf.Write([]byte(s))
 	}
 
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats())
+}
+
+func (f *StringOptionalField) stats() *sch.Statistics {
+	var min, max []byte
+	if len(f.vals) > 0 {
+		tmp := make([]string, len(f.vals))
+		copy(tmp, f.vals)
+		sort.Strings(tmp)
+		min = []byte(tmp[0])
+		max = []byte(tmp[len(tmp)-1])		
+	}
+
+ 	return &sch.Statistics{
+		MinValue:  min,
+		MaxValue:  max,
+		NullCount: f.NilCount(),
+	}
 }
 
 func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {

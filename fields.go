@@ -83,7 +83,7 @@ func RequiredFieldUncompressed(r *RequiredField) {
 }
 
 // DoWrite writes the actual raw data.
-func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats *sch.Statistics) error {
+func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	l, cl, vals := compress(f.compression, vals)
 	if err := meta.WritePageHeader(w, f.col, l, cl, count, f.compression, stats); err != nil {
 		return err
@@ -165,7 +165,7 @@ func valsFromDefs(defs []int64) int {
 
 // DoWrite is called by all optional field types to write the definition levels
 // and raw data to the io.Writer
-func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats *sch.Statistics) error {
+func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
 	err := writeLevels(wc, f.Defs)

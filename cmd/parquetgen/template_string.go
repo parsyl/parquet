@@ -6,6 +6,7 @@ type StringField struct {
 	vals []string
 	val  func(r {{.Type}}) string
 	read func(r *{{.Type}}, v string)
+	stats *stringStats
 }
 
 func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v string), col string, opts ...func(*parquet.RequiredField)) *StringField {
@@ -13,6 +14,7 @@ func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v stri
 		val:           val,
 		read:          read,
 		RequiredField: parquet.NewRequiredField(col, opts...),
+		stats:         newStringStats(),
 	}
 }
 
@@ -44,7 +46,7 @@ func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
 		buf.Write([]byte(s))
 	}
 
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals))
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
@@ -66,5 +68,55 @@ func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.P
 		f.vals = append(f.vals, string(s))
 	}
 	return nil
+}
+{{end}}`
+
+var stringStatsTpl = `{{define "stringStats"}}
+type stringStats struct {
+	vals []string
+	min []byte
+	max []byte
+}
+
+func newStringStats() *stringStats {
+	return &stringStats{}
+}
+
+func (s *stringStats) add(val string) {
+	s.vals = append(s.vals, val)
+}
+
+func (s *stringStats) NullCount() *int64 {
+	return nil
+}
+
+func (s *stringStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (s *stringStats) Min() []byte {
+	if s.min == nil {
+		s.minMax()
+	}
+	return s.min
+}
+
+func (s *stringStats) Max() []byte {
+	if s.max == nil {
+		s.minMax()
+	}
+	return s.max
+}
+
+func (s *stringStats) minMax()  {
+	if len(s.vals) == 0 {
+		return
+	}
+
+	tmp := make([]string, len(s.vals))
+	copy(tmp, s.vals)
+	sort.Strings(tmp)
+	s.min = []byte(tmp[0])
+	s.max = []byte(tmp[len(tmp)-1])
 }
 {{end}}`

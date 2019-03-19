@@ -2,9 +2,10 @@ package main
 
 var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField struct {
 	parquet.OptionalField
-	vals []bool
-	val  func(r {{.Type}}) *bool
-	read func(r *{{.Type}}, v *bool)
+	vals  []bool
+	val   func(r {{.Type}}) *bool
+	read  func(r *{{.Type}}, v *bool)
+	stats parquet.Stats
 }
 
 func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v *bool), col string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
@@ -12,6 +13,7 @@ func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v
 		val:           val,
 		read:          read,
 		OptionalField: parquet.NewOptionalField(col, opts...),
+		stats:         newOptionalStats(),
 	}
 }
 
@@ -66,6 +68,38 @@ func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		}
 	}
 
-	return f.DoWrite(w, meta, rawBuf, len(f.vals))
+	return f.DoWrite(w, meta, rawBuf, len(f.vals), f.stats())
+}
+{{end}}`
+
+var boolOptionalStatsTpl = `{{define "boolOptionalStats"}}
+type boolOptionalStats struct {
+	nilCount int64
+}
+
+func newboolOptionalStats() *boolOptionalStats {
+	return &boolOptionalStats{}
+}
+
+func (b *boolOptionalstats) add(val *bool) {
+	if val == nil {
+		b.nilCount++	
+	}
+}
+
+func (b *boolOptionalStats) NullCount() *int64 {
+	return &b.nilCount
+}
+
+func (b *boolOptionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (b *boolOptionalStats) Min() []byte {
+	return nil
+}
+
+func (b *boolOptionalStats) Max() []byte {
+	return nil
 }
 {{end}}`
