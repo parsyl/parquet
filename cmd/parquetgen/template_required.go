@@ -68,7 +68,7 @@ type {{.TypeName}}stats struct {
 	max {{.TypeName}}
 }
 
-func new{{camelCase .TypeName}}stats() *{{.TypeName}stats {
+func new{{camelCase .TypeName}}stats() *{{.TypeName}}stats {
 	return &{{.TypeName}}stats{
 		min: {{.TypeName}}(math.Max{{camelCase .TypeName}}),
 	}

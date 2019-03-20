@@ -6,7 +6,7 @@ type {{.FieldType}} struct {
 	vals  []{{removeStar .TypeName}}
 	read  func(r *{{.Type}}, v {{.TypeName}})
 	val   func(r {{.Type}}) {{.TypeName}}
-	stats *{{.TypeName}}optionalStats
+	stats {{.TypeName}}optionalStats
 }
 
 func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
@@ -14,7 +14,7 @@ func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type
 		val:           val,
 		read:          read,
 		OptionalField: parquet.NewOptionalField(col, opts...),
-		stats:         new{{camelCase .TypeName}}optionalStats(),
+		stats:         new{{removeStar .TypeName}}optionalStats(),
 	}
 }
 
@@ -72,51 +72,51 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 {{end}}`
 
 var optionalStatsTpl = `{{define "optionalStats"}}
-type {{.TypeName}}optionalStats struct {
-	min {{.TypeName}}
-	max {{.TypeName}}
-	nilCount int64
+type {{removeStar .TypeName}}optionalStats struct {
+	min {{removeStar .TypeName}}
+	max {{removeStar .TypeName}}
+	nils int64
 }
 
-func new{{camelCase .TypeName}}optionalStats() *int32stats {
-	return &{{.TypeName}}optionalStats{
-		min: {{.TypeName}}(math.Max{{camelCase .TypeName}}),
+func new{{removeStar .TypeName}}optionalStats() {{.TypeName}}optionalStats {
+	return &{{removeStar .TypeName}}optionalStats{
+		min: {{removeStar .TypeName}}(math.Max{{camelCaseRemoveStar .TypeName}}),
 	}
 }
 
-func (i *{{.TypeName}}optionalStats) add(val *{{.TypeName}}) {
+func (f *{{removeStar .TypeName}}optionalStats) add(val *{{removeStar .TypeName}}) {
 	if val == nil {
-		f.nilCount++
+		f.nils++
 		return
 	}
 
-	if *val < i.min {
-		i.min = *val
+	if *val < f.min {
+		f.min = *val
 	}
-	if *val > i.max {
-		i.max = *val
+	if *val > f.max {
+		f.max = *val
 	}
 }
 
-func (f *{{.TypeName}}optionalStats) bytes(val {{.TypeName}}) []byte {
+func (f *{{removeStar .TypeName}}optionalStats) bytes(val {{removeStar .TypeName}}) []byte {
 	var buf bytes.Buffer
 	binary.Write(&buf, binary.LittleEndian, val)
 	return buf.Bytes()
 }
 
-func (f *{{.TypeName}}optionalStats) NullCount() *int64 {
-	return &s.nilCount
+func (f *{{removeStar .TypeName}}optionalStats) NullCount() *int64 {
+	return &f.nils
 }
 
-func (f *{{.TypeName}}optionalStats) DistinctCount() *int64 {
+func (f *{{removeStar .TypeName}}optionalStats) DistinctCount() *int64 {
 	return nil
 }
 
-func (f *{{.TypeName}}optionalStats) Min() []byte {
+func (f *{{removeStar .TypeName}}optionalStats) Min() []byte {
 	return f.bytes(f.min)
 }
 
-func (f *{{.TypeName}}optionalStats) Max() []byte {
+func (f *{{removeStar .TypeName}}optionalStats) Max() []byte {
 	return f.bytes(f.max)
 }
 {{end}}`

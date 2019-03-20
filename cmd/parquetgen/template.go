@@ -13,7 +13,6 @@ import (
 	"encoding/binary"
 
 	"github.com/parsyl/parquet"
-	sch "github.com/parsyl/parquet/generated"
 	{{.Import}}
 	{{range imports .Fields}}{{.}}
 	{{end}}

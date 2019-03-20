@@ -5,5 +5,4 @@ type Stats interface {
 	DistinctCount() *int64
 	Min() []byte
 	Max() []byte
-	String() string
 }

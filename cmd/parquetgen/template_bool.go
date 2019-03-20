@@ -60,24 +60,9 @@ func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Pag
 
 var boolStatsTpl = `{{define "boolStats"}}
 type boolStats struct {}
-
-func newboolStats() *boolStats {
-	return boolStats{}
-}
-
-func (b *boolStats) NullCount() *int64 {
-	return nil
-}
-
-func (b *boolStats) DistinctCount() *int64 {
-	return nil
-}
-
-func (b *boolStats) Min() []byte {
-	return nil
-}
-
-func (b *boolStats) Max() []byte {
-	return nil
-}
+func newBoolStats() *boolStats {return &boolStats{}}
+func (b *boolStats) NullCount() *int64 {return nil}
+func (b *boolStats) DistinctCount() *int64 {return nil}
+func (b *boolStats) Min() []byte {return nil}
+func (b *boolStats) Max() []byte {return nil}
 {{end}}`

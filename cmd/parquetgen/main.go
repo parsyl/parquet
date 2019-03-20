@@ -44,6 +44,9 @@ var (
 		"camelCase": func(s string) string {
 			return cases.Camel(s)
 		},
+		"camelCaseRemoveStar": func(s string) string {
+			return cases.Camel(strings.Replace(s, "*", "", 1))
+		},
 		"dedupe": dedupe,
 		"compressionFunc": func(f parse.Field) string {
 			if strings.Contains(f.FieldType, "Optional") {
@@ -237,6 +240,12 @@ func fromStruct(pth string) {
 		boolTpl,
 		boolOptionalTpl,
 		newFieldTpl,
+		requiredStatsTpl,
+		optionalStatsTpl,
+		boolStatsTpl,
+		boolOptionalStatsTpl,
+		stringStatsTpl,
+		stringOptionalStatsTpl,
 	} {
 		var err error
 		tmpl, err = tmpl.Parse(t)
@@ -251,17 +260,18 @@ func fromStruct(pth string) {
 		log.Fatal(err)
 	}
 
-	gocode, err := format.Source(buf.Bytes())
-	if err != nil {
-		log.Fatal(err)
-	}
+	// gocode, err := format.Source(buf.Bytes())
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	f, err := os.Create(*outPth)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = f.Write(gocode)
+	//_, err = f.Write(gocode)
+	_, err = f.Write(buf.Bytes())
 	if err != nil {
 		log.Fatal(err)
 	}
