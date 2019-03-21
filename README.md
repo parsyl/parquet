@@ -168,6 +168,8 @@ Usage of parquetgen:
     	name of the file that is produced, defaults to parquet.go (default "parquet.go")
   -package string
     	package of the generated code
+  -pageheaders
+        print the page headers of a parquet file (-parquet) and exit (also prints the metadata)
   -parquet string
     	path to a parquet file (if you are generating code based on an existing parquet file)
   -struct-output string

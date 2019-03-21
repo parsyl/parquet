@@ -286,6 +286,11 @@ func (m *Metadata) Pages() (map[string][]Page, error) {
 
 // PageHeader reads the page header from a column page
 func (m *Metadata) PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
+	return PageHeader(r)
+}
+
+// PageHeader reads the page header from a column page
+func PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	pg := &sch.PageHeader{}
 	err := pg.Read(p)
