@@ -44,6 +44,14 @@ type Metadata struct {
 	metadata *sch.FileMetaData
 }
 
+// Stats is passed in by each column's call to DoWrite
+type Stats interface {
+	NullCount() *int64
+	DistinctCount() *int64
+	Min() []byte
+	Max() []byte
+}
+
 // New returns a Metadata struct and reads the first row group
 // into memory.
 func New(fields ...Field) *Metadata {
