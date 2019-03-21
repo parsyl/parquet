@@ -147,6 +147,8 @@ func readPageHeaders() {
 		}
 	}
 
+	f.Close()
+
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	enc.Encode(struct {
