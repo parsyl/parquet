@@ -203,7 +203,7 @@ type Field interface {
 	Write(w io.Writer, meta *parquet.Metadata) error
 	Schema() parquet.Field
 	Scan(r *Person)
-	Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error
+	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
 }
 
@@ -301,7 +301,7 @@ func (p *ParquetReader) readRowGroup() error {
 		}
 
 		pg := pages[0]
-		if err := f.Read(p.r, p.meta, pg); err != nil {
+		if err := f.Read(p.r, pg); err != nil {
 			return fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
 		}
 		p.pages[f.Name()] = p.pages[f.Name()][1:]
@@ -382,8 +382,8 @@ func (f *Int32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Int32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Int32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -431,8 +431,8 @@ func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Int32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -511,8 +511,8 @@ func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Int64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Int64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -560,8 +560,8 @@ func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Int64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -658,9 +658,9 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	start := len(f.Defs)
-	rr, _, err := f.DoRead(r, meta, pg)
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -726,8 +726,8 @@ func (f *Float32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Float32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Float32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -786,8 +786,8 @@ func (f *Float64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Float64Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Float64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -835,8 +835,8 @@ func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error 
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Float32OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -894,8 +894,8 @@ func (f *BoolOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionOptional}
 }
 
-func (f *BoolOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, sizes, err := f.DoRead(r, meta, pg)
+func (f *BoolOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, sizes, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -986,8 +986,8 @@ func (f *Uint32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Uint32Field) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Uint32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -1035,8 +1035,8 @@ func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *Uint64OptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *Uint64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}
@@ -1120,8 +1120,8 @@ func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, rawBuf, len(f.vals), newBoolStats())
 }
 
-func (f *BoolField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, sizes, err := f.DoRead(r, meta, pg)
+func (f *BoolField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, sizes, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}

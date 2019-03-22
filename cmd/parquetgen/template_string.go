@@ -49,8 +49,8 @@ func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *StringField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, meta, pg)
+func (f *StringField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}

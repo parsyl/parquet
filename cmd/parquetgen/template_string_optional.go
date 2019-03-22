@@ -61,9 +61,9 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *StringOptionalField) Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error {
+func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	start := len(f.Defs)
-	rr, _, err := f.DoRead(r, meta, pg)
+	rr, _, err := f.DoRead(r, pg)
 	if err != nil {
 		return err
 	}

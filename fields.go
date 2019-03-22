@@ -93,12 +93,12 @@ func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
-func (f *RequiredField) DoRead(r io.ReadSeeker, meta *Metadata, pg Page) (io.Reader, []int, error) {
+func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
 	var sizes []int
 	for nRead < pg.N {
-		ph, err := meta.PageHeader(r)
+		ph, err := PageHeader(r)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -194,12 +194,12 @@ func (f *OptionalField) NilCount() *int64 {
 
 // DoRead is called by all optional fields.  It reads the definition levels and uses
 // them to interpret the raw data.
-func (f *OptionalField) DoRead(r io.ReadSeeker, meta *Metadata, pg Page) (io.Reader, []int, error) {
+func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
 	var sizes []int
 	for nRead < pg.N {
-		ph, err := meta.PageHeader(r)
+		ph, err := PageHeader(r)
 		if err != nil {
 			return nil, nil, err
 		}

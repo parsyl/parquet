@@ -196,7 +196,7 @@ type Field interface {
 	Write(w io.Writer, meta *parquet.Metadata) error
 	Schema() parquet.Field
 	Scan(r *{{.Type}})
-	Read(r io.ReadSeeker, meta *parquet.Metadata, pg parquet.Page) error
+	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
 }
 
@@ -294,7 +294,7 @@ func (p *ParquetReader) readRowGroup() error {
 		}
 
 		pg := pages[0]
-		if err := f.Read(p.r, p.meta, pg); err != nil {
+		if err := f.Read(p.r, pg); err != nil {
 			return fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
 		}
 		p.pages[f.Name()] = p.pages[f.Name()][1:]
