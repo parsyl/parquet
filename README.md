@@ -151,29 +151,30 @@ type Being struct {
 ## Parquetgen
 
 Parquetgen is the command that go generate should call in
-order to generate the code for your custom type:
+order to generate the code for your custom type.  It also can
+print the page headers and file metadata from a parquet file:
 
 ```console
 $ parquetgen --help
 Usage of parquetgen:
   -ignore
-    	ignore unsupported fields in -type, otherwise log.Fatal is called when an unsupported type is encountered (default true)
+        ignore unsupported fields in -type, otherwise log.Fatal is called when an unsupported type is encountered (default true)
   -import string
-    	import statement of -type if it doesn't live in -package
+        import statement of -type if it doesn't live in -package
   -input string
-    	path to the go file that defines -type
+        path to the go file that defines -type
   -metadata
-    	print the metadata of a parquet file (-parquet) and exit
+        print the metadata of a parquet file (-parquet) and exit
   -output string
-    	name of the file that is produced, defaults to parquet.go (default "parquet.go")
+        name of the file that is produced, defaults to parquet.go (default "parquet.go")
   -package string
-    	package of the generated code
+        package of the generated code
   -pageheaders
         print the page headers of a parquet file (-parquet) and exit (also prints the metadata)
   -parquet string
-    	path to a parquet file (if you are generating code based on an existing parquet file)
+        path to a parquet file (if you are generating code based on an existing parquet file or printing the file metadata or page headers)
   -struct-output string
-    	name of the file that is produced, defaults to parquet.go (default "generated_struct.go")
+        name of the file that is produced, defaults to parquet.go (default "generated_struct.go")
   -type string
-    	name of the struct that will used for writing and reading
+        name of the struct that will used for writing and reading
 ```
