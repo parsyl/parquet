@@ -325,6 +325,43 @@ func PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
 	return pg, err
 }
 
+func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, error) {
+	var pageHeaders []sch.PageHeader
+	for _, rg := range footer.RowGroups {
+		for _, col := range rg.Columns {
+			h, err := PageHeadersAtOffset(r, col.FileOffset, col.MetaData.NumValues)
+			if err != nil {
+				return nil, err
+			}
+			pageHeaders = append(pageHeaders, h...)
+		}
+	}
+	return pageHeaders, nil
+}
+
+func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) {
+	var out []sch.PageHeader
+	var nRead int64
+	_, err := r.Seek(o, 0)
+	if err != nil {
+		return nil, fmt.Errorf("unable to seek to offset %d, err: %s", o, err)
+	}
+
+	for nRead < n {
+		ph, err := PageHeader(r)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read page header: %s", err)
+		}
+		out = append(out, *ph)
+		nRead += int64(ph.DataPageHeader.NumValues)
+		_, err = r.Seek(int64(ph.CompressedPageSize), io.SeekCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("unable to seek to next page: %s", err)
+		}
+	}
+	return out, nil
+}
+
 // FieldFunc is used to set some of the metadata for each column
 type FieldFunc func(*sch.SchemaElement)
 

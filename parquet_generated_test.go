@@ -1173,9 +1173,10 @@ func (f *int32stats) Max() []byte {
 }
 
 type int32optionalStats struct {
-	min  int32
-	max  int32
-	nils int64
+	min     int32
+	max     int32
+	nils    int64
+	nonNils int64
 }
 
 func newint32optionalStats() *int32optionalStats {
@@ -1190,6 +1191,7 @@ func (f *int32optionalStats) add(val *int32) {
 		return
 	}
 
+	f.nonNils++
 	if *val < f.min {
 		f.min = *val
 	}
@@ -1213,10 +1215,16 @@ func (f *int32optionalStats) DistinctCount() *int64 {
 }
 
 func (f *int32optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.min)
 }
 
 func (f *int32optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.max)
 }
 
@@ -1263,9 +1271,10 @@ func (f *int64stats) Max() []byte {
 }
 
 type int64optionalStats struct {
-	min  int64
-	max  int64
-	nils int64
+	min     int64
+	max     int64
+	nils    int64
+	nonNils int64
 }
 
 func newint64optionalStats() *int64optionalStats {
@@ -1280,6 +1289,7 @@ func (f *int64optionalStats) add(val *int64) {
 		return
 	}
 
+	f.nonNils++
 	if *val < f.min {
 		f.min = *val
 	}
@@ -1303,10 +1313,16 @@ func (f *int64optionalStats) DistinctCount() *int64 {
 }
 
 func (f *int64optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.min)
 }
 
 func (f *int64optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.max)
 }
 
@@ -1448,9 +1464,10 @@ func (f *float64stats) Max() []byte {
 }
 
 type float32optionalStats struct {
-	min  float32
-	max  float32
-	nils int64
+	min     float32
+	max     float32
+	nils    int64
+	nonNils int64
 }
 
 func newfloat32optionalStats() *float32optionalStats {
@@ -1465,6 +1482,7 @@ func (f *float32optionalStats) add(val *float32) {
 		return
 	}
 
+	f.nonNils++
 	if *val < f.min {
 		f.min = *val
 	}
@@ -1488,10 +1506,16 @@ func (f *float32optionalStats) DistinctCount() *int64 {
 }
 
 func (f *float32optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.min)
 }
 
 func (f *float32optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.max)
 }
 
@@ -1568,9 +1592,10 @@ func (f *uint32stats) Max() []byte {
 }
 
 type uint64optionalStats struct {
-	min  uint64
-	max  uint64
-	nils int64
+	min     uint64
+	max     uint64
+	nils    int64
+	nonNils int64
 }
 
 func newuint64optionalStats() *uint64optionalStats {
@@ -1585,6 +1610,7 @@ func (f *uint64optionalStats) add(val *uint64) {
 		return
 	}
 
+	f.nonNils++
 	if *val < f.min {
 		f.min = *val
 	}
@@ -1608,10 +1634,16 @@ func (f *uint64optionalStats) DistinctCount() *int64 {
 }
 
 func (f *uint64optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.min)
 }
 
 func (f *uint64optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.max)
 }
 

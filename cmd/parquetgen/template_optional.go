@@ -76,6 +76,7 @@ type {{removeStar .TypeName}}optionalStats struct {
 	min {{removeStar .TypeName}}
 	max {{removeStar .TypeName}}
 	nils int64
+	nonNils int64
 }
 
 func new{{removeStar .TypeName}}optionalStats() {{.TypeName}}optionalStats {
@@ -90,6 +91,7 @@ func (f *{{removeStar .TypeName}}optionalStats) add(val *{{removeStar .TypeName}
 		return
 	}
 
+	f.nonNils++
 	if *val < f.min {
 		f.min = *val
 	}
@@ -113,10 +115,16 @@ func (f *{{removeStar .TypeName}}optionalStats) DistinctCount() *int64 {
 }
 
 func (f *{{removeStar .TypeName}}optionalStats) Min() []byte {
+	if f.nonNils == 0  {
+		return nil
+	}
 	return f.bytes(f.min)
 }
 
 func (f *{{removeStar .TypeName}}optionalStats) Max() []byte {
+	if f.nonNils == 0  {
+		return nil
+	}
 	return f.bytes(f.max)
 }
 {{end}}`

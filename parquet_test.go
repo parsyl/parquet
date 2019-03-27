@@ -2,12 +2,16 @@ package parquet_test
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"testing"
 	"time"
 
+	"github.com/parsyl/parquet"
+	sch "github.com/parsyl/parquet/generated"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -448,7 +452,141 @@ func TestParquet(t *testing.T) {
 			})
 		}
 	}
+}
 
+func TestStats(t *testing.T) {
+	type stats struct {
+		min []byte
+		max []byte
+	}
+
+	type testCase struct {
+		name     string
+		input    [][]Person
+		pageSize int
+		stats    []stats
+		col      string
+	}
+
+	testCases := []testCase{
+		{
+			name: "int64 single stat",
+			col:  "happiness",
+			input: [][]Person{
+				{
+					{Happiness: 1},
+					{Happiness: 2},
+					{Happiness: 22},
+				},
+			},
+			stats: []stats{
+				{min: writeInt64(1), max: writeInt64(22)},
+			},
+		},
+		{
+			name:     "int64 two pages",
+			col:      "happiness",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{Happiness: 1},
+					{Happiness: 2},
+					{Happiness: 22},
+				},
+			},
+			stats: []stats{
+				{min: writeInt64(1), max: writeInt64(2)},
+				{min: writeInt64(22), max: writeInt64(22)},
+			},
+		},
+		{
+			name: "int64 no stats",
+			col:  "happiness",
+			input: [][]Person{
+				{
+					{Being: Being{ID: 1}},
+					{Being: Being{ID: 2}},
+					{Being: Being{ID: 3}},
+				},
+			},
+			stats: []stats{
+				{min: writeInt64(0), max: writeInt64(0)},
+			},
+		},
+		{
+			name: "optional int64 no stats",
+			col:  "sadness",
+			input: [][]Person{
+				{
+					{Being: Being{ID: 1}},
+					{Being: Being{ID: 2}},
+					{Being: Being{ID: 3}},
+				},
+			},
+			stats: []stats{
+				{min: nil, max: nil},
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		for j, comp := range []string{"uncompressed", "snappy"} {
+			t.Run(fmt.Sprintf("%02d %s %s", 2*i+j, tc.name, comp), func(t *testing.T) {
+				if tc.pageSize == 0 {
+					tc.pageSize = 100
+				}
+				var buf bytes.Buffer
+				w, err := NewParquetWriter(&buf, MaxPageSize(tc.pageSize), compressionTest[comp])
+				assert.Nil(t, err, tc.name)
+				for _, rowgroup := range tc.input {
+					for _, p := range rowgroup {
+						w.Add(p)
+					}
+					assert.Nil(t, w.Write(), tc.name)
+				}
+
+				err = w.Close()
+				assert.Nil(t, err, tc.name)
+
+				r := bytes.NewReader(buf.Bytes())
+				footer, err := parquet.ReadMetaData(r)
+				if !assert.NoError(t, err) {
+					return
+				}
+
+				pages, err := getPageHeaders(r, tc.col, footer)
+				if !assert.NoError(t, err) {
+					return
+				}
+
+				if !assert.Equal(t, len(pages), len(tc.stats), tc.name) {
+					return
+				}
+				for i, st := range tc.stats {
+					ph := pages[i]
+					assert.Equal(t, st.min, ph.DataPageHeader.Statistics.MinValue)
+					assert.Equal(t, st.max, ph.DataPageHeader.Statistics.MaxValue)
+				}
+			})
+		}
+	}
+}
+
+func getPageHeaders(r io.ReadSeeker, name string, footer *sch.FileMetaData) ([]sch.PageHeader, error) {
+	var out []sch.PageHeader
+	for _, rg := range footer.RowGroups {
+		for _, col := range rg.Columns {
+			pth := col.MetaData.PathInSchema
+			if pth[len(pth)-1] == name {
+				h, err := parquet.PageHeadersAtOffset(r, col.FileOffset, col.MetaData.NumValues)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, h...)
+			}
+		}
+	}
+	return out, nil
 }
 
 var compressionTest = map[string]func(*ParquetWriter) error{
@@ -644,4 +782,10 @@ func BenchmarkWrite(b *testing.B) {
 
 	err = w.Close()
 	assert.Nil(b, err, "benchmark write")
+}
+
+func writeInt64(i int64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, i)
+	return buf.Bytes()
 }

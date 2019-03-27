@@ -132,19 +132,9 @@ func readPageHeaders() {
 	f := openParquet()
 	footer := getFooter(f)
 
-	var pageHeaders []sch.PageHeader
-	for _, rg := range footer.RowGroups {
-		for _, col := range rg.Columns {
-			_, err := f.Seek(col.FileOffset, 0)
-			if err != nil {
-				log.Fatalf("unable to seek to offset %d, err: %s", col.FileOffset, err)
-			}
-			ph, err := parquet.PageHeader(f)
-			if err != nil {
-				log.Fatalf("unable to read page header: %s", err)
-			}
-			pageHeaders = append(pageHeaders, *ph)
-		}
+	pageHeaders, err := parquet.PageHeaders(footer, f)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	f.Close()
