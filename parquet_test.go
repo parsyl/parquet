@@ -456,8 +456,9 @@ func TestParquet(t *testing.T) {
 
 func TestStats(t *testing.T) {
 	type stats struct {
-		min []byte
-		max []byte
+		min      []byte
+		max      []byte
+		nilCount *int64
 	}
 
 	type testCase struct {
@@ -524,7 +525,21 @@ func TestStats(t *testing.T) {
 				},
 			},
 			stats: []stats{
-				{min: nil, max: nil},
+				{min: nil, max: nil, nilCount: pint64(3)},
+			},
+		},
+		{
+			name: "optional bool stats",
+			col:  "keen",
+			input: [][]Person{
+				{
+					{Keen: pbool(true)},
+					{Keen: nil},
+					{Keen: nil},
+				},
+			},
+			stats: []stats{
+				{nilCount: pint64(2)},
 			},
 		},
 	}
@@ -566,6 +581,11 @@ func TestStats(t *testing.T) {
 					ph := pages[i]
 					assert.Equal(t, st.min, ph.DataPageHeader.Statistics.MinValue)
 					assert.Equal(t, st.max, ph.DataPageHeader.Statistics.MaxValue)
+					if st.nilCount == nil {
+						assert.Equal(t, st.nilCount, ph.DataPageHeader.Statistics.NullCount)
+					} else {
+						assert.Equal(t, *st.nilCount, *ph.DataPageHeader.Statistics.NullCount)
+					}
 				}
 			})
 		}

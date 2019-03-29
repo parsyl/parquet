@@ -5,7 +5,7 @@ var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField stru
 	vals  []bool
 	val   func(r {{.Type}}) *bool
 	read  func(r *{{.Type}}, v *bool)
-	stats parquet.Stats
+	stats *boolOptionalStats
 }
 
 func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v *bool), col string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
@@ -49,6 +49,7 @@ func (f *BoolOptionalField) Scan(r *{{.Type}}) {
 
 func (f *BoolOptionalField) Add(r {{.Type}}) {
 	v := f.val(r)
+	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
 		f.Defs = append(f.Defs, 1)

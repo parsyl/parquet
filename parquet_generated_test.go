@@ -878,7 +878,7 @@ type BoolOptionalField struct {
 	vals  []bool
 	val   func(r Person) *bool
 	read  func(r *Person, v *bool)
-	stats parquet.Stats
+	stats *boolOptionalStats
 }
 
 func NewBoolOptionalField(val func(r Person) *bool, read func(r *Person, v *bool), col string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
@@ -922,6 +922,7 @@ func (f *BoolOptionalField) Scan(r *Person) {
 
 func (f *BoolOptionalField) Add(r Person) {
 	v := f.val(r)
+	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
 		f.Defs = append(f.Defs, 1)
