@@ -531,6 +531,49 @@ func TestStats(t *testing.T) {
 			},
 		},
 		{
+			name: "int32 stats",
+			col:  "birthday",
+			input: [][]Person{
+				{
+					{Birthday: 10},
+					{Birthday: 20},
+					{Birthday: 30},
+				},
+			},
+			stats: []stats{
+				{min: writeInt32(10), max: writeInt32(30)},
+			},
+		},
+		{
+			name: "float64 stats",
+			col:  "boldness",
+			input: [][]Person{
+				{
+					{Boldness: 0.5},
+					{Boldness: 500.0},
+					{Boldness: -50.5},
+				},
+			},
+			stats: []stats{
+				{min: writeFloat64(-50.5), max: writeFloat64(500.0)},
+			},
+		},
+		{
+			name: "float32 optional stats",
+			col:  "lameness",
+			input: [][]Person{
+				{
+					{Lameness: pfloat32(0.5)},
+					{Lameness: pfloat32(500.0)},
+					{Lameness: pfloat32(50.5)},
+					{Lameness: nil},
+				},
+			},
+			stats: []stats{
+				{min: writeFloat32(0.5), max: writeFloat32(500.0), nilCount: pint64(1)},
+			},
+		},
+		{
 			name: "bool stats",
 			col:  "hungry",
 			input: [][]Person{
@@ -851,5 +894,23 @@ func BenchmarkWrite(b *testing.B) {
 func writeInt64(i int64) []byte {
 	var buf bytes.Buffer
 	binary.Write(&buf, binary.LittleEndian, i)
+	return buf.Bytes()
+}
+
+func writeInt32(i int32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, i)
+	return buf.Bytes()
+}
+
+func writeFloat32(f float32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, f)
+	return buf.Bytes()
+}
+
+func writeFloat64(f float64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, f)
 	return buf.Bytes()
 }
