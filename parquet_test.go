@@ -39,6 +39,8 @@ type Person struct {
 	Keen        *bool    `parquet:"keen"`
 	Birthday    uint32   `parquet:"birthday"`
 	Anniversary *uint64  `parquet:"anniversary"`
+	BFF         string   `parquet:"bff"`
+	Hungry      bool     `parquet:"hungry"`
 	Secret      string   `parquet:"-"`
 	Sleepy      bool
 }
@@ -529,6 +531,20 @@ func TestStats(t *testing.T) {
 			},
 		},
 		{
+			name: "bool stats",
+			col:  "hungry",
+			input: [][]Person{
+				{
+					{Hungry: true},
+					{Hungry: false},
+					{Hungry: true},
+				},
+			},
+			stats: []stats{
+				{},
+			},
+		},
+		{
 			name: "optional bool stats",
 			col:  "keen",
 			input: [][]Person{
@@ -540,6 +556,34 @@ func TestStats(t *testing.T) {
 			},
 			stats: []stats{
 				{nilCount: pint64(2)},
+			},
+		},
+		{
+			name: "string stats",
+			col:  "bff",
+			input: [][]Person{
+				{
+					{BFF: "Fred"},
+					{BFF: "Val"},
+					{BFF: "Miranda"},
+				},
+			},
+			stats: []stats{
+				{min: []byte("Fred"), max: []byte("Val")},
+			},
+		},
+		{
+			name: "string optional stats",
+			col:  "code",
+			input: [][]Person{
+				{
+					{Code: pstring("Fred")},
+					{Code: nil},
+					{Code: pstring("Miranda")},
+				},
+			},
+			stats: []stats{
+				{min: []byte("Fred"), max: []byte("Miranda"), nilCount: pint64(1)},
 			},
 		},
 	}

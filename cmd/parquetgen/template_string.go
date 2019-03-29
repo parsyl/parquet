@@ -33,7 +33,9 @@ func (f *StringField) Scan(r *{{.Type}}) {
 }
 
 func (f *StringField) Add(r {{.Type}}) {
-	f.vals = append(f.vals, f.val(r))
+	v := f.val(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
 }
 
 func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
