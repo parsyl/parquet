@@ -17,8 +17,8 @@ import (
 type compression int
 
 const (
-	compressionUncompressed             = 0
-	compressionSnappy                   = 1
+	compressionUncompressed compression = 0
+	compressionSnappy       compression = 1
 	compressionUnknown      compression = -1
 )
 
@@ -374,9 +374,7 @@ func (f *Int32Field) Scan(r *Person) {
 
 func (f *Int32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
-
 	for _, v := range f.vals {
-
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
@@ -503,9 +501,7 @@ func (f *Int64Field) Scan(r *Person) {
 
 func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
-
 	for _, v := range f.vals {
-
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
@@ -718,9 +714,7 @@ func (f *Float32Field) Scan(r *Person) {
 
 func (f *Float32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
-
 	for _, v := range f.vals {
-
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
@@ -778,9 +772,7 @@ func (f *Float64Field) Scan(r *Person) {
 
 func (f *Float64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
-
 	for _, v := range f.vals {
-
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
@@ -979,9 +971,7 @@ func (f *Uint32Field) Scan(r *Person) {
 
 func (f *Uint32Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	var buf bytes.Buffer
-
 	for _, v := range f.vals {
-
 		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
 			return err
 		}

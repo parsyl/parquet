@@ -21,8 +21,8 @@ import (
 type compression int
 
 const (
-	compressionUncompressed             = 0
-	compressionSnappy                   = 1
+	compressionUncompressed compression = 0
+	compressionSnappy       compression = 1
 	compressionUnknown      compression = -1
 )
 
