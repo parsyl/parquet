@@ -655,7 +655,6 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
-
 func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	start := len(f.Defs)
 	rr, _, err := f.DoRead(r, pg)
@@ -1766,3 +1765,72 @@ func (b *boolStats) NullCount() *int64     { return nil }
 func (b *boolStats) DistinctCount() *int64 { return nil }
 func (b *boolStats) Min() []byte           { return nil }
 func (b *boolStats) Max() []byte           { return nil }
+
+type Int96Field struct {
+	vals []parquet.Int96
+	parquet.RequiredField
+	val  func(r Person) parquet.Int96
+	read func(r *Person, v parquet.Int96)
+	//stats *int96stats
+}
+
+func NewInt96Field(val func(r Person) parquet.Int96, read func(r *Person, v parquet.Int96), col string, opts ...func(*parquet.RequiredField)) *Int96Field {
+	return &Int96Field{
+		val:           val,
+		read:          read,
+		RequiredField: parquet.NewRequiredField(col, opts...),
+		//stats:         newInt96stats(),
+	}
+}
+
+func (f *Int96Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Type: parquet.Int32Type, RepetitionType: parquet.RepetitionRequired}
+}
+
+func (f *Int96Field) Scan(r *Person) {
+	if len(f.vals) == 0 {
+		return
+	}
+	v := f.vals[0]
+	f.vals = f.vals[1:]
+	f.read(r, v)
+}
+
+func (f *Int96Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if _, err := buf.Write(v.Bytes()); err != nil {
+			return err
+		}
+	}
+	//return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+}
+
+func (f *Int96Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	b := make([]byte, 12*int(pg.N))
+	_, err = rr.Read(b)
+	if err != nil {
+		return err
+	}
+
+	vals := make([]parquet.Int96, int(pg.N))
+	for i := range vals {
+		vals[i] = parquet.NewInt96(b[:12])
+		b = b[12:]
+	}
+
+	f.vals = append(f.vals, vals...)
+	return err
+}
+
+func (f *Int96Field) Add(r Person) {
+	v := f.val(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, v)
+}

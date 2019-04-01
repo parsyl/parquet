@@ -399,6 +399,11 @@ func Int64Type(se *sch.SchemaElement) {
 	se.Type = &t
 }
 
+func Int96Type(se *sch.SchemaElement) {
+	t := sch.Type_INT96
+	se.Type = &t
+}
+
 func Float32Type(se *sch.SchemaElement) {
 	t := sch.Type_FLOAT
 	se.Type = &t
@@ -509,3 +514,17 @@ func Pint64(i int64) *int64       { return &i }
 func Puint64(i uint64) *uint64    { return &i }
 func Pfloat32(f float32) *float32 { return &f }
 func Pfloat64(f float64) *float64 { return &f }
+
+type Int96 struct {
+	bytes [12]byte
+}
+
+func NewInt96(b []byte) Int96 {
+	i := Int96{}
+	copy(i.bytes[:], b)
+	return i
+}
+
+func (i Int96) Bytes() []byte {
+	return i.bytes[:]
+}
