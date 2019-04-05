@@ -7,7 +7,6 @@ import (
 	"go/format"
 	"log"
 	"os"
-	"strings"
 	"text/template"
 )
 
@@ -83,16 +82,15 @@ var (
 			shift := (i * width) % 8
 			index := (i * width) / 8
 			mask := ((1 << uint(width)) - 1) << uint((i*width)%8)
-			parts := []string{
-				fmt.Sprintf("(int64(vals[%d] & %d) >> %d)", index, mask, shift),
+			if mask < (1 << 8) {
+				return fmt.Sprintf("(int64(vals[%d] & %d) >> %d),", index, mask, shift)
 			}
-			if mask > (1 << 8) {
-				parts = []string{
-					fmt.Sprintf("(int64(vals[%d] & %d) >> %d)", index, mask&((1<<8)-1), shift),
-					fmt.Sprintf("(int64(vals[%d] & %d) << %d)", index+1, mask>>8, 8-shift),
-				}
-			}
-			return fmt.Sprintf("%s,", strings.Join(parts, " | "))
+
+			return fmt.Sprintf(
+				"%s | %s,",
+				fmt.Sprintf("(int64(vals[%d] & %d) >> %d)", index, mask&((1<<8)-1), shift),
+				fmt.Sprintf("(int64(vals[%d] & %d) << %d)", index+1, mask>>8, 8-shift),
+			)
 		},
 		"N": func(start, end int) (stream chan int) {
 			stream = make(chan int)
