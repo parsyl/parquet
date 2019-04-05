@@ -10,8 +10,6 @@ func Pack(width int, vals []int64) []byte {
 		return pack2(vals)
 	case 3:
 		return pack3(vals)
-	case 4:
-		return pack4(vals)
 	default:
 		return []byte{}
 	}
@@ -80,43 +78,6 @@ func pack3(vals []int64) []byte {
 	}
 }
 
-func pack4(vals []int64) []byte {
-	return []byte{
-		(byte((vals[0]&1)<<0) |
-			byte((vals[0]&2)<<0) |
-			byte((vals[0]&4)<<0) |
-			byte((vals[0]&8)<<0) |
-			byte((vals[1]&1)<<4) |
-			byte((vals[1]&2)<<4) |
-			byte((vals[1]&4)<<4) |
-			byte((vals[1]&8)<<4)),
-		(byte((vals[2]&1)<<0) |
-			byte((vals[2]&2)<<0) |
-			byte((vals[2]&4)<<0) |
-			byte((vals[2]&8)<<0) |
-			byte((vals[3]&1)<<4) |
-			byte((vals[3]&2)<<4) |
-			byte((vals[3]&4)<<4) |
-			byte((vals[3]&8)<<4)),
-		(byte((vals[4]&1)<<0) |
-			byte((vals[4]&2)<<0) |
-			byte((vals[4]&4)<<0) |
-			byte((vals[4]&8)<<0) |
-			byte((vals[5]&1)<<4) |
-			byte((vals[5]&2)<<4) |
-			byte((vals[5]&4)<<4) |
-			byte((vals[5]&8)<<4)),
-		(byte((vals[6]&1)<<0) |
-			byte((vals[6]&2)<<0) |
-			byte((vals[6]&4)<<0) |
-			byte((vals[6]&8)<<0) |
-			byte((vals[7]&1)<<4) |
-			byte((vals[7]&2)<<4) |
-			byte((vals[7]&4)<<4) |
-			byte((vals[7]&8)<<4)),
-	}
-}
-
 func Unpack(width int, vals []byte) []int64 {
 	switch width {
 	case 1:
@@ -125,8 +86,6 @@ func Unpack(width int, vals []byte) []int64 {
 		return unpack2(vals)
 	case 3:
 		return unpack3(vals)
-	case 4:
-		return unpack4(vals)
 	default:
 		return []int64{}
 	}
@@ -168,18 +127,5 @@ func unpack3(vals []byte) []int64 {
 		(int64(vals[1]&128) >> 7) | (int64(vals[2]&3) << 1),
 		(int64(vals[2]&28) >> 2),
 		(int64(vals[2]&224) >> 5),
-	}
-}
-
-func unpack4(vals []byte) []int64 {
-	return []int64{
-		(int64(vals[0]&15) >> 0),
-		(int64(vals[0]&240) >> 4),
-		(int64(vals[1]&15) >> 0),
-		(int64(vals[1]&240) >> 4),
-		(int64(vals[2]&15) >> 0),
-		(int64(vals[2]&240) >> 4),
-		(int64(vals[3]&15) >> 0),
-		(int64(vals[3]&240) >> 4),
 	}
 }
