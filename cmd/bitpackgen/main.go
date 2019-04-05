@@ -81,7 +81,7 @@ var (
 		"int64": func(width, i int) string {
 			shift := (i * width) % 8
 			index := (i * width) / 8
-			mask := ((1 << uint(width)) - 1) << uint((i*width)%8)
+			mask := ((1 << uint(width)) - 1) << uint(shift)
 			if mask < (1 << 8) {
 				return fmt.Sprintf("(int64(vals[%d] & %d) >> %d),", index, mask, shift)
 			}
