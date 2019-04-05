@@ -13,7 +13,7 @@ import (
 
 var (
 	pkg    = flag.String("package", "main", "package of the generated code")
-	max    = flag.Int("max", 3, "the bit width at which to stop")
+	max    = flag.Int("maxwidth", 3, "the bit width at which to stop")
 	outPth = flag.String("output", "bitpack.go", "name of the file that is produced, defaults to parquet.go")
 )
 
