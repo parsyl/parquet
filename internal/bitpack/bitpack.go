@@ -30,51 +30,29 @@ func pack1(vals []int64) []byte {
 
 func pack2(vals []int64) []byte {
 	return []byte{
-		(byte((vals[0]&1)<<0) |
-			byte((vals[0]&2)<<0) |
-			byte((vals[1]&1)<<2) |
-			byte((vals[1]&2)<<2) |
-			byte((vals[2]&1)<<4) |
-			byte((vals[2]&2)<<4) |
-			byte((vals[3]&1)<<6) |
-			byte((vals[3]&2)<<6)),
-		(byte((vals[4]&1)<<0) |
-			byte((vals[4]&2)<<0) |
-			byte((vals[5]&1)<<2) |
-			byte((vals[5]&2)<<2) |
-			byte((vals[6]&1)<<4) |
-			byte((vals[6]&2)<<4) |
-			byte((vals[7]&1)<<6) |
-			byte((vals[7]&2)<<6)),
+		(byte((vals[0]&3)<<0) |
+			byte((vals[1]&3)<<2) |
+			byte((vals[2]&3)<<4) |
+			byte((vals[3]&3)<<6)),
+		(byte((vals[4]&3)<<0) |
+			byte((vals[5]&3)<<2) |
+			byte((vals[6]&3)<<4) |
+			byte((vals[7]&3)<<6)),
 	}
 }
 
 func pack3(vals []int64) []byte {
 	return []byte{
-		(byte((vals[0]&1)<<0) |
-			byte((vals[0]&2)<<0) |
-			byte((vals[0]&4)<<0) |
-			byte((vals[1]&1)<<3) |
-			byte((vals[1]&2)<<3) |
-			byte((vals[1]&4)<<3) |
-			byte((vals[2]&1)<<6) |
-			byte((vals[2]&2)<<6)),
+		(byte((vals[0]&7)<<0) |
+			byte((vals[1]&7)<<3) |
+			byte((vals[2]&3)<<6)),
 		(byte((vals[2]&4)>>2) |
-			byte((vals[3]&1)<<1) |
-			byte((vals[3]&2)<<1) |
-			byte((vals[3]&4)<<1) |
-			byte((vals[4]&1)<<4) |
-			byte((vals[4]&2)<<4) |
-			byte((vals[4]&4)<<4) |
+			byte((vals[3]&7)<<1) |
+			byte((vals[4]&7)<<4) |
 			byte((vals[5]&1)<<7)),
-		(byte((vals[5]&2)>>1) |
-			byte((vals[5]&4)>>1) |
-			byte((vals[6]&1)<<2) |
-			byte((vals[6]&2)<<2) |
-			byte((vals[6]&4)<<2) |
-			byte((vals[7]&1)<<5) |
-			byte((vals[7]&2)<<5) |
-			byte((vals[7]&4)<<5)),
+		(byte((vals[5]&6)>>1) |
+			byte((vals[6]&7)<<2) |
+			byte((vals[7]&7)<<5)),
 	}
 }
 
