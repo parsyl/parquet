@@ -65,36 +65,6 @@ type bitback struct {
 	Max     int
 }
 
-/*
-end := 8 / width
-			if width > 2 && width%2 > 0 {
-				end++
-			}
-			var out string
-			for i := 0; i < end; i++ {
-				index := (width * byt) + i
-				if index > 7 {
-					break
-				}
-
-				shift := (index * width) % 8
-				and := (1<<uint(width) - 1)
-				or := " |\n"
-				if index > 0 && width%2 != 0 && i == end-1 {
-					and = 7 >> uint(width-(8-shift))
-					or = ""
-				} else if index > 0 && width%2 != 0 && i == 0 {
-					s := 8 - (((index - 1) * width) % 8)
-					a := 7 - (7 >> uint(width-s))
-					out += fmt.Sprintf("byte((vals[%d]&%d)%s%d) |\n", index-1, a, ">>", s)
-				} else if index == 7 || i == end-1 {
-					or = ""
-				}
-				out += fmt.Sprintf("byte((vals[%d]&%d)%s%d)%s", index, and, "<<", shift, or)
-			}
-			return out
-*/
-
 type byt struct {
 	I     int
 	Or    string
