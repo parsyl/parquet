@@ -40,10 +40,57 @@ type ParquetWriter struct {
 	compression compression
 }
 
+func readHobbyName(x Person) (*string, int64) {
+	var def int64
+	if x.Hobby == nil {
+		return nil, 0
+	}
+	return &x.Hobby.Name, 2
+}
+
+// Hobby is optional, but Hobby.Name is not so only def 0 and 2 are valid
+func writeHobbyName(x *Person, v *string, def int64) {
+	switch def {
+	case 2:
+		x.Hobby = &Hobby{Name: *v}
+	}
+}
+
+func readHobbyDifficulty(x Person) (*int32, int64) {
+	var def int64
+	if x.Hobby == nil {
+		return nil, 0
+	}
+	if x.Hobby.Difficulty == nil {
+		return nil, 1
+	}
+
+	return x.Hobby.Difficulty, 2
+}
+
+func writeHobbyDifficulty(x *Person, v *int32, def int64) {
+	switch def {
+	case 2:
+		if x.Hobby != nil {
+			x.Hobby = &Hobby{Difficulty: v}
+		}
+	case 1:
+		if x.Hobby != nil {
+			x.Hobby = &Hobby{}
+		}
+	}
+}
+
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt32Field(func(x Person) int32 { return x.ID }, func(x *Person, v int32) { x.ID = v }, "id", fieldCompression(compression)...),
-		NewInt32OptionalField(func(x Person) *int32 { return x.Age }, func(x *Person, v *int32) { x.Age = v }, "age", optionalFieldCompression(compression)...),
+		NewInt32OptionalField(func(x Person) (*int32, int64) {
+			var def int64
+			if x.Age != nil {
+				def = 1
+			}
+			return x.Age, def
+		}, func(x *Person, v *int32, def int64) { x.Age = v }, "age", optionalFieldCompression(compression)...),
 		NewInt64Field(func(x Person) int64 { return x.Happiness }, func(x *Person, v int64) { x.Happiness = v }, "happiness", fieldCompression(compression)...),
 		NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, func(x *Person, v *int64) { x.Sadness = v }, "sadness", optionalFieldCompression(compression)...),
 		NewStringOptionalField(func(x Person) *string { return x.Code }, func(x *Person, v *string) { x.Code = v }, "code", optionalFieldCompression(compression)...),
@@ -56,6 +103,7 @@ func Fields(compression compression) []Field {
 		NewStringField(func(x Person) string { return x.BFF }, func(x *Person, v string) { x.BFF = v }, "bff", fieldCompression(compression)...),
 		NewBoolField(func(x Person) bool { return x.Hungry }, func(x *Person, v bool) { x.Hungry = v }, "hungry", fieldCompression(compression)...),
 		NewBoolField(func(x Person) bool { return x.Sleepy }, func(x *Person, v bool) { x.Sleepy = v }, "Sleepy", fieldCompression(compression)...),
+		NewStringOptionalField(readHobbyName, writeHobbyName, "hobby.name", optionalFieldCompression(compression)...),
 	}
 }
 
@@ -403,12 +451,12 @@ func (f *Int32Field) Add(r Person) {
 type Int32OptionalField struct {
 	parquet.OptionalField
 	vals  []int32
-	read  func(r *Person, v *int32)
-	val   func(r Person) *int32
+	read  func(r *Person, v *int32, def int64)
+	val   func(r Person) (*int32, int64)
 	stats *int32optionalStats
 }
 
-func NewInt32OptionalField(val func(r Person) *int32, read func(r *Person, v *int32), col string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
+func NewInt32OptionalField(val func(r Person) (*int32, int64), read func(r *Person, v *int32, def int64), col string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
 	return &Int32OptionalField{
 		val:           val,
 		read:          read,
@@ -599,12 +647,12 @@ func (f *Int64OptionalField) Scan(r *Person) {
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
-	val   func(r Person) *string
-	read  func(r *Person, v *string)
+	val   func(r Person) (*string, int64)
+	read  func(r *Person, v *string, def int64)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(val func(r Person) *string, read func(r *Person, v *string), col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(val func(r Person) (*string, int64), read func(r *Person, v *string, def int64), col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		val:           val,
 		read:          read,
@@ -622,24 +670,26 @@ func (f *StringOptionalField) Scan(r *Person) {
 		return
 	}
 
-	if f.Defs[0] == 1 {
+	if f.Defs[0] == int64(f.OptionalField.Depth) {
 		var val *string
 		v := f.vals[0]
 		f.vals = f.vals[1:]
 		val = &v
-		f.read(r, val)
+		f.read(r, val, f.Defs[0])
+	} else {
+		f.read(r, nil, f.Defs[0])
 	}
 	f.Defs = f.Defs[1:]
 }
 
 func (f *StringOptionalField) Add(r Person) {
-	v := f.val(r)
+	v, depth := f.val(r)
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
-		f.Defs = append(f.Defs, 1)
+		f.Defs = append(f.Defs, depth)
 	} else {
-		f.Defs = append(f.Defs, 0)
+		f.Defs = append(f.Defs, depth)
 	}
 }
 

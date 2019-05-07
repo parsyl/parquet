@@ -2,6 +2,7 @@ package parquet
 
 import (
 	"bytes"
+	"math/bits"
 
 	"fmt"
 
@@ -124,11 +125,16 @@ func (f *RequiredField) Name() string {
 type OptionalField struct {
 	Defs        []int64
 	col         string
+	Depth       uint
 	compression sch.CompressionCodec
 }
 
 func NewOptionalField(col string, opts ...func(*OptionalField)) OptionalField {
-	f := OptionalField{col: col, compression: sch.CompressionCodec_SNAPPY}
+	f := OptionalField{
+		col:         col,
+		compression: sch.CompressionCodec_SNAPPY,
+		Depth:       1,
+	}
 	for _, opt := range opts {
 		opt(&f)
 	}
@@ -147,16 +153,24 @@ func OptionalFieldUncompressed(o *OptionalField) {
 	o.compression = sch.CompressionCodec_UNCOMPRESSED
 }
 
+// OptionalFieldDepth sets the depth, as in how deeply
+// nested the field is.
+func OptionalFieldDepth(d uint) func(*OptionalField) {
+	return func(o *OptionalField) {
+		o.Depth = d
+	}
+}
+
 // Values reads the definition levels and uses them
 // to return the values from the page data.
 func (f *OptionalField) Values() int {
-	return valsFromDefs(f.Defs)
+	return valsFromDefs(f.Defs, int64(f.Depth))
 }
 
-func valsFromDefs(defs []int64) int {
+func valsFromDefs(defs []int64, depth int64) int {
 	var out int
 	for _, d := range defs {
-		if d == 1 {
+		if d == depth {
 			out++
 		}
 	}
@@ -209,12 +223,12 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 
-		defs, l, err := readLevels(bytes.NewBuffer(data))
+		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Depth)))
 		if err != nil {
 			return nil, nil, err
 		}
 		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
-		sizes = append(sizes, valsFromDefs(defs))
+		sizes = append(sizes, valsFromDefs(defs, int64(f.Depth)))
 		out = append(out, data[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}

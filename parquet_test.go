@@ -28,6 +28,11 @@ type Being struct {
 	Age *int32 `parquet:"age"`
 }
 
+type Hobby struct {
+	Name       string `parquet:"name"`
+	Difficulty *int32 `parquet:"difficulty"`
+}
+
 type Person struct {
 	Being
 	Happiness   int64    `parquet:"happiness"`
@@ -43,6 +48,7 @@ type Person struct {
 	Hungry      bool     `parquet:"hungry"`
 	Secret      string   `parquet:"-"`
 	Sleepy      bool
+	Hobby       *Hobby `parquet:"hobby"`
 }
 
 func TestParquet(t *testing.T) {

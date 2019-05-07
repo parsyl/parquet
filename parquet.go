@@ -430,9 +430,9 @@ func writeLevels(w io.Writer, levels []int64) error {
 }
 
 // readLevels reads the RLE/bitpack encoded definition levels
-func readLevels(in io.Reader) ([]int64, int, error) {
+func readLevels(in io.Reader, width int32) ([]int64, int, error) {
 	var out []int64
-	dec, _ := rle.New(1, 0)
+	dec, _ := rle.New(width, 0)
 	out, n, err := dec.Read(in)
 	if err != nil {
 		return nil, 0, err
