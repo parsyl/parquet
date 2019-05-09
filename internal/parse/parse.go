@@ -14,7 +14,7 @@ const letters = "abcdefghijklmnopqrstuvwxyz"
 
 type Field struct {
 	Type        string
-	FieldName   string
+	FieldNames  []string
 	TypeName    string
 	FieldType   string
 	ParquetType string
@@ -23,11 +23,12 @@ type Field struct {
 }
 
 type field struct {
-	Field    Field
-	tagName  string
-	omit     bool
-	embedded bool
-	err      error
+	Field     Field
+	tagName   string
+	fieldName string
+	omit      bool
+	embedded  bool
+	err       error
 }
 
 type Result struct {
@@ -65,7 +66,11 @@ func Fields(typ, pth string) (*Result, error) {
 	var errs []error
 	var i int
 	for _, f := range fields[typ] {
-		if f.err != nil {
+		fmt.Printf("%+v\n", f)
+		_, ok := fields[f.fieldName]
+		if ok {
+			//get nested
+		} else if f.err != nil {
 			errs = append(errs, f.err)
 		} else if f.err == nil && f.embedded {
 			embeddedFields := fields[f.Field.TypeName]
@@ -83,6 +88,10 @@ func Fields(typ, pth string) (*Result, error) {
 	}, nil
 }
 
+func getOut(f field, fields map[string][]field) []field {
+	return nil
+}
+
 func getType(typ string) string {
 	parts := strings.Split(typ, ".")
 	return parts[len(parts)-1]
@@ -91,15 +100,17 @@ func getType(typ string) string {
 func getFields(typ string, fields []field) []Field {
 	out := make([]Field, 0, len(fields))
 	for _, f := range fields {
-		if !f.omit {
-			f.Field.Type = typ
-			if f.tagName != "" {
-				f.Field.ColumnName = f.tagName
-			} else {
-				f.Field.ColumnName = f.Field.FieldName
-			}
-			out = append(out, f.Field)
+		if f.omit {
+			continue
 		}
+
+		f.Field.Type = typ
+		if f.tagName != "" {
+			f.Field.ColumnName = f.tagName
+		} else {
+			f.Field.ColumnName = strings.Join(f.Field.FieldNames, ".")
+		}
+		out = append(out, f.Field)
 	}
 	return out
 }
@@ -161,7 +172,18 @@ func getField(name string, x ast.Node) field {
 	}
 
 	fn, cat, pt := lookupTypeAndCategory(typ, optional)
-	return field{Field: Field{FieldName: name, TypeName: getTypeName(typ, optional), FieldType: fn, ParquetType: pt, Category: cat}, tagName: tag, omit: tag == "-", err: err}
+	return field{
+		Field: Field{
+			FieldNames:  []string{name},
+			TypeName:    getTypeName(typ, optional),
+			FieldType:   fn,
+			ParquetType: pt,
+			Category:    cat},
+		fieldName: name,
+		tagName:   tag,
+		omit:      tag == "-",
+		err:       err,
+	}
 }
 
 func parseTag(t string) string {

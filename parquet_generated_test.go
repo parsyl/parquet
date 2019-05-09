@@ -57,15 +57,14 @@ func writeHobbyName(x *Person, v *string, def int64) {
 }
 
 func readHobbyDifficulty(x Person) (*int32, int64) {
-	var def int64
-	if x.Hobby == nil {
+	switch {
+	case x.Hobby == nil:
 		return nil, 0
-	}
-	if x.Hobby.Difficulty == nil {
+	case x.Hobby.Difficulty == nil:
 		return nil, 1
+	default:
+		return x.Hobby.Difficulty, 2
 	}
-
-	return x.Hobby.Difficulty, 2
 }
 
 func writeHobbyDifficulty(x *Person, v *int32, def int64) {
@@ -81,6 +80,19 @@ func writeHobbyDifficulty(x *Person, v *int32, def int64) {
 	}
 }
 
+func readCode(x Person) (*string, int64) {
+	switch {
+	case x.Code == nil:
+		return nil, 0
+	default:
+		return x.Code, 1
+	}
+}
+
+func writeCode(x *Person, v *string, def int64) {
+	x.Code = v
+}
+
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt32Field(func(x Person) int32 { return x.ID }, func(x *Person, v int32) { x.ID = v }, "id", fieldCompression(compression)...),
@@ -93,7 +105,7 @@ func Fields(compression compression) []Field {
 		}, func(x *Person, v *int32, def int64) { x.Age = v }, "age", optionalFieldCompression(compression)...),
 		NewInt64Field(func(x Person) int64 { return x.Happiness }, func(x *Person, v int64) { x.Happiness = v }, "happiness", fieldCompression(compression)...),
 		NewInt64OptionalField(func(x Person) *int64 { return x.Sadness }, func(x *Person, v *int64) { x.Sadness = v }, "sadness", optionalFieldCompression(compression)...),
-		NewStringOptionalField(func(x Person) *string { return x.Code }, func(x *Person, v *string) { x.Code = v }, "code", optionalFieldCompression(compression)...),
+		NewStringOptionalField(readCode, writeCode, "code", optionalFieldCompression(compression)...),
 		NewFloat32Field(func(x Person) float32 { return x.Funkiness }, func(x *Person, v float32) { x.Funkiness = v }, "funkiness", fieldCompression(compression)...),
 		NewFloat64Field(func(x Person) float64 { return x.Boldness }, func(x *Person, v float64) { x.Boldness = v }, "boldness", fieldCompression(compression)...),
 		NewFloat32OptionalField(func(x Person) *float32 { return x.Lameness }, func(x *Person, v *float32) { x.Lameness = v }, "lameness", optionalFieldCompression(compression)...),
