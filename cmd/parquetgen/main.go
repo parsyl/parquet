@@ -76,6 +76,9 @@ var (
 			}
 			return "fieldCompression"
 		},
+		"funcName": func(f parse.Field) string {
+			return strings.Join(f.FieldNames, "")
+		},
 		"imports": func(fields []parse.Field) []string {
 			var out []string
 			var intFound, stringFound bool
@@ -282,6 +285,7 @@ func fromStruct(pth string) {
 		boolOptionalStatsTpl,
 		stringStatsTpl,
 		stringOptionalStatsTpl,
+		writeSwitchTpl,
 	} {
 		var err error
 		tmpl, err = tmpl.Parse(t)
