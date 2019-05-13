@@ -46,12 +46,22 @@ type Private struct {
 	name string
 }
 
-// Nested structs are not supported at this time.
 type Nested struct {
-	// This field will be ignored because it's not one of the
-	// supported types.
 	Being       Being
 	Anniversary *uint64
+}
+
+type DoubleNested struct {
+	Nested Nested
+}
+
+type OptionalNested struct {
+	Being       *Being
+	Anniversary *uint64
+}
+
+type OptionalDoubleNested struct {
+	OptionalNested OptionalNested
 }
 
 type Unsupported struct {

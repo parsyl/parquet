@@ -14,20 +14,23 @@ const letters = "abcdefghijklmnopqrstuvwxyz"
 
 type Field struct {
 	Type        string
-	FieldName   string
+	FieldNames  []string
 	TypeName    string
 	FieldType   string
 	ParquetType string
 	ColumnName  string
 	Category    string
+	Optionals   []bool
 }
 
 type field struct {
-	Field    Field
-	tagName  string
-	omit     bool
-	embedded bool
-	err      error
+	Field     Field
+	tagName   string
+	fieldName string
+	omit      bool
+	embedded  bool
+	optional  bool
+	err       error
 }
 
 type Result struct {
@@ -64,23 +67,55 @@ func Fields(typ, pth string) (*Result, error) {
 	var out []field
 	var errs []error
 	var i int
+
 	for _, f := range fields[typ] {
-		if f.err != nil {
-			errs = append(errs, f.err)
-		} else if f.err == nil && f.embedded {
-			embeddedFields := fields[f.Field.TypeName]
-			out = append(out[:i], append(embeddedFields, out[i:]...)...)
-			i += len(embeddedFields)
-		} else if f.err == nil {
-			out = append(out, f)
-			i++
-		}
+		i, out, errs = getOut(i, f, fields, errs, out)
 	}
 
 	return &Result{
 		Fields: getFields(fullTyp, out),
 		Errors: errs,
 	}, nil
+}
+
+func getOut(i int, f field, fields map[string][]field, errs []error, out []field) (int, []field, []error) {
+	flds, ok := fields[f.fieldName]
+	o := strings.Contains(f.Field.TypeName, "*")
+	if ok {
+		for _, fld := range flds {
+			if !fld.optional && (o || f.optional) {
+				fld = makeOptional(fld)
+			}
+			fld.Field.Optionals = append(append(f.Field.Optionals[:0:0], f.Field.Optionals...), o) //make a copy
+			fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
+			i, out, errs = getOut(i, fld, fields, errs, out)
+		}
+		return i, out, errs
+	} else if f.err != nil {
+		errs = append(errs, f.err)
+	} else if f.err == nil && f.embedded {
+		embeddedFields := fields[f.Field.TypeName]
+		for i, f := range embeddedFields {
+			f.Field.Optionals = append(f.Field.Optionals, strings.Contains(f.Field.TypeName, "*"))
+			embeddedFields[i] = f
+		}
+		out = append(out[:i], append(embeddedFields, out[i:]...)...)
+		i += len(embeddedFields)
+	} else if f.err == nil {
+		f.Field.Optionals = append(f.Field.Optionals, o)
+		out = append(out, f)
+		i++
+	}
+	return i, out, errs
+}
+
+func makeOptional(f field) field {
+	f.optional = true
+	fn, cat, pt := lookupTypeAndCategory(f.Field.TypeName, true)
+	f.Field.FieldType = fn
+	f.Field.ParquetType = pt
+	f.Field.Category = cat
+	return f
 }
 
 func getType(typ string) string {
@@ -91,15 +126,17 @@ func getType(typ string) string {
 func getFields(typ string, fields []field) []Field {
 	out := make([]Field, 0, len(fields))
 	for _, f := range fields {
-		if !f.omit {
-			f.Field.Type = typ
-			if f.tagName != "" {
-				f.Field.ColumnName = f.tagName
-			} else {
-				f.Field.ColumnName = f.Field.FieldName
-			}
-			out = append(out, f.Field)
+		if f.omit {
+			continue
 		}
+
+		f.Field.Type = typ
+		if f.tagName != "" {
+			f.Field.ColumnName = f.tagName
+		} else {
+			f.Field.ColumnName = strings.Join(f.Field.FieldNames, ".")
+		}
+		out = append(out, f.Field)
 	}
 	return out
 }
@@ -161,7 +198,19 @@ func getField(name string, x ast.Node) field {
 	}
 
 	fn, cat, pt := lookupTypeAndCategory(typ, optional)
-	return field{Field: Field{FieldName: name, TypeName: getTypeName(typ, optional), FieldType: fn, ParquetType: pt, Category: cat}, tagName: tag, omit: tag == "-", err: err}
+	return field{
+		Field: Field{
+			FieldNames:  []string{name},
+			TypeName:    getTypeName(typ, optional),
+			FieldType:   fn,
+			ParquetType: pt,
+			Category:    cat},
+		fieldName: name,
+		tagName:   tag,
+		omit:      tag == "-",
+		err:       err,
+		optional:  optional,
+	}
 }
 
 func parseTag(t string) string {
