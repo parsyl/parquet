@@ -647,15 +647,15 @@ func (f *Int64OptionalField) Scan(r *Person) {
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
-	val   func(r Person) (*string, int64)
-	read  func(r *Person, v *string, def int64)
+	get   func(r Person) (*string, int64)
+	set   func(r *Person, v *string, def int64)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(val func(r Person) (*string, int64), read func(r *Person, v *string, def int64), col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(get func(r Person) (*string, int64), set func(r *Person, v *string, def int64), col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
-		val:           val,
-		read:          read,
+		get:           get,
+		set:           set,
 		OptionalField: parquet.NewOptionalField(col, opts...),
 		stats:         newStringOptionalStats(),
 	}
@@ -675,15 +675,15 @@ func (f *StringOptionalField) Scan(r *Person) {
 		v := f.vals[0]
 		f.vals = f.vals[1:]
 		val = &v
-		f.read(r, val, f.Defs[0])
+		f.set(r, val, f.Defs[0])
 	} else {
-		f.read(r, nil, f.Defs[0])
+		f.set(r, nil, f.Defs[0])
 	}
 	f.Defs = f.Defs[1:]
 }
 
 func (f *StringOptionalField) Add(r Person) {
-	v, depth := f.val(r)
+	v, depth := f.get(r)
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -714,7 +714,7 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	}
 
 	for j := 0; j < pg.N; j++ {
-		if f.Defs[start+j] == 0 {
+		if f.Defs[start+j] != int64(f.Depth) {
 			continue
 		}
 
