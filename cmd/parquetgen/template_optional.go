@@ -14,7 +14,7 @@ type {{.FieldType}} struct {
 
 func write{{funcName .}}(r {{.Type}}, v {{.TypeName}}, def int64) {
 	switch def {
-        {{template "writeSwitch" .}}
+		{{template "writeSwitch" .}}
 	}
 }
 

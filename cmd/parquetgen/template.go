@@ -1,6 +1,6 @@
 package main
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}(func(x {{.Type}}) {{.TypeName}} { return x.{{.FieldName}} }, func(x *{{.Type}}, v {{.TypeName}}) { x.{{.FieldName}} = v }, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}(func(x {{.Type}}) {{.TypeName}} { return x.{{join .FieldNames}} }, func(x *{{.Type}}, v {{.TypeName}}) { x.{{join .FieldNames}} = v }, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
 
 var tpl = `package {{.Package}}
 

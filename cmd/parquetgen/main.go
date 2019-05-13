@@ -79,6 +79,9 @@ var (
 		"funcName": func(f parse.Field) string {
 			return strings.Join(f.FieldNames, "")
 		},
+		"join": func(names []string) string {
+			return strings.Join(names, ".")
+		},
 		"imports": func(fields []parse.Field) []string {
 			var out []string
 			var intFound, stringFound bool
