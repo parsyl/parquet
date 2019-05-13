@@ -20,6 +20,7 @@ type Field struct {
 	ParquetType string
 	ColumnName  string
 	Category    string
+	Optionals   []bool
 }
 
 type field struct {
@@ -28,6 +29,7 @@ type field struct {
 	fieldName string
 	omit      bool
 	embedded  bool
+	optional  bool
 	err       error
 }
 
@@ -65,21 +67,9 @@ func Fields(typ, pth string) (*Result, error) {
 	var out []field
 	var errs []error
 	var i int
+
 	for _, f := range fields[typ] {
-		fmt.Printf("%+v\n", f)
-		_, ok := fields[f.fieldName]
-		if ok {
-			//get nested
-		} else if f.err != nil {
-			errs = append(errs, f.err)
-		} else if f.err == nil && f.embedded {
-			embeddedFields := fields[f.Field.TypeName]
-			out = append(out[:i], append(embeddedFields, out[i:]...)...)
-			i += len(embeddedFields)
-		} else if f.err == nil {
-			out = append(out, f)
-			i++
-		}
+		i, out, errs = getOut(i, f, fields, errs, out)
 	}
 
 	return &Result{
@@ -88,8 +78,44 @@ func Fields(typ, pth string) (*Result, error) {
 	}, nil
 }
 
-func getOut(f field, fields map[string][]field) []field {
-	return nil
+func getOut(i int, f field, fields map[string][]field, errs []error, out []field) (int, []field, []error) {
+	flds, ok := fields[f.fieldName]
+	o := strings.Contains(f.Field.TypeName, "*")
+	if ok {
+		for _, fld := range flds {
+			if !fld.optional && (o || f.optional) {
+				fld = makeOptional(fld)
+			}
+			fld.Field.Optionals = append(append(f.Field.Optionals[:0:0], f.Field.Optionals...), o) //make a copy
+			fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
+			i, out, errs = getOut(i, fld, fields, errs, out)
+		}
+		return i, out, errs
+	} else if f.err != nil {
+		errs = append(errs, f.err)
+	} else if f.err == nil && f.embedded {
+		embeddedFields := fields[f.Field.TypeName]
+		for i, f := range embeddedFields {
+			f.Field.Optionals = append(f.Field.Optionals, strings.Contains(f.Field.TypeName, "*"))
+			embeddedFields[i] = f
+		}
+		out = append(out[:i], append(embeddedFields, out[i:]...)...)
+		i += len(embeddedFields)
+	} else if f.err == nil {
+		f.Field.Optionals = append(f.Field.Optionals, o)
+		out = append(out, f)
+		i++
+	}
+	return i, out, errs
+}
+
+func makeOptional(f field) field {
+	f.optional = true
+	fn, cat, pt := lookupTypeAndCategory(f.Field.TypeName, true)
+	f.Field.FieldType = fn
+	f.Field.ParquetType = pt
+	f.Field.Category = cat
+	return f
 }
 
 func getType(typ string) string {
@@ -183,6 +209,7 @@ func getField(name string, x ast.Node) field {
 		tagName:   tag,
 		omit:      tag == "-",
 		err:       err,
+		optional:  optional,
 	}
 }
 
