@@ -1,8 +1,5 @@
 package main
 
-var writeSwitchTpl = `{{define "writeSwitch"}}
-{{end}}`
-
 var optionalTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
@@ -12,9 +9,18 @@ type {{.FieldType}} struct {
 	stats {{.TypeName}}optionalStats
 }
 
+{{$field := .}}
 func write{{funcName .}}(r {{.Type}}, v {{.TypeName}}, def int64) {
-	switch def {
-		{{template "writeSwitch" .}}
+	switch def { {{range $i, $n := .FieldNames}}
+		{{writeSwitch $i $field}}
+        {{end}}
+	}
+}
+
+func read{{funcName .}}(r {{.Type}}) (*.TypeName, int64) {
+	switch { {{range $i, $n := .FieldNames}}
+		{{readSwitch $i $field}}
+        {{end}}
 	}
 }
 

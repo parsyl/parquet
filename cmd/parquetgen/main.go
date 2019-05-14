@@ -82,6 +82,8 @@ var (
 		"join": func(names []string) string {
 			return strings.Join(names, ".")
 		},
+		"readSwitch":  readSwitch,
+		"writeSwitch": writeSwitch,
 		"imports": func(fields []parse.Field) []string {
 			var out []string
 			var intFound, stringFound bool
@@ -117,6 +119,35 @@ var (
 		},
 	}
 )
+
+func writeSwitch(i int, f parse.Field) string {
+	if !f.Optionals[i] {
+		return ""
+	}
+	return ""
+}
+
+func readSwitch(i int, f parse.Field) string {
+	if !f.Optionals[i] {
+		return ""
+	}
+	joined := strings.Join(f.FieldNames[:i+1], ".")
+	if i == len(f.FieldNames)-1 {
+		out := fmt.Sprintf(`case r.%s == nil:
+			return nil, %d
+		default:
+			return r.%s, %d
+`, joined, i, joined, i+1)
+		fmt.Println(out)
+		return out
+	}
+
+	out := fmt.Sprintf(`case r.%s == nil:
+			return nil, %d
+`, joined, i)
+	fmt.Println(out)
+	return out
+}
 
 type structField struct {
 	Name string
@@ -288,7 +319,6 @@ func fromStruct(pth string) {
 		boolOptionalStatsTpl,
 		stringStatsTpl,
 		stringOptionalStatsTpl,
-		writeSwitchTpl,
 	} {
 		var err error
 		tmpl, err = tmpl.Parse(t)
