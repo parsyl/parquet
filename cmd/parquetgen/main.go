@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"go/format"
@@ -117,6 +118,26 @@ var (
 			}
 			return out
 		},
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, errors.New("invalid dict call")
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, errors.New("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
+		},
+		"validCase": func(i int, f parse.Field) bool {
+			return f.Optionals[i]
+		},
+		"plus": func(a, b int) int {
+			return a + b
+		},
 	}
 )
 
@@ -124,7 +145,7 @@ func writeSwitch(i int, f parse.Field) string {
 	if !f.Optionals[i] {
 		return ""
 	}
-	return ""
+	return "case %d:"
 }
 
 func readSwitch(i int, f parse.Field) string {
@@ -319,6 +340,10 @@ func fromStruct(pth string) {
 		boolOptionalStatsTpl,
 		stringStatsTpl,
 		stringOptionalStatsTpl,
+		writeTpl,
+		writeCaseTpl,
+		readTpl,
+		readCaseTpl,
 	} {
 		var err error
 		tmpl, err = tmpl.Parse(t)

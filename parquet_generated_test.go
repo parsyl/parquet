@@ -52,7 +52,11 @@ func readHobbyName(x Person) (*string, int64) {
 func writeHobbyName(x *Person, v *string, def int64) {
 	switch def {
 	case 2:
-		x.Hobby = &Hobby{Name: *v}
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Name: *v}
+		} else {
+			x.Hobby.Name = *v
+		}
 	}
 }
 
@@ -69,14 +73,17 @@ func readHobbyDifficulty(x Person) (*int32, int64) {
 
 func writeHobbyDifficulty(x *Person, v *int32, def int64) {
 	switch def {
-	case 2:
-		if x.Hobby != nil {
-			x.Hobby = &Hobby{Difficulty: v}
-		}
 	case 1:
-		if x.Hobby != nil {
+		if x.Hobby == nil {
 			x.Hobby = &Hobby{}
 		}
+	case 2:
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Difficulty: v}
+		} else {
+			x.Hobby.Difficulty = v
+		}
+
 	}
 }
 

@@ -1,5 +1,33 @@
 package main
 
+var readCaseTpl = `{{define "readCase"}}{{end}}`
+
+/*
+func read{{funcName .}}(r {{.Type}}) (*.TypeName, int64) {
+	switch { {{range $i, $n := .FieldNames}}
+		{{readSwitch $i $field}}
+        {{end}}
+	}
+}
+*/
+
+var readTpl = `{{define "readFunc"}}
+{{end}}`
+
+var writeCaseTpl = `{{define "writeCase"}}
+	{{if validCase .i .field}}case {{plus .i 1}}:
+	{{if finalCase
+{{end}}
+{{end}}`
+
+var writeTpl = `{{define "writeFunc"}}
+{{$field := .}}
+func write{{funcName .}}(r {{.Type}}, v {{.TypeName}}, def int64) {
+	switch def { {{range $i, $n := .FieldNames}}{{template "writeCase" dict "i" $i "field" $field}}
+		{{end}}
+	}
+}{{end}}`
+
 var optionalTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
@@ -9,20 +37,7 @@ type {{.FieldType}} struct {
 	stats {{.TypeName}}optionalStats
 }
 
-{{$field := .}}
-func write{{funcName .}}(r {{.Type}}, v {{.TypeName}}, def int64) {
-	switch def { {{range $i, $n := .FieldNames}}
-		{{writeSwitch $i $field}}
-        {{end}}
-	}
-}
-
-func read{{funcName .}}(r {{.Type}}) (*.TypeName, int64) {
-	switch { {{range $i, $n := .FieldNames}}
-		{{readSwitch $i $field}}
-        {{end}}
-	}
-}
+{{template "writeFunc" .}}
 
 func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
