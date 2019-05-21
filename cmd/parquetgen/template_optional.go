@@ -14,17 +14,10 @@ func read{{funcName .}}(r {{.Type}}) (*.TypeName, int64) {
 var readTpl = `{{define "readFunc"}}
 {{end}}`
 
-var writeCaseTpl = `{{define "writeCase"}}
-	{{if validCase .i .field}}case {{plus .i 1}}:
-	{{if finalCase
-{{end}}
-{{end}}`
-
 var writeTpl = `{{define "writeFunc"}}
 {{$field := .}}
 func write{{funcName .}}(r {{.Type}}, v {{.TypeName}}, def int64) {
-	switch def { {{range $i, $n := .FieldNames}}{{template "writeCase" dict "i" $i "field" $field}}
-		{{end}}
+	switch def { {{range $i, $n := .FieldNames}}{{writeCase $i $field}}{{end}}
 	}
 }{{end}}`
 

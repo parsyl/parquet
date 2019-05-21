@@ -83,8 +83,7 @@ var (
 		"join": func(names []string) string {
 			return strings.Join(names, ".")
 		},
-		"readSwitch":  readSwitch,
-		"writeSwitch": writeSwitch,
+		"readSwitch": readSwitch,
 		"imports": func(fields []parse.Field) []string {
 			var out []string
 			var intFound, stringFound bool
@@ -118,34 +117,54 @@ var (
 			}
 			return out
 		},
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
-			if len(values)%2 != 0 {
-				return nil, errors.New("invalid dict call")
-			}
-			dict := make(map[string]interface{}, len(values)/2)
-			for i := 0; i < len(values); i += 2 {
-				key, ok := values[i].(string)
-				if !ok {
-					return nil, errors.New("dict keys must be strings")
-				}
-				dict[key] = values[i+1]
-			}
-			return dict, nil
+		"dict": templateDict,
+		"plus": func(a, b int) int {
+			return a + b
+		},
+		"lastCase": func(i int, f parse.Field) bool {
+			return len(f.FieldNames) == i+1
 		},
 		"validCase": func(i int, f parse.Field) bool {
 			return f.Optionals[i]
 		},
-		"plus": func(a, b int) int {
-			return a + b
-		},
+		"writeCase": writeCase,
 	}
 )
 
-func writeSwitch(i int, f parse.Field) string {
+func templateDict(values ...interface{}) (map[string]interface{}, error) {
+	if len(values)%2 != 0 {
+		return nil, errors.New("invalid dict call")
+	}
+	dict := make(map[string]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key, ok := values[i].(string)
+		if !ok {
+			return nil, errors.New("dict keys must be strings")
+		}
+		dict[key] = values[i+1]
+	}
+	return dict, nil
+}
+
+func writeCase(i int, f parse.Field) string {
 	if !f.Optionals[i] {
 		return ""
 	}
-	return "case %d:"
+
+	name := strings.Join(f.FieldNames[:i+1], ".")
+	if i + 1 == len(f.FieldNames) {
+		return writeFinalCase(i, f, name)
+	}
+	
+	
+	return fmt.Sprintf(`case %d:
+	x.%s = %s`, i + 1, name)
+}
+
+func writeFinalCase(i int, f parse.Field, name string) string {
+	return fmt.Sprintf(`if x.%s == nil {
+	x.%s`
+
 }
 
 func readSwitch(i int, f parse.Field) string {
@@ -341,7 +360,6 @@ func fromStruct(pth string) {
 		stringStatsTpl,
 		stringOptionalStatsTpl,
 		writeTpl,
-		writeCaseTpl,
 		readTpl,
 		readCaseTpl,
 	} {

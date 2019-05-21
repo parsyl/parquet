@@ -83,7 +83,6 @@ func writeHobbyDifficulty(x *Person, v *int32, def int64) {
 		} else {
 			x.Hobby.Difficulty = v
 		}
-
 	}
 }
 
