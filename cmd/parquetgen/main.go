@@ -152,19 +152,31 @@ func writeCase(i int, f parse.Field) string {
 	}
 
 	name := strings.Join(f.FieldNames[:i+1], ".")
-	if i + 1 == len(f.FieldNames) {
+	if i+1 == len(f.FieldNames) {
 		return writeFinalCase(i, f, name)
 	}
-	
-	
+
 	return fmt.Sprintf(`case %d:
-	x.%s = %s`, i + 1, name)
+	x.%s = %s`, i+1, name)
 }
 
 func writeFinalCase(i int, f parse.Field, name string) string {
 	return fmt.Sprintf(`if x.%s == nil {
-	x.%s`
+	x.%s`)
+}
 
+func initStruct(i, n int, levels []bool, names []string) string {
+	if i == n {
+		return "%s"
+	}
+	return fmt.Sprintf(`%s%s{%s}`, pointer(i, n, levels), names[i], initStruct(i+1, n, levels, names))
+}
+
+func pointer(i, n int, levels []bool) string {
+	if levels[i] && i < n-1 {
+		return "&"
+	}
+	return ""
 }
 
 func readSwitch(i int, f parse.Field) string {
