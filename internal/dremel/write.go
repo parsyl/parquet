@@ -61,7 +61,7 @@ func writeCases(f parse.Field) []string {
 		out = append(out, fmt.Sprintf(`case %d:
 		%s`,
 			i+1,
-			strings.Join(inits(i, f), "\n"),
+			strings.Join(inits(i, f), " "),
 		))
 	}
 	return out
@@ -73,13 +73,43 @@ func inits(i int, f parse.Field) []string {
 		if !o {
 			continue
 		}
-		out = append(out, initStruct(i, j+1, f))
+		out = append(out, fmt.Sprintf(`%s {
+			x.%s = %s
+		}`,
+			ifelse(j, f),
+			strings.Join(f.FieldNames[:j+1], "."),
+			initStruct(i, j, f)))
 	}
 	return out
 }
 
-func initStruct(i, j int, f parse.Field) string {
-	return ""
+func ifelse(i int, f parse.Field) string {
+	switch {
+	case i == 0:
+		return fmt.Sprintf("if x.%s == nil", strings.Join(f.FieldNames[:i+1], "."))
+	case i+1 == len(f.FieldNames):
+		return "else"
+	default:
+		return fmt.Sprintf("else if x.%s == nil", strings.Join(f.FieldNames[:i+1], "."))
+	}
+}
+
+func initStruct(cs, i int, f parse.Field) string {
+	switch {
+	case cs == 0 && i == 0:
+		return fmt.Sprintf("&%s{}", f.FieldNames[0])
+	case i < cs:
+		return doInit(cs, i, f.Optionals, f.FieldNames)
+	default:
+		return "v"
+	}
+}
+
+func doInit(i, n int, levels []bool, names []string) string {
+	if i == len(levels) {
+		return "v"
+	}
+	return fmt.Sprintf(`%s%s{%s}`, pointer(i, n, "&", levels), names[i], doInit(i+1, n, levels, names))
 }
 
 func writeRequired(f parse.Field) string {
@@ -88,9 +118,9 @@ func writeRequired(f parse.Field) string {
 }`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func pointer(p string, optional bool) string {
-	if !optional {
-		return ""
+func pointer(i, n int, p string, levels []bool) string {
+	if levels[i-1] && i < n-1 {
+		return p
 	}
-	return p
+	return ""
 }
