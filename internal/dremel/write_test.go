@@ -69,6 +69,43 @@ func TestWrite(t *testing.T) {
 	}
 }`,
 		},
+		{
+			/*
+				type Item struct {
+					Name *string
+				}
+
+				type Entity struct {
+					Hobby Item
+				}
+
+				type Thing struct {
+					Friend *Entity
+				}
+
+
+					s := "hi"
+					t := Thing{
+						Friend: &Entity{
+							Hobby: Item{
+								Name: &s,
+							},
+						},
+					}
+			*/
+			name: "mix of optional and require and nested 3 deep",
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item"}, Optionals: []bool{true, false, true}},
+			result: `func writeFriendHobbyName(x *Person, v *string, def int64) {
+	switch def {
+	case 2:
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Name: *v}
+		} else {
+			x.Hobby.Name = *v
+		}
+	}
+}`,
+		},
 	}
 
 	for i, tc := range testCases {

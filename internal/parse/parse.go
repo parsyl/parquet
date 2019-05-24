@@ -15,6 +15,7 @@ const letters = "abcdefghijklmnopqrstuvwxyz"
 type Field struct {
 	Type        string
 	FieldNames  []string
+	FieldTypes  []string
 	TypeName    string
 	FieldType   string
 	ParquetType string
@@ -88,6 +89,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 			}
 			fld.Field.Optionals = append(append(f.Field.Optionals[:0:0], f.Field.Optionals...), o) //make a copy
 			fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
+			fld.Field.FieldTypes = append(f.Field.FieldTypes, fld.Field.FieldTypes...)
 			i, out, errs = getOut(i, fld, fields, errs, out)
 		}
 		return i, out, errs
@@ -201,6 +203,7 @@ func getField(name string, x ast.Node) field {
 	return field{
 		Field: Field{
 			FieldNames:  []string{name},
+			FieldTypes:  []string{"x"},
 			TypeName:    getTypeName(typ, optional),
 			FieldType:   fn,
 			ParquetType: pt,

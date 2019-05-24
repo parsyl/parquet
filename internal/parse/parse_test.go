@@ -51,6 +51,11 @@ type Nested struct {
 	Anniversary *uint64
 }
 
+type Nested2 struct {
+	Info        Being
+	Anniversary *uint64
+}
+
 type DoubleNested struct {
 	Nested Nested
 }

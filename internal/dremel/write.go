@@ -54,8 +54,8 @@ func writeNested(f parse.Field) string {
 
 func writeCases(f parse.Field) []string {
 	var out []string
-	for i, o := range f.Optionals {
-		if !o {
+	for i := range f.Optionals {
+		if !validCase(i, f.Optionals) {
 			continue
 		}
 		out = append(out, fmt.Sprintf(`case %d:
@@ -67,10 +67,26 @@ func writeCases(f parse.Field) []string {
 	return out
 }
 
+func validCase(i int, optionals []bool) bool {
+	if i == len(optionals)-1 {
+		return true
+	}
+	return optionals[i] && allOptional(optionals[i+1:])
+}
+
+func allOptional(b []bool) bool {
+	for _, x := range b {
+		if !x {
+			return false
+		}
+	}
+	return true
+}
+
 func inits(i int, f parse.Field) []string {
 	var out []string
-	for j, o := range f.Optionals[:i+1] {
-		if !o {
+	for j := range f.Optionals[:i+1] {
+		if !validCase(i, f.Optionals) {
 			continue
 		}
 		out = append(out, fmt.Sprintf(`%s {
@@ -101,15 +117,34 @@ func initStruct(cs, i int, f parse.Field) string {
 	case i < cs:
 		return doInit(cs, i, f.Optionals, f.FieldNames)
 	default:
-		return "v"
+		p := ""
+		if !f.Optionals[i] {
+			p = "*"
+		}
+		return fmt.Sprintf("%sv", p)
 	}
 }
 
 func doInit(i, n int, levels []bool, names []string) string {
-	if i == len(levels) {
-		return "v"
+	if n == len(levels) {
+		p := ""
+		if !levels[i] {
+			p = "*"
+		}
+		return fmt.Sprintf(": %sv", p)
 	}
-	return fmt.Sprintf(`%s%s{%s}`, pointer(i, n, "&", levels), names[i], doInit(i+1, n, levels, names))
+	brackets := []string{"{", "}"}
+	if n == len(levels)-1 {
+		brackets = []string{"", ""}
+	}
+	return fmt.Sprintf(
+		`%s%s%s%s%s`,
+		pointer(i, n, "&", levels),
+		names[n],
+		brackets[0],
+		doInit(i, n+1, levels, names),
+		brackets[1],
+	)
 }
 
 func writeRequired(f parse.Field) string {
@@ -119,7 +154,7 @@ func writeRequired(f parse.Field) string {
 }
 
 func pointer(i, n int, p string, levels []bool) string {
-	if levels[i-1] && i < n-1 {
+	if levels[n] && n < i {
 		return p
 	}
 	return ""

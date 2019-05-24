@@ -51,6 +51,16 @@ func TestFields(t *testing.T) {
 			errors: []error{},
 		},
 		{
+			name: "nested struct with name that doesn't match the struct type",
+			typ:  "Nested2",
+			expected: []parse.Field{
+				{Type: "Nested", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Being", "ID"}, ColumnName: "Being.ID", Category: "numeric", Optionals: []bool{false, false}},
+				{Type: "Nested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Being", "Age"}, ColumnName: "Being.Age", Category: "numericOptional", Optionals: []bool{false, true}},
+				{Type: "Nested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, ColumnName: "Anniversary", Category: "numericOptional", Optionals: []bool{true}},
+			},
+			errors: []error{},
+		},
+		{
 			name: "2 deep nested struct",
 			typ:  "DoubleNested",
 			expected: []parse.Field{
