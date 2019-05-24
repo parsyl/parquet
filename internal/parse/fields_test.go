@@ -54,9 +54,9 @@ func TestFields(t *testing.T) {
 			name: "nested struct with name that doesn't match the struct type",
 			typ:  "Nested2",
 			expected: []parse.Field{
-				{Type: "Nested", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Being", "ID"}, ColumnName: "Being.ID", Category: "numeric", Optionals: []bool{false, false}},
-				{Type: "Nested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Being", "Age"}, ColumnName: "Being.Age", Category: "numericOptional", Optionals: []bool{false, true}},
-				{Type: "Nested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, ColumnName: "Anniversary", Category: "numericOptional", Optionals: []bool{true}},
+				{Type: "Nested2", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Info", "ID"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Info.ID", Category: "numeric", Optionals: []bool{false, false}},
+				{Type: "Nested2", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Info", "Age"}, FieldTypes: []string{"Being", "*int32"}, ColumnName: "Info.Age", Category: "numericOptional", Optionals: []bool{false, true}},
+				{Type: "Nested2", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, ColumnName: "Anniversary", Category: "numericOptional", Optionals: []bool{true}},
 			},
 			errors: []error{},
 		},
@@ -165,6 +165,9 @@ func TestFields(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			out, err := parse.Fields(tc.typ, "./parse_test.go")
+			for _, f := range out.Fields {
+				fmt.Printf("%+v\n", f)
+			}
 			assert.Nil(t, err, tc.name)
 			assert.Equal(t, tc.expected, out.Fields, tc.name)
 			if assert.Equal(t, len(tc.errors), len(out.Errors), tc.name) {

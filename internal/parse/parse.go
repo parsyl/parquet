@@ -178,6 +178,7 @@ func getField(name string, x ast.Node) field {
 	ast.Inspect(x, func(n ast.Node) bool {
 		switch t := n.(type) {
 		case *ast.Field:
+			fmt.Printf("case field: %+v\n", t)
 			if t.Tag != nil {
 				tag = parseTag(t.Tag.Value)
 			}
@@ -185,6 +186,7 @@ func getField(name string, x ast.Node) field {
 			optional = true
 		case ast.Expr:
 			s := fmt.Sprintf("%v", t)
+			fmt.Println("getField", s)
 			_, ok := types[s]
 			if ok {
 				typ = s
