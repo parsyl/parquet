@@ -18,21 +18,28 @@ func TestWrite(t *testing.T) {
 	}{
 		{
 			name: "required and not nested",
-			f:    parse.Field{TypeName: "int32", FieldNames: []string{"ID"}, Optionals: []bool{false}},
+			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, Optionals: []bool{false}},
 			result: `func writeID(x *Person, v int32, def int64) {
 	x.ID = v
 }`,
 		},
 		{
 			name: "optional and not nested",
-			f:    parse.Field{TypeName: "*int32", FieldNames: []string{"ID"}, Optionals: []bool{true}},
+			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, Optionals: []bool{true}},
 			result: `func writeID(x *Person, v *int32, def int64) {
 	x.ID = v
 }`,
 		},
 		{
+			name: "required and nested",
+			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, Optionals: []bool{false, false, false}},
+			result: `func writeOtherHobbyDifficulty(x *Person, v int32, def int64) {
+	x.Other.Hobby.Difficulty = v
+}`,
+		},
+		{
 			name: "optional and nested",
-			f:    parse.Field{TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, Optionals: []bool{true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, Optionals: []bool{true, true}},
 			result: `func writeHobbyDifficulty(x *Person, v *int32, def int64) {
 	switch def {
 	case 1:
@@ -50,8 +57,8 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested",
-			f:    parse.Field{TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, Optionals: []bool{true, false}},
-			result: `func writeHobbyDifficulty(x *Person, v *int32, def int64) {
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, Optionals: []bool{true, false}},
+			result: `func writeHobbyName(x *Person, v *int32, def int64) {
 	switch def {
 	case 2:
 		if x.Hobby == nil {
@@ -69,7 +76,7 @@ func TestWrite(t *testing.T) {
 			s := dremel.Write(tc.f)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
-			assert.Equal(t, tc.result, gocode)
+			assert.Equal(t, tc.result, string(gocode))
 		})
 	}
 }
