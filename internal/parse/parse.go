@@ -28,6 +28,7 @@ type field struct {
 	Field     Field
 	tagName   string
 	fieldName string
+	fieldType string
 	omit      bool
 	embedded  bool
 	optional  bool
@@ -74,13 +75,13 @@ func Fields(typ, pth string) (*Result, error) {
 	}
 
 	return &Result{
-		Fields: getFields(fullTyp, out),
+		Fields: getFields(fullTyp, out, fields),
 		Errors: errs,
 	}, nil
 }
 
 func getOut(i int, f field, fields map[string][]field, errs []error, out []field) (int, []field, []error) {
-	flds, ok := fields[f.fieldName]
+	flds, ok := fields[f.fieldType]
 	o := strings.Contains(f.Field.TypeName, "*")
 	if ok {
 		for _, fld := range flds {
@@ -93,8 +94,6 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 			i, out, errs = getOut(i, fld, fields, errs, out)
 		}
 		return i, out, errs
-	} else if f.err != nil {
-		errs = append(errs, f.err)
 	} else if f.err == nil && f.embedded {
 		embeddedFields := fields[f.Field.TypeName]
 		for i, f := range embeddedFields {
@@ -104,9 +103,14 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 		out = append(out[:i], append(embeddedFields, out[i:]...)...)
 		i += len(embeddedFields)
 	} else if f.err == nil {
-		f.Field.Optionals = append(f.Field.Optionals, o)
-		out = append(out, f)
-		i++
+		_, ok := types[f.fieldType]
+		if ok {
+			f.Field.Optionals = append(f.Field.Optionals, o)
+			out = append(out, f)
+			i++
+		} else {
+			errs = append(errs, fmt.Errorf("unsupported type: %s", f.fieldName))
+		}
 	}
 	return i, out, errs
 }
@@ -125,10 +129,11 @@ func getType(typ string) string {
 	return parts[len(parts)-1]
 }
 
-func getFields(typ string, fields []field) []Field {
+func getFields(typ string, fields []field, m map[string][]field) []Field {
 	out := make([]Field, 0, len(fields))
 	for _, f := range fields {
-		if f.omit {
+		_, ok := m[typ]
+		if f.omit || !ok {
 			continue
 		}
 
@@ -178,15 +183,15 @@ func getField(name string, x ast.Node) field {
 	ast.Inspect(x, func(n ast.Node) bool {
 		switch t := n.(type) {
 		case *ast.Field:
-			fmt.Printf("case field: %+v\n", t)
 			if t.Tag != nil {
 				tag = parseTag(t.Tag.Value)
 			}
+			typ = fmt.Sprintf("%s", t.Type)
 		case *ast.StarExpr:
 			optional = true
+			typ = fmt.Sprintf("%s", t.X)
 		case ast.Expr:
 			s := fmt.Sprintf("%v", t)
-			fmt.Println("getField", s)
 			_, ok := types[s]
 			if ok {
 				typ = s
@@ -195,25 +200,19 @@ func getField(name string, x ast.Node) field {
 		return true
 	})
 
-	var err error
-	_, ok := types[typ]
-	if !ok {
-		err = fmt.Errorf("unsupported type: %s", name)
-	}
-
 	fn, cat, pt := lookupTypeAndCategory(typ, optional)
 	return field{
 		Field: Field{
 			FieldNames:  []string{name},
-			FieldTypes:  []string{"x"},
+			FieldTypes:  []string{typ},
 			TypeName:    getTypeName(typ, optional),
 			FieldType:   fn,
 			ParquetType: pt,
 			Category:    cat},
 		fieldName: name,
+		fieldType: typ,
 		tagName:   tag,
 		omit:      tag == "-",
-		err:       err,
 		optional:  optional,
 	}
 }
