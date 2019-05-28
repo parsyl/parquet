@@ -32,14 +32,14 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "required and nested",
-			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, Optionals: []bool{false, false, false}},
+			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, Optionals: []bool{false, false, false}},
 			result: `func writeOtherHobbyDifficulty(x *Person, v int32, def int64) {
 	x.Other.Hobby.Difficulty = v
 }`,
 		},
 		{
 			name: "optional and nested",
-			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, Optionals: []bool{true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, Optionals: []bool{true, true}},
 			result: `func writeHobbyDifficulty(x *Person, v *int32, def int64) {
 	switch def {
 	case 1:
@@ -57,7 +57,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, Optionals: []bool{true, false}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, Optionals: []bool{true, false}},
 			result: `func writeHobbyName(x *Person, v *string, def int64) {
 	switch def {
 	case 2:
@@ -70,38 +70,19 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			/*
-				type Item struct {
-					Name *string
-				}
-
-				type Entity struct {
-					Hobby Item
-				}
-
-				type Thing struct {
-					Friend *Entity
-				}
-
-
-					s := "hi"
-					t := Thing{
-						Friend: &Entity{
-							Hobby: Item{
-								Name: &s,
-							},
-						},
-					}
-			*/
 			name: "mix of optional and require and nested 3 deep",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item"}, Optionals: []bool{true, false, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, false, true}},
 			result: `func writeFriendHobbyName(x *Person, v *string, def int64) {
 	switch def {
+	case 1:
+		if x.Friend == nil {
+			x.Friend = &Entity{}
+		}
 	case 2:
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{Name: *v}
+		if x.Friend == nil {
+			x.Friend = &Entity{Item{Name: v}}
 		} else {
-			x.Hobby.Name = *v
+			x.Friend.Hobby.Name = v
 		}
 	}
 }`,
