@@ -35,7 +35,7 @@ func TestStructs(t *testing.T) {
 			name:     "2 deep def 2 of 2",
 			field:    parse.Field{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Item", "string"}, Optionals: []bool{true, true}},
 			def:      2,
-			expected: "&Item{Name: *v}",
+			expected: "&Item{Name: v}",
 		},
 		{
 			name:     "3 deep def 1 of 2",
@@ -47,7 +47,19 @@ func TestStructs(t *testing.T) {
 			name:     "3 deep def 2 of 2",
 			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, false, true}},
 			def:      2,
-			expected: "&Entity{Hobby: Item{Name: *v}}",
+			expected: "&Entity{Hobby: Item{Name: v}}",
+		},
+		{
+			name:     "3 deep def 1 of 2 v2",
+			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, true, false}},
+			def:      1,
+			expected: "&Entity{}",
+		},
+		{
+			name:     "3 deep def 2 of 2 v2",
+			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, true, false}},
+			def:      2,
+			expected: "&Entity{Hobby: &Item{Name: *v}}",
 		},
 		{
 			name:     "3 deep def 1 of 3",

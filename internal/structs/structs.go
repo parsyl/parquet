@@ -6,6 +6,8 @@ import (
 	"github.com/parsyl/parquet/internal/parse"
 )
 
+// Init initializes the nested structs according to the
+// current definition level.
 func Init(def int, f parse.Field) string {
 	return doInit(def, 0, f)
 }
