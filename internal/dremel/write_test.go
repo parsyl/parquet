@@ -80,7 +80,7 @@ func TestWrite(t *testing.T) {
 		}
 	case 2:
 		if x.Friend == nil {
-			x.Friend = &Entity{Item{Name: v}}
+			x.Friend = &Entity{Hobby: Item{Name: v}}
 		} else {
 			x.Friend.Hobby.Name = v
 		}

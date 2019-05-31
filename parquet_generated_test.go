@@ -48,10 +48,9 @@ func readHobbyName(x Person) (*string, int64) {
 	return &x.Hobby.Name, 2
 }
 
-// Hobby is optional, but Hobby.Name is not so only def 0 and 2 are valid
 func writeHobbyName(x *Person, v *string, def int64) {
 	switch def {
-	case 2:
+	case 1:
 		if x.Hobby == nil {
 			x.Hobby = &Hobby{Name: *v}
 		} else {

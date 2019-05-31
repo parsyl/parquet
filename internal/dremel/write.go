@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/structs"
 )
 
 func init() {
@@ -37,6 +38,12 @@ type writeInput struct {
 	FuncName string
 }
 
+func writeRequired(f parse.Field) string {
+	return fmt.Sprintf(`func write%s(x *%s, v %s, def int64) {
+	x.%s = v
+}`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
+}
+
 func writeNested(f parse.Field) string {
 	i := writeInput{
 		Field:    f,
@@ -54,105 +61,60 @@ func writeNested(f parse.Field) string {
 
 func writeCases(f parse.Field) []string {
 	var out []string
-	for i := 0; i < validCases(f.Optionals); i++ {
+	for def := 1; def <= defs(f); def++ {
 		out = append(out, fmt.Sprintf(`case %d:
-		%s`,
-			i+1,
-			strings.Join(inits(i, f), " "),
-		))
+	%s`, def, ifelse(0, def, f)))
 	}
 	return out
 }
 
-func validCases(optionals []bool) int {
+// return an if else block for the definition level
+func ifelse(i, def int, f parse.Field) string {
+	if i == def {
+		return ""
+	}
+
+	stmt := "if"
+	brace := "}"
+	cmp := fmt.Sprintf(" x.%s == nil", nilField(i, f))
+	if i == defs(f)-1 {
+		stmt = " else"
+		cmp = ""
+		brace = ""
+	} else if i > 0 && i < defs(f)-1 {
+		stmt = " else if"
+		brace = ""
+	}
+
+	return fmt.Sprintf(`%s%s {
+	%s = %s
+	%s%s`, stmt, cmp, "x", structs.Init(def, f), brace, ifelse(i+1, def, f))
+}
+
+func nilField(i int, f parse.Field) string {
+	var fields []string
+	var count int
+	for i, o := range f.Optionals {
+		fields = append(fields, f.FieldNames[i])
+		if o {
+			count++
+		}
+		if count > i {
+			break
+		}
+	}
+	return strings.Join(fields, ".")
+}
+
+// count the number of fields in the path that can be optional
+func defs(f parse.Field) int {
 	var out int
-	for _, o := range optionals {
+	for _, o := range f.Optionals {
 		if o {
 			out++
 		}
 	}
 	return out
-}
-
-func allOptional(b []bool) bool {
-	for _, x := range b {
-		if !x {
-			return false
-		}
-	}
-	return true
-}
-
-func inits(i int, f parse.Field) []string {
-	var out []string
-	for j := range f.Optionals[:i+1] {
-		if !validCase(i, f.Optionals) {
-			continue
-		}
-		out = append(out, fmt.Sprintf(`%s {
-			x.%s = %s
-		}`,
-			ifelse(j, f),
-			strings.Join(f.FieldNames[:j+1], "."),
-			initStruct(i, j, f)))
-	}
-	return out
-}
-
-func ifelse(i int, f parse.Field) string {
-	switch {
-	case i == 0:
-		return fmt.Sprintf("if x.%s == nil", strings.Join(f.FieldNames[:i+1], "."))
-	case i+1 == len(f.FieldNames):
-		return "else"
-	default:
-		return fmt.Sprintf("else if x.%s == nil", strings.Join(f.FieldNames[:i+1], "."))
-	}
-}
-
-func initStruct(cs, i int, f parse.Field) string {
-	switch {
-	case cs == 0 && i == 0:
-		return fmt.Sprintf("&%s{}", f.FieldNames[0])
-	case i < cs:
-		return doInit(cs, i, f)
-	default:
-		p := ""
-		if !f.Optionals[i] {
-			p = "*"
-		}
-		return fmt.Sprintf("%sv", p)
-	}
-}
-
-func doInit(i, n int, f parse.Field) string {
-	if n == len(f.Optionals) {
-		p := ""
-		if !f.Optionals[i] {
-			p = "*"
-		}
-		return fmt.Sprintf(": %sv", p)
-	}
-	brackets := []string{"{", "}"}
-	name := f.FieldTypes[n]
-	if n == len(f.Optionals)-1 {
-		brackets = []string{"", ""}
-		name = f.FieldNames[n]
-	}
-	return fmt.Sprintf(
-		`%s%s%s%s%s`,
-		pointer(i, n, "&", f.Optionals),
-		name,
-		brackets[0],
-		doInit(i, n+1, f),
-		brackets[1],
-	)
-}
-
-func writeRequired(f parse.Field) string {
-	return fmt.Sprintf(`func write%s(x *%s, v %s, def int64) {
-	x.%s = v
-}`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
 func pointer(i, n int, p string, levels []bool) string {
