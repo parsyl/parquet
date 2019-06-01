@@ -20,20 +20,20 @@ func doInit(def, i int, f parse.Field) string {
 		}
 	}
 
-	if j == def && j == nDefs(f) {
+	if def == nDefs(f) && i == len(f.Optionals)-1 {
 		var ptr string
-		if f.Optionals[i] {
+		if !f.Optionals[len(f.Optionals)-1] {
 			ptr = "*"
 		}
 		return fmt.Sprintf("%s: %sv", f.FieldNames[i], ptr)
 	}
 
-	if i == def {
+	if i == def && def < nDefs(f) {
 		return ""
 	}
 
 	var field string
-	if i > 0 && j < nDefs(f) {
+	if i > 0 && i < len(f.Optionals) {
 		field = fmt.Sprintf("%s: ", f.FieldNames[i])
 	}
 

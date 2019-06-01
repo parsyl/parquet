@@ -77,7 +77,7 @@ func TestStructs(t *testing.T) {
 			name:     "3 deep def 3 of 3",
 			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, true, true}},
 			def:      3,
-			expected: "&Entity{Hobby: &Item{Name: *v}}",
+			expected: "&Entity{Hobby: &Item{Name: v}}",
 		},
 	}
 
