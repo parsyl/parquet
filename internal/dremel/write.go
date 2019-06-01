@@ -13,10 +13,9 @@ import (
 
 func init() {
 	var err error
-	writeTpl, err = template.New("output").Parse(`func write{{.FuncName}}(x *{{.Type}}, v {{.TypeName}}, def int64) {
-	switch def { {{range .Cases}}
-	{{.}}{{end}}
-	}
+	writeTpl, err = template.New("output").Parse(`func write{{.FuncName}}(x *{{.Type}}, v {{.TypeName}}, def int64) { {{ $length := len .Cases }} {{ if eq $length 1 }} {{range .Cases}}
+	{{.}}{{end}}{{else}} switch def { {{range .Cases}}
+	{{.}}{{end}} } {{end}}
 }`)
 	if err != nil {
 		log.Fatal(err)
@@ -62,33 +61,54 @@ func writeNested(f parse.Field) string {
 func writeCases(f parse.Field) []string {
 	var out []string
 	for def := 1; def <= defs(f); def++ {
-		out = append(out, fmt.Sprintf(`case %d:
-	%s`, def, ifelse(0, def, f)))
+		cs := fmt.Sprintf(`case %d:
+	`, def)
+		if defs(f) == 1 {
+			cs = ""
+		}
+		out = append(out, fmt.Sprintf(`%s%s`, cs, ifelse(0, def, f)))
 	}
 	return out
 }
 
 // return an if else block for the definition level
 func ifelse(i, def int, f parse.Field) string {
-	if i == def {
+	if i == recursions(def, f) {
 		return ""
 	}
 
-	stmt := "if"
-	brace := "}"
-	cmp := fmt.Sprintf(" x.%s == nil", nilField(i, f))
-	if i == defs(f)-1 {
-		stmt = " else"
-		cmp = ""
-		brace = ""
+	var stmt, brace, val, field, cmp string
+	if i == 0 {
+		stmt = "if"
+		brace = "}"
+		val = structs.Init(def, f)
+		field = fmt.Sprintf("x.%s", f.FieldNames[0])
+		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
 	} else if i > 0 && i < defs(f)-1 {
 		stmt = " else if"
 		brace = ""
+	} else {
+		stmt = " else"
+		val = "v"
+		if !f.Optionals[len(f.Optionals)-1] {
+			val = "*v"
+		}
+		brace = "}"
+		field = fmt.Sprintf("x.%s", strings.Join(f.FieldNames, "."))
 	}
 
 	return fmt.Sprintf(`%s%s {
 	%s = %s
-	%s%s`, stmt, cmp, "x", structs.Init(def, f), brace, ifelse(i+1, def, f))
+	%s%s`, stmt, cmp, field, val, brace, ifelse(i+1, def, f))
+}
+
+// recursions calculates the number of times ifelse should execute
+func recursions(def int, f parse.Field) int {
+	n := def
+	if defs(f) == 1 {
+		n++
+	}
+	return n
 }
 
 func nilField(i int, f parse.Field) string {

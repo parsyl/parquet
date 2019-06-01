@@ -59,13 +59,10 @@ func TestWrite(t *testing.T) {
 			name: "mix of optional and require and nested",
 			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, Optionals: []bool{true, false}},
 			result: `func writeHobbyName(x *Person, v *string, def int64) {
-	switch def {
-	case 2:
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{Name: *v}
-		} else {
-			x.Hobby.Name = *v
-		}
+	if x.Hobby == nil {
+		x.Hobby = &Hobby{Name: *v}
+	} else {
+		x.Hobby.Name = *v
 	}
 }`,
 		},
@@ -92,7 +89,6 @@ func TestWrite(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(tc.f)
-			fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))
