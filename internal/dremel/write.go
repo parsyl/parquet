@@ -86,7 +86,11 @@ func ifelse(i, def int, f parse.Field) string {
 		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
 	} else if i > 0 && i < defs(f)-1 {
 		stmt = " else if"
-		brace = ""
+		brace = "}"
+		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
+		ch := f.Child(i)
+		val = structs.Init(def-1, ch)
+		field = fmt.Sprintf("x.%s", nilField(i, f))
 	} else {
 		stmt = " else"
 		val = "v"
@@ -114,8 +118,8 @@ func recursions(def int, f parse.Field) int {
 func nilField(i int, f parse.Field) string {
 	var fields []string
 	var count int
-	for i, o := range f.Optionals {
-		fields = append(fields, f.FieldNames[i])
+	for j, o := range f.Optionals {
+		fields = append(fields, f.FieldNames[j])
 		if o {
 			count++
 		}

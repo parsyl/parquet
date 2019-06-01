@@ -84,6 +84,32 @@ func TestWrite(t *testing.T) {
 	}
 }`,
 		},
+		{
+			name: "mix of optional and require and nested 3 deep all optional",
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, true, true}},
+			result: `func writeFriendHobbyName(x *Person, v *string, def int64) {
+	switch def {
+	case 1:
+		if x.Friend == nil {
+			x.Friend = &Entity{}
+		}
+	case 2:
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{}
+		}
+	case 3:
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{Name: v}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: v}
+		} else {
+			x.Friend.Hobby.Name = v
+		}
+	}
+}`,
+		},
 	}
 
 	for i, tc := range testCases {

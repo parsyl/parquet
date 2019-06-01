@@ -24,6 +24,14 @@ type Field struct {
 	Optionals   []bool
 }
 
+func (f Field) Child(i int) Field {
+	return Field{
+		FieldNames: f.FieldNames[i:],
+		FieldTypes: f.FieldTypes[i:],
+		Optionals:  f.Optionals[i:],
+	}
+}
+
 type field struct {
 	Field     Field
 	tagName   string
