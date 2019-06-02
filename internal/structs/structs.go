@@ -14,7 +14,6 @@ func Init(def int, f parse.Field) string {
 
 func doInit(def, i int, f parse.Field) string {
 	var j int
-	fmt.Println(def, i, f.Optionals)
 	for _, o := range f.Optionals[:i+1] {
 		if o {
 			j++

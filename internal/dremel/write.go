@@ -65,6 +65,10 @@ func writeCases(f parse.Field) []string {
 	`, def)
 		if defs(f) == 1 {
 			cs = ""
+			if defIndex(0, f) == len(f.Optionals)-1 {
+				out = append(out, fmt.Sprintf("x.%s = v", strings.Join(f.FieldNames, ".")))
+				return out
+			}
 		}
 		out = append(out, fmt.Sprintf(`%s%s`, cs, ifelse(0, def, f)))
 	}
@@ -81,15 +85,16 @@ func ifelse(i, def int, f parse.Field) string {
 	if i == 0 {
 		stmt = "if"
 		brace = "}"
-		val = structs.Init(def, f)
-		field = fmt.Sprintf("x.%s", f.FieldNames[0])
+		field = fmt.Sprintf("x.%s", nilField(i, f))
 		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
+		ch := f.Child(defIndex(i, f))
+		val = structs.Init(def, ch)
 	} else if i > 0 && i < defs(f)-1 {
 		stmt = " else if"
 		brace = "}"
 		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
-		ch := f.Child(i)
-		val = structs.Init(def-1, ch)
+		ch := f.Child(defIndex(i, f))
+		val = structs.Init(def-i, ch)
 		field = fmt.Sprintf("x.%s", nilField(i, f))
 	} else {
 		stmt = " else"
@@ -128,6 +133,19 @@ func nilField(i int, f parse.Field) string {
 		}
 	}
 	return strings.Join(fields, ".")
+}
+
+func defIndex(i int, f parse.Field) int {
+	var count int
+	for j, o := range f.Optionals {
+		if o {
+			count++
+		}
+		if count > i {
+			return j
+		}
+	}
+	return -1
 }
 
 // count the number of fields in the path that can be optional
