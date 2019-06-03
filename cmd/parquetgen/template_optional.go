@@ -1,7 +1,5 @@
 package main
 
-var readCaseTpl = `{{define "readCase"}}{{end}}`
-
 /*
 func read{{funcName .}}(r {{.Type}}) (*.TypeName, int64) {
 	switch { {{range $i, $n := .FieldNames}}
@@ -14,28 +12,21 @@ func read{{funcName .}}(r {{.Type}}) (*.TypeName, int64) {
 var readTpl = `{{define "readFunc"}}
 {{end}}`
 
-var writeTpl = `{{define "writeFunc"}}
-{{$field := .}}
-func write{{funcName .}}(r {{.Type}}, v {{.TypeName}}, def int64) {
-	switch def { {{range $i, $n := .FieldNames}}{{writeCase $i $field}}{{end}}
-	}
-}{{end}}`
-
 var optionalTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
 	vals  []{{removeStar .TypeName}}
-	read  func(r *{{.Type}}, v {{.TypeName}})
-	val   func(r {{.Type}}) {{.TypeName}}
+	write  func(r *{{.Type}}, v {{.TypeName}})
+	read   func(r {{.Type}}) {{.TypeName}}
 	stats {{.TypeName}}optionalStats
 }
 
-{{template "writeFunc" .}}
+{{writeFunc .}}
 
-func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, v {{.TypeName}}, def int64), col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
-		val:           val,
 		read:          read,
+		write:         write,
 		OptionalField: parquet.NewOptionalField(col, opts...),
 		stats:         new{{removeStar .TypeName}}optionalStats(),
 	}
@@ -68,7 +59,7 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *{{.FieldType}}) Add(r {{.Type}}) {
-	v := f.val(r)
+	v := f.read(r)
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
@@ -88,7 +79,7 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 		v := f.vals[0]
 		f.vals = f.vals[1:]
 		val = v
-        f.read(r, &val)
+        f.write(r, &val)
 	}
 	f.Defs = f.Defs[1:]
 }

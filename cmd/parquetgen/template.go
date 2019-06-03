@@ -1,6 +1,6 @@
 package main
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}(func(x {{.Type}}) {{.TypeName}} { return x.{{join .FieldNames}} }, func(x *{{.Type}}, v {{.TypeName}}) { x.{{join .FieldNames}} = v }, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}(func(x {{.Type}}) {{.TypeName}} { return x.{{join .FieldNames}} }, {{writeFuncName .}}, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
 
 var tpl = `package {{.Package}}
 
@@ -49,6 +49,9 @@ func Fields(compression compression) []Field {
 		{{template "newField" .}}{{end}}
 	}
 }
+
+{{range .Fields}}{{writeFunc .}}
+{{end}}
 
 func fieldCompression(c compression) []func(*parquet.RequiredField) {
 	switch c {

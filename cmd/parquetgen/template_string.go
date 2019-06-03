@@ -4,15 +4,15 @@ var stringTpl = `{{define "stringField"}}
 type StringField struct {
 	parquet.RequiredField
 	vals []string
-	val  func(r {{.Type}}) string
-	read func(r *{{.Type}}, v string)
+	read  func(r {{.Type}}) string
+	write func(r *{{.Type}}, v string, def int64)
 	stats *stringStats
 }
 
-func NewStringField(val func(r {{.Type}}) string, read func(r *{{.Type}}, v string), col string, opts ...func(*parquet.RequiredField)) *StringField {
+func NewStringField(read func(r {{.Type}}) string, write func(r *{{.Type}}, v string, def int64), col string, opts ...func(*parquet.RequiredField)) *StringField {
 	return &StringField{
-		val:           val,
-		read:          read,
+		read:           read,
+		write:          write,
 		RequiredField: parquet.NewRequiredField(col, opts...),
 		stats:         newStringStats(),
 	}

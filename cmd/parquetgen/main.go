@@ -16,6 +16,7 @@ import (
 	"github.com/parsyl/parquet"
 	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/cases"
+	"github.com/parsyl/parquet/internal/dremel"
 	"github.com/parsyl/parquet/internal/parse"
 )
 
@@ -117,17 +118,8 @@ var (
 			}
 			return out
 		},
-		"dict": templateDict,
-		"plus": func(a, b int) int {
-			return a + b
-		},
-		"lastCase": func(i int, f parse.Field) bool {
-			return len(f.FieldNames) == i+1
-		},
-		"validCase": func(i int, f parse.Field) bool {
-			return f.Optionals[i]
-		},
-		"writeCase": writeCase,
+		"writeFunc":     dremel.Write,
+		"writeFuncName": func(f parse.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")) },
 	}
 )
 
@@ -371,9 +363,6 @@ func fromStruct(pth string) {
 		boolOptionalStatsTpl,
 		stringStatsTpl,
 		stringOptionalStatsTpl,
-		writeTpl,
-		readTpl,
-		readCaseTpl,
 	} {
 		var err error
 		tmpl, err = tmpl.Parse(t)
@@ -388,17 +377,18 @@ func fromStruct(pth string) {
 		log.Fatal(err)
 	}
 
-	gocode, err := format.Source(buf.Bytes())
-	if err != nil {
-		log.Fatal(err)
-	}
+	// gocode, err := format.Source(buf.Bytes())
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	f, err := os.Create(*outPth)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = f.Write(gocode)
+	//_, err = f.Write(gocode)
+	_, err = f.Write(buf.Bytes())
 	if err != nil {
 		log.Fatal(err)
 	}

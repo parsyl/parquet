@@ -245,7 +245,7 @@ func TestWrite(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			s := dremel.Write(tc.f)
+			_, s := dremel.Write(tc.f)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))

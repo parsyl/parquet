@@ -38,9 +38,9 @@ type writeInput struct {
 }
 
 func writeRequired(f parse.Field) string {
-	return fmt.Sprintf(`func write%s(x *%s, v %s, def int64) {
+	return fmt.Sprintf(`func %s(x *%s, v %s, def int64) {
 	x.%s = v
-}`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
+}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
 func writeNested(f parse.Field) string {

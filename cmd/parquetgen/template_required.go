@@ -4,15 +4,15 @@ var requiredTpl = `{{define "requiredField"}}
 type {{.FieldType}} struct {
 	vals []{{.TypeName}}
 	parquet.RequiredField
-	val  func(r {{.Type}}) {{.TypeName}}
-	read func(r *{{.Type}}, v {{.TypeName}})
+	read  func(r {{.Type}}) {{.TypeName}}
+	write func(r *{{.Type}}, v {{.TypeName}}, def int64)
 	stats *{{.TypeName}}stats
 }
 
-func New{{.FieldType}}(val func(r {{.Type}}) {{.TypeName}}, read func(r *{{.Type}}, v {{.TypeName}}), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, v {{.TypeName}}, def int64), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
-		val:           val,
-		read:          read,
+		read:           read,
+		write:          write,
 		RequiredField: parquet.NewRequiredField(col, opts...),
 		stats:         new{{camelCase .TypeName}}stats(),
 	}
@@ -28,7 +28,7 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 	}
 	v := f.vals[0]
 	f.vals = f.vals[1:]
-	f.read(r, v)
+	f.write(r, v)
 }
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -54,7 +54,7 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *{{.FieldType}}) Add(r {{.Type}}) {
-	v := f.val(r)
+	v := f.read(r)
 	f.stats.add(v)
 	f.vals = append(f.vals, v)
 }
