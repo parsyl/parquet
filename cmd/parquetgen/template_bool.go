@@ -1,42 +1,58 @@
 package main
 
 var boolTpl = `{{define "boolField"}}type BoolField struct {
-	parquet.RequiredField
+	{{parquetType .}}
 	vals []bool
-	val  func(r {{.Type}}) bool
-	read func(r *{{.Type}}, v bool)
+	{{if isOptional .}}read   func(r {{.Type}}) (*bool, int64}}{{else}}read  func(r {{.Type}}) bool{{end}}
+	write func(r *{{.Type}}, vals []bool, def int64) bool
 }
 
-func NewBoolField(val func(r {{.Type}}) bool, read func(r *{{.Type}}, v bool), col string, opts ...func(*parquet.RequiredField)) *BoolField {
+func NewBoolField(read func(r {{.Type}}) bool, write func(r *{{.Type}}, v bool, def int64), col string, opts ...func(*{{parquetType .}})) *BoolField {
 	return &BoolField{
 		val:           val,
 		read:          read,
-		RequiredField: parquet.NewRequiredField(col, opts...),
+		{{if isOptional .}}OptionalField: parquet.NewOptionalField(col, opts...),{{else}}RequiredField: parquet.NewRequiredField(col, opts...),{{end}}
 	}
 }
 
 func (f *BoolField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}
+	{{if isOptional .}}return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionOptional}{{else}}return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}{{end}}
 }
 
 func (f *BoolField) Scan(r *{{.Type}}) {
+	{{ if isOptional .}}
 	if len(f.vals) == 0 {
 		return
 	}
 
 	v := f.vals[0]
 	f.vals = f.vals[1:]
-	f.read(r, v)
+	f.write(r, v)
+	{{else}}if len(f.Defs) == 0 {
+		return
+	}
+
+	if f.write(r, f.vals, f.Defs[0]) {
+		f.vals = f.vals[1:]
+	}
+	f.Defs = f.Defs[1:]{{end}}
 }
 
 func (f *BoolField) Add(r {{.Type}}) {
-	f.vals = append(f.vals, f.val(r))
+	{{if isOptional .}}v, def := f.read(r)
+	f.stats.add(v)
+	if v != nil {
+		f.vals = append(f.vals, *v)
+		f.Defs = append(f.Defs, def)
+	} else {
+		f.Defs = append(f.Defs, 0)
+	}{{else}}f.vals = append(f.vals, f.read(r)){{end}}
 }
 
 func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 	ln := len(f.vals)
-	byteNum := (ln + 7) / 8
-	rawBuf := make([]byte, byteNum)
+	n := (ln + 7) / 8
+	rawBuf := make([]byte, n)
 
 	for i := 0; i < ln; i++ {
 		if f.vals[i] {

@@ -32,6 +32,15 @@ func (f Field) Child(i int) Field {
 	}
 }
 
+func (f Field) Optional() bool {
+	for _, o := range f.Optionals {
+		if o {
+			return true
+		}
+	}
+	return false
+}
+
 type field struct {
 	Field     Field
 	tagName   string

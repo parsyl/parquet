@@ -22,8 +22,8 @@ func doInit(def, i int, f parse.Field) string {
 
 	if def == nDefs(f) && i == len(f.Optionals)-1 {
 		var ptr string
-		if !f.Optionals[len(f.Optionals)-1] {
-			ptr = "*"
+		if f.Optionals[len(f.Optionals)-1] {
+			ptr = "&"
 		}
 		return fmt.Sprintf("%s: %sv", f.FieldNames[i], ptr)
 	}

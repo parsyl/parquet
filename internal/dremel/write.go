@@ -12,10 +12,17 @@ import (
 )
 
 func init() {
+	funcs := template.FuncMap{
+		"removeStar": func(s string) string {
+			return strings.Replace(s, "*", "", 1)
+		},
+	}
+
 	var err error
-	writeTpl, err = template.New("output").Parse(`func write{{.FuncName}}(x *{{.Type}}, v {{.TypeName}}, def int64) { {{ $length := len .Cases }} {{ if eq $length 1 }} {{range .Cases}}
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool { {{ $length := len .Cases }} {{ if eq $length 1 }} {{range .Cases}}
 	{{.}}{{end}}{{else}} switch def { {{range .Cases}}
-	{{.}}{{end}} } {{end}}
+	{{.}}{{end}} }
+	return false {{end}}
 }`)
 	if err != nil {
 		log.Fatal(err)
@@ -38,8 +45,9 @@ type writeInput struct {
 }
 
 func writeRequired(f parse.Field) string {
-	return fmt.Sprintf(`func %s(x *%s, v %s, def int64) {
-	x.%s = v
+	return fmt.Sprintf(`func %s(x *%s, vals []%s, def int64) bool {
+	x.%s = vals[0]
+	return true
 }`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
@@ -59,20 +67,43 @@ func writeNested(f parse.Field) string {
 }
 
 func writeCases(f parse.Field) []string {
+	if defs(f) == 1 {
+		return writeSingleCase(f)
+	}
+
 	var out []string
 	for def := 1; def <= defs(f); def++ {
+		var v, ret string
+		if def == defs(f) {
+			v = `v := vals[0]
+		`
+			ret = `
+	return true
+	`
+		}
+
 		cs := fmt.Sprintf(`case %d:
 	`, def)
-		if defs(f) == 1 {
-			cs = ""
-			if defIndex(0, f) == len(f.Optionals)-1 {
-				out = append(out, fmt.Sprintf("x.%s = v", strings.Join(f.FieldNames, ".")))
-				return out
-			}
-		}
-		out = append(out, fmt.Sprintf(`%s%s`, cs, ifelse(0, def, f)))
+
+		out = append(out, fmt.Sprintf(`%s%s%s%s`, cs, v, ifelse(0, def, f), ret))
 	}
 	return out
+}
+
+func writeSingleCase(f parse.Field) []string {
+	// 		if defIndex(0, f) == len(f.Optionals)-1 {
+	// 			out = append(out, fmt.Sprintf(`if def == 0 {
+	// 		return false
+	// 	}
+
+	// 	x.%s = vals[0]
+	// 	return true`, strings.Join(f.FieldNames, ".")))
+	// 			return out
+	// 		}
+	// 	}
+
+	// 	}
+	return nil
 }
 
 // return an if else block for the definition level
@@ -99,8 +130,8 @@ func ifelse(i, def int, f parse.Field) string {
 	} else {
 		stmt = " else"
 		val = "v"
-		if !f.Optionals[len(f.Optionals)-1] {
-			val = "*v"
+		if f.Optionals[len(f.Optionals)-1] {
+			val = "&v"
 		}
 		brace = "}"
 		field = fmt.Sprintf("x.%s", strings.Join(f.FieldNames, "."))

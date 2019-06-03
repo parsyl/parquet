@@ -120,6 +120,12 @@ var (
 		},
 		"writeFunc":     dremel.Write,
 		"writeFuncName": func(f parse.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")) },
+		"parquetType": func(f parse.Field) string {
+			if f.Optional() {
+				return "parquet.OptionalField"
+			}
+			return "parquet.RequiredField"
+		},
 	}
 )
 

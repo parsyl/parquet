@@ -164,7 +164,7 @@ func OptionalFieldDepth(d uint) func(*OptionalField) {
 // Values reads the definition levels and uses them
 // to return the values from the page data.
 func (f *OptionalField) Values() int {
-binary	return valsFromDefs(f.Defs, int64(f.Depth))
+	return valsFromDefs(f.Defs, int64(f.Depth))
 }
 
 func valsFromDefs(defs []int64, depth int64) int {

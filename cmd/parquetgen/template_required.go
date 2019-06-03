@@ -1,8 +1,9 @@
 package main
 
-var requiredTpl = `{{define "requiredField"}}
+var numericTpl = `{{define "numericField"}}
 type {{.FieldType}} struct {
 	vals []{{.TypeName}}
+	read   func(r {{.Type}}) (*bool, int64}}{{else}}read  func(r {{.Type}}) bool{{end}}
 	parquet.RequiredField
 	read  func(r {{.Type}}) {{.TypeName}}
 	write func(r *{{.Type}}, v {{.TypeName}}, def int64)
