@@ -28,13 +28,13 @@ func TestWrite(t *testing.T) {
 			name: "optional and not nested",
 			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, Optionals: []bool{true}},
 			result: `func writeID(x *Person, vals []int32, def int64) bool {
-	if def == 0 {
-		return false
+	switch def {
+	case 1:
+		v := vals[0]
+		x.ID = &v
+		return true
 	}
-
-	v := vals[0]
-	x.ID = &v
-	return true
+	return false
 }`,
 		},
 		{
@@ -70,30 +70,30 @@ func TestWrite(t *testing.T) {
 			name: "mix of optional and required and nested",
 			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, Optionals: []bool{true, false}},
 			result: `func writeHobbyName(x *Person, vals []string, def int64) bool {
-	if def == 0 {
-		return false
+	switch def {
+	case 1:
+		v := vals[0]
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Name: v}
+		} else {
+			x.Hobby.Name = v
+		}
+		return true
 	}
-
-	v := vals[0]
-	if x.Hobby == nil {
-		x.Hobby = &Hobby{Name: v}
-	} else {
-		x.Hobby.Name = v
-	}
-	return true
+	return false
 }`,
 		},
 		{
-			name: "mix of optional and require and nested v2",
+			name: "mix of optional and required and nested v2",
 			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, Optionals: []bool{false, true}},
 			result: `func writeHobbyName(x *Person, vals []string, def int64) bool {
-	if def == 0 {
-		return false
+	switch def {
+	case 1:
+		v := vals[0]
+		x.Hobby.Name = &v
+		return true
 	}
-
-	v := vals[0]
-	x.Hobby.Name = &v
-	return true
+	return false
 }`,
 		},
 		{
@@ -290,7 +290,6 @@ func TestWrite(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(tc.f)
-			fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))

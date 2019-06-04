@@ -3,7 +3,7 @@ package dremel
 import "github.com/parsyl/parquet/internal/parse"
 
 func Write(f parse.Field) string {
-	if len(f.Optionals) == 1 || !isOptional(f) {
+	if !isOptional(f) {
 		return writeRequired(f)
 	}
 	return writeNested(f)

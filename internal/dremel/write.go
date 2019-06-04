@@ -19,10 +19,10 @@ func init() {
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool { {{ $length := len .Cases }} {{ if eq $length 1 }} {{range .Cases}}
-	{{.}}{{end}}{{else}} switch def { {{range .Cases}}
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool {
+	switch def { {{range .Cases}}
 	{{.}}{{end}} }
-	return false {{end}}
+	return false
 }`)
 	if err != nil {
 		log.Fatal(err)
@@ -67,10 +67,6 @@ func writeNested(f parse.Field) string {
 }
 
 func writeCases(f parse.Field) []string {
-	if defs(f) == 1 {
-		return writeSingleCase(f)
-	}
-
 	var out []string
 	for def := 1; def <= defs(f); def++ {
 		var v, ret string
@@ -90,22 +86,6 @@ func writeCases(f parse.Field) []string {
 	return out
 }
 
-func writeSingleCase(f parse.Field) []string {
-	// 		if defIndex(0, f) == len(f.Optionals)-1 {
-	// 			out = append(out, fmt.Sprintf(`if def == 0 {
-	// 		return false
-	// 	}
-
-	// 	x.%s = vals[0]
-	// 	return true`, strings.Join(f.FieldNames, ".")))
-	// 			return out
-	// 		}
-	// 	}
-
-	// 	}
-	return nil
-}
-
 // return an if else block for the definition level
 func ifelse(i, def int, f parse.Field) string {
 	if i == recursions(def, f) {
@@ -113,7 +93,9 @@ func ifelse(i, def int, f parse.Field) string {
 	}
 
 	var stmt, brace, val, field, cmp string
-	if i == 0 {
+	if i == 0 && defs(f) == 1 && f.Optionals[len(f.Optionals)-1] {
+		return fmt.Sprintf(`x.%s = &v`, strings.Join(f.FieldNames, "."))
+	} else if i == 0 {
 		stmt = "if"
 		brace = "}"
 		field = fmt.Sprintf("x.%s", nilField(i, f))
