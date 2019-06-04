@@ -59,7 +59,7 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *{{.FieldType}}) Add(r {{.Type}}) {
-	v := f.read(r)
+	v, def := f.read(r)
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)

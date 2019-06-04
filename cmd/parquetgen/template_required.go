@@ -3,14 +3,13 @@ package main
 var numericTpl = `{{define "numericField"}}
 type {{.FieldType}} struct {
 	vals []{{.TypeName}}
-	read   func(r {{.Type}}) (*bool, int64}}{{else}}read  func(r {{.Type}}) bool{{end}}
 	parquet.RequiredField
-	read  func(r {{.Type}}) {{.TypeName}}
-	write func(r *{{.Type}}, v {{.TypeName}}, def int64)
+	read  func(r {{.Type}}) ({{.TypeName}}, int64)
+	write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool
 	stats *{{.TypeName}}stats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, v {{.TypeName}}, def int64), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:           read,
 		write:          write,
@@ -27,9 +26,10 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 	if len(f.vals) == 0 {
 		return
 	}
-	v := f.vals[0]
-	f.vals = f.vals[1:]
-	f.write(r, v)
+	
+	if f.write(r, v, f.vals) {
+		f.vals = f.vals[1:]
+	}
 }
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -55,9 +55,15 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *{{.FieldType}}) Add(r {{.Type}}) {
-	v := f.read(r)
+	v, def := f.read(r)
 	f.stats.add(v)
-	f.vals = append(f.vals, v)
+	if def > 0 {
+		f.Defs = append(f.Defs, def)
+	}
+
+	if v != nil {
+		f.vals = append(f.vals, *v)
+	}
 }
 {{end}}`
 
