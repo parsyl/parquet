@@ -410,15 +410,15 @@ func (p *ParquetReader) Scan(x *Person) {
 type Int32Field struct {
 	vals []int32
 	parquet.RequiredField
-	val   func(r Person) int32
-	read  func(r *Person, v int32)
+	read  func(r Person) (int32, int64)
+	write func(r *Person, vals []int32, def int64)
 	stats *int32stats
 }
 
-func NewInt32Field(val func(r Person) int32, read func(r *Person, v int32), col string, opts ...func(*parquet.RequiredField)) *Int32Field {
+func NewInt32Field(read func(r Person) (int32, int64), write func(r *Person, vals []int32, def int64), col string, opts ...func(*parquet.RequiredField)) *Int32Field {
 	return &Int32Field{
-		val:           val,
 		read:          read,
+		write:         write,
 		RequiredField: parquet.NewRequiredField(col, opts...),
 		stats:         newInt32stats(),
 	}
@@ -432,9 +432,9 @@ func (f *Int32Field) Scan(r *Person) {
 	if len(f.vals) == 0 {
 		return
 	}
-	v := f.vals[0]
+
+	f.write(r, f.vals, 0)
 	f.vals = f.vals[1:]
-	f.read(r, v)
 }
 
 func (f *Int32Field) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -460,7 +460,7 @@ func (f *Int32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int32Field) Add(r Person) {
-	v := f.val(r)
+	v, f.defs = f.read(r, f.defs)
 	f.stats.add(v)
 	f.vals = append(f.vals, v)
 }
