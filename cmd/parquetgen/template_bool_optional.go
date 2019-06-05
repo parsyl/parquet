@@ -3,15 +3,15 @@ package main
 var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	val   func(r {{.Type}}) *bool
-	read  func(r *{{.Type}}, v *bool)
+	read   func(r {{.Type}}) ({{.TypeName}}, int64)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool
 	stats *boolOptionalStats
 }
 
-func NewBoolOptionalField(val func(r {{.Type}}) *bool, read func(r *{{.Type}}, v *bool), col string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+func NewBoolOptionalField(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
-		val:           val,
 		read:          read,
+		write:         write,
 		OptionalField: parquet.NewOptionalField(col, opts...),
 		stats:         newBoolOptionalStats(),
 	}
@@ -37,12 +37,8 @@ func (f *BoolOptionalField) Scan(r *{{.Type}}) {
 		return
 	}
 
-	var val *bool
-	if f.Defs[0] == 1 {
-		v := f.vals[0]
+	if f.write(r, f.vals, f.Defs[0]) {
 		f.vals = f.vals[1:]
-		val = &v
-		f.read(r, val)
 	}
 	f.Defs = f.Defs[1:]
 }
@@ -52,10 +48,9 @@ func (f *BoolOptionalField) Add(r {{.Type}}) {
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
-		f.Defs = append(f.Defs, 1)
-	} else {
-		f.Defs = append(f.Defs, 0)
+
 	}
+	f.Defs = append(f.Defs, def)
 }
 
 func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {

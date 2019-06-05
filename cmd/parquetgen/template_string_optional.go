@@ -4,15 +4,15 @@ var stringOptionalTpl = `{{define "stringOptionalField"}}
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals []string
-	val  func(r {{.Type}}) *string
-	read func(r *{{.Type}}, v *string)
+	read   func(r {{.Type}}) ({{.TypeName}}, int64)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(val func(r {{.Type}}) *string, read func(r *{{.Type}}, v *string), col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
-		val:           val,
 		read:          read,
+		write:         write,
 		OptionalField: parquet.NewOptionalField(col, opts...),
 		stats:         newStringOptionalStats(),
 	}
@@ -27,25 +27,20 @@ func (f *StringOptionalField) Scan(r *{{.Type}}) {
 		return
 	}
 
-	if f.Defs[0] == 1 {
-		var val *string
-		v := f.vals[0]
+	if f.write(r, f.vals, f.Defs[0]) {
 		f.vals = f.vals[1:]
-		val = &v
-        f.read(r, val)
 	}
 	f.Defs = f.Defs[1:]
 }
 
 func (f *StringOptionalField) Add(r {{.Type}}) {
-	v := f.val(r)
+	v, def := f.read(r)
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
-		f.Defs = append(f.Defs, 1)
-	} else {
-		f.Defs = append(f.Defs, 0)
+
 	}
+	f.Defs = append(f.Defs, def)
 }
 
 func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {

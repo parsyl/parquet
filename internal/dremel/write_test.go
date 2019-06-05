@@ -19,9 +19,8 @@ func TestWrite(t *testing.T) {
 		{
 			name: "required and not nested",
 			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, Optionals: []bool{false}},
-			result: `func writeID(x *Person, vals []int32, def int64) bool {
+			result: `func writeID(x *Person, vals []int32) {
 	x.ID = vals[0]
-	return true
 }`,
 		},
 		{
@@ -40,9 +39,8 @@ func TestWrite(t *testing.T) {
 		{
 			name: "required and nested",
 			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, Optionals: []bool{false, false, false}},
-			result: `func writeOtherHobbyDifficulty(x *Person, vals []int32, def int64) bool {
+			result: `func writeOtherHobbyDifficulty(x *Person, vals []int32) {
 	x.Other.Hobby.Difficulty = vals[0]
-	return true
 }`,
 		},
 		{

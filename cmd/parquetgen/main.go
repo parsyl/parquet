@@ -356,8 +356,8 @@ func fromStruct(pth string) {
 	}
 
 	for _, t := range []string{
-		requiredTpl,
-		optionalTpl,
+		requiredNumericTpl,
+		optionalNumericTpl,
 		stringTpl,
 		stringOptionalTpl,
 		boolTpl,

@@ -3,51 +3,22 @@ package main
 var boolTpl = `{{define "boolField"}}type BoolField struct {
 	{{parquetType .}}
 	vals []bool
-	{{if isOptional .}}read   func(r {{.Type}}) (*bool, int64}}{{else}}read  func(r {{.Type}}) bool{{end}}
-	write func(r *{{.Type}}, vals []bool, def int64) bool
+	read  func(r {{.Type}}) ({{.TypeName}})
+	write func(r *{{.Type}}, vals []{{removeStar .TypeName}})
 }
 
-func NewBoolField(read func(r {{.Type}}) bool, write func(r *{{.Type}}, v bool, def int64), col string, opts ...func(*{{parquetType .}})) *BoolField {
+func NewBoolField(read func(r {{.Type}}) ({{.TypeName}}), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*{{parquetType .}})) *BoolField {
 	return &BoolField{
-		val:           val,
 		read:          read,
-		{{if isOptional .}}OptionalField: parquet.NewOptionalField(col, opts...),{{else}}RequiredField: parquet.NewRequiredField(col, opts...),{{end}}
+		write:         write,
+		RequiredField: parquet.NewRequiredField(col, opts...),
 	}
 }
 
 func (f *BoolField) Schema() parquet.Field {
-	{{if isOptional .}}return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionOptional}{{else}}return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}{{end}}
+	return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}
 }
 
-func (f *BoolField) Scan(r *{{.Type}}) {
-	{{ if isOptional .}}
-	if len(f.vals) == 0 {
-		return
-	}
-
-	v := f.vals[0]
-	f.vals = f.vals[1:]
-	f.write(r, v)
-	{{else}}if len(f.Defs) == 0 {
-		return
-	}
-
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
-	}
-	f.Defs = f.Defs[1:]{{end}}
-}
-
-func (f *BoolField) Add(r {{.Type}}) {
-	{{if isOptional .}}v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-		f.Defs = append(f.Defs, def)
-	} else {
-		f.Defs = append(f.Defs, 0)
-	}{{else}}f.vals = append(f.vals, f.read(r)){{end}}
-}
 
 func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
 	ln := len(f.vals)
@@ -72,6 +43,22 @@ func (f *BoolField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	f.vals, err = parquet.GetBools(rr, int(pg.N), sizes)
 	return err
 }
+
+func (f *BoolField) Scan(r *{{.Type}}) {
+	if len(f.vals) == 0 {
+		return
+	}
+	
+	f.write(r, v, f.vals)
+    f.vals = f.vals[1:]
+}
+
+func (f *BoolField) Add(r {{.Type}}) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
 {{end}}`
 
 var boolStatsTpl = `{{define "boolStats"}}

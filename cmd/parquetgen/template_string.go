@@ -4,12 +4,12 @@ var stringTpl = `{{define "stringField"}}
 type StringField struct {
 	parquet.RequiredField
 	vals []string
-	read  func(r {{.Type}}) string
-	write func(r *{{.Type}}, v string, def int64)
+	read  func(r {{.Type}}) ({{.TypeName}})
+	write func(r *{{.Type}}, vals []{{removeStar .TypeName}})
 	stats *stringStats
 }
 
-func NewStringField(read func(r {{.Type}}) string, write func(r *{{.Type}}, v string, def int64), col string, opts ...func(*parquet.RequiredField)) *StringField {
+func NewStringField(read func(r {{.Type}}) ({{.TypeName}}), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*parquet.RequiredField)) *StringField {
 	return &StringField{
 		read:           read,
 		write:          write,
@@ -20,22 +20,6 @@ func NewStringField(read func(r {{.Type}}) string, write func(r *{{.Type}}, v st
 
 func (f *StringField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
-}
-
-func (f *StringField) Scan(r *{{.Type}}) {
-	if len(f.vals) == 0 {
-		return
-	}
-
-	v := f.vals[0]
-	f.vals = f.vals[1:]
-	f.read(r, v)
-}
-
-func (f *StringField) Add(r {{.Type}}) {
-	v := f.val(r)
-	f.stats.add(v)
-	f.vals = append(f.vals, v)
 }
 
 func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -70,6 +54,21 @@ func (f *StringField) Read(r io.ReadSeeker, pg parquet.Page) error {
 		f.vals = append(f.vals, string(s))
 	}
 	return nil
+}
+
+func (f *StringField) Scan(r *{{.Type}}) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *StringField) Add(r {{.Type}}) {
+	v := f.val(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
 }
 {{end}}`
 

@@ -1,29 +1,20 @@
 package main
 
-/*
-func read{{funcName .}}(r {{.Type}}) (*.TypeName, int64) {
-	switch { {{range $i, $n := .FieldNames}}
-		{{readSwitch $i $field}}
-        {{end}}
-	}
-}
-*/
-
 var readTpl = `{{define "readFunc"}}
 {{end}}`
 
-var optionalTpl = `{{define "optionalField"}}
+var optionalNumericTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
 	vals  []{{removeStar .TypeName}}
-	write  func(r *{{.Type}}, v {{.TypeName}})
-	read   func(r {{.Type}}) {{.TypeName}}
+	read   func(r {{.Type}}) ({{.TypeName}}, int64)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool
 	stats {{.TypeName}}optionalStats
 }
 
 {{writeFunc .}}
 
-func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, v {{.TypeName}}, def int64), col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:          read,
 		write:         write,
@@ -63,10 +54,9 @@ func (f *{{.FieldType}}) Add(r {{.Type}}) {
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
-		f.Defs = append(f.Defs, 1)
-	} else {
-		f.Defs = append(f.Defs, 0)
+
 	}
+	f.Defs = append(f.Defs, def)
 }
 
 func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
@@ -74,12 +64,8 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 		return
 	}
 
-	if f.Defs[0] == 1 {
-        var val {{removeStar .TypeName}}
-		v := f.vals[0]
+	if f.write(r, f.vals, f.Defs[0]) {
 		f.vals = f.vals[1:]
-		val = v
-        f.write(r, &val)
 	}
 	f.Defs = f.Defs[1:]
 }

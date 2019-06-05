@@ -153,8 +153,8 @@ func OptionalFieldUncompressed(o *OptionalField) {
 	o.compression = sch.CompressionCodec_UNCOMPRESSED
 }
 
-// OptionalFieldDepth sets the depth, as in how deeply
-// nested the field is.
+// OptionalFieldDepth sets the depth, as in the maximum
+// definition level.
 func OptionalFieldDepth(d uint) func(*OptionalField) {
 	return func(o *OptionalField) {
 		o.Depth = d

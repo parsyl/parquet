@@ -408,14 +408,14 @@ func (p *ParquetReader) Scan(x *Person) {
 }
 
 type Int32Field struct {
-	vals []int32
 	parquet.RequiredField
-	read  func(r Person) (int32, int64)
-	write func(r *Person, vals []int32, def int64)
+	vals  []int32
+	read  func(r Person) int32
+	write func(r *Person, vals []int32)
 	stats *int32stats
 }
 
-func NewInt32Field(read func(r Person) (int32, int64), write func(r *Person, vals []int32, def int64), col string, opts ...func(*parquet.RequiredField)) *Int32Field {
+func NewInt32Field(read func(r Person) int32, write func(r *Person, vals []int32), col string, opts ...func(*parquet.RequiredField)) *Int32Field {
 	return &Int32Field{
 		read:          read,
 		write:         write,
@@ -433,7 +433,7 @@ func (f *Int32Field) Scan(r *Person) {
 		return
 	}
 
-	f.write(r, f.vals, 0)
+	f.write(r, f.vals)
 	f.vals = f.vals[1:]
 }
 
@@ -460,7 +460,7 @@ func (f *Int32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int32Field) Add(r Person) {
-	v, f.defs = f.read(r, f.defs)
+	v := f.read(r)
 	f.stats.add(v)
 	f.vals = append(f.vals, v)
 }
@@ -468,15 +468,15 @@ func (f *Int32Field) Add(r Person) {
 type Int32OptionalField struct {
 	parquet.OptionalField
 	vals  []int32
-	read  func(r *Person, v *int32, def int64)
-	val   func(r Person) (*int32, int64)
+	read  func(r Person) (*int32, int64)
+	write func(r *Person, vals []int32, def int64) bool
 	stats *int32optionalStats
 }
 
-func NewInt32OptionalField(val func(r Person) (*int32, int64), read func(r *Person, v *int32, def int64), col string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
+func NewInt32OptionalField(read func(r Person) (*int32, int64), write func(r *Person, vals []int32, def int64) bool, col string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
 	return &Int32OptionalField{
-		val:           val,
 		read:          read,
+		write:         write,
 		OptionalField: parquet.NewOptionalField(col, opts...),
 		stats:         newint32optionalStats(),
 	}
@@ -509,14 +509,13 @@ func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int32OptionalField) Add(r Person) {
-	v := f.val(r)
+	v, def := f.read(r)
 	f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, *v)
-		f.Defs = append(f.Defs, 1)
-	} else {
-		f.Defs = append(f.Defs, 0)
+
 	}
+	f.Defs = append(f.Defs, def)
 }
 
 func (f *Int32OptionalField) Scan(r *Person) {
@@ -524,12 +523,8 @@ func (f *Int32OptionalField) Scan(r *Person) {
 		return
 	}
 
-	if f.Defs[0] == 1 {
-		var val int32
-		v := f.vals[0]
+	if f.write(r, f.vals, f.Defs[0]) {
 		f.vals = f.vals[1:]
-		val = v
-		f.read(r, &val)
 	}
 	f.Defs = f.Defs[1:]
 }

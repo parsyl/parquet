@@ -1,15 +1,17 @@
 package main
 
-var numericTpl = `{{define "numericField"}}
+var requiredNumericTpl = `{{define "numericField"}}
 type {{.FieldType}} struct {
 	vals []{{.TypeName}}
 	parquet.RequiredField
-	read  func(r {{.Type}}) ({{.TypeName}}, int64)
-	write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool
+	read  func(r {{.Type}}) ({{.TypeName}})
+	write func(r *{{.Type}}, vals []{{removeStar .TypeName}})
 	stats *{{.TypeName}}stats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
+{{writeFunc .}}
+
+func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:           read,
 		write:          write,
@@ -20,26 +22,6 @@ func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func
 
 func (f *{{.FieldType}}) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Type: parquet.{{.ParquetType}}, RepetitionType: parquet.RepetitionRequired}
-}
-
-func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
-	if len(f.vals) == 0 {
-		return
-	}
-	
-	if f.write(r, v, f.vals) {
-		f.vals = f.vals[1:]
-	}
-}
-
-func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
-	var buf bytes.Buffer
-	for _, v := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
-			return err
-		}
-	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -54,16 +36,29 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 	return err
 }
 
-func (f *{{.FieldType}}) Add(r {{.Type}}) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if def > 0 {
-		f.Defs = append(f.Defs, def)
+func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
+	if len(f.vals) == 0 {
+		return
 	}
 
-	if v != nil {
-		f.vals = append(f.vals, *v)
-	}
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *{{.FieldType}}) Add(r {{.Type}}) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
 }
 {{end}}`
 

@@ -45,9 +45,8 @@ type writeInput struct {
 }
 
 func writeRequired(f parse.Field) string {
-	return fmt.Sprintf(`func %s(x *%s, vals []%s, def int64) bool {
+	return fmt.Sprintf(`func %s(x *%s, vals []%s) {
 	x.%s = vals[0]
-	return true
 }`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
