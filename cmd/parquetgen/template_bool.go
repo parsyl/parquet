@@ -3,11 +3,11 @@ package main
 var boolTpl = `{{define "boolField"}}type BoolField struct {
 	{{parquetType .}}
 	vals []bool
-	read  func(r {{.Type}}) ({{.TypeName}})
+	read  func(r {{.Type}}) {{.TypeName}}
 	write func(r *{{.Type}}, vals []{{removeStar .TypeName}})
 }
 
-func NewBoolField(read func(r {{.Type}}) ({{.TypeName}}), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*{{parquetType .}})) *BoolField {
+func NewBoolField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*{{parquetType .}})) *BoolField {
 	return &BoolField{
 		read:          read,
 		write:         write,

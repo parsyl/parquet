@@ -6,14 +6,14 @@ func Write(f parse.Field) string {
 	if !isOptional(f) {
 		return writeRequired(f)
 	}
-	return writeNested(f)
+	return writeOptional(f)
 }
 
 func Read(f parse.Field) string {
-	if len(f.Optionals) == 1 {
-		return readFlat(f)
+	if !isOptional(f) {
+		return readRequired(f)
 	}
-	return readNested(f)
+	return readOptional(f)
 }
 
 func isOptional(f parse.Field) bool {

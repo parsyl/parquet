@@ -4,14 +4,16 @@ var requiredNumericTpl = `{{define "numericField"}}
 type {{.FieldType}} struct {
 	vals []{{.TypeName}}
 	parquet.RequiredField
-	read  func(r {{.Type}}) ({{.TypeName}})
+	read  func(r {{.Type}}) {{.TypeName}}
 	write func(r *{{.Type}}, vals []{{removeStar .TypeName}})
 	stats *{{.TypeName}}stats
 }
 
+{{readFunc .}}
+
 {{writeFunc .}}
 
-func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:           read,
 		write:          write,

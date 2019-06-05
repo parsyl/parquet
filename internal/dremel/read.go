@@ -1,11 +1,37 @@
 package dremel
 
-import "github.com/parsyl/parquet/internal/parse"
+import (
+	"fmt"
+	"strings"
 
-func readFlat(f parse.Field) string {
-	return ""
+	"github.com/parsyl/parquet/internal/parse"
+)
+
+func readRequired(f parse.Field) string {
+	return fmt.Sprintf(`func read%s(x *%s) %s {
+	return x.%s
+}`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func readNested(f parse.Field) string {
-	return ""
+func readOptional(f parse.Field) string {
+	var out string
+	n := defs(f)
+	for def := 0; def < n; def++ {
+		out += fmt.Sprintf(`case x.%s == nil:
+		return nil, %d
+`, nilField(def, f), def)
+	}
+
+	var ptr string
+	if !f.Optionals[len(f.Optionals)-1] {
+		ptr = "&"
+	}
+	out += fmt.Sprintf(`	default:
+		return %sx.%s, %d`, ptr, nilField(n, f), n)
+
+	return fmt.Sprintf(`func read%s(x *%s) (%s, int64) {
+	switch {
+	%s
+	}
+}`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, out)
 }

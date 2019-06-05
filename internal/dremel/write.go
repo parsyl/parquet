@@ -50,7 +50,7 @@ func writeRequired(f parse.Field) string {
 }`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func writeNested(f parse.Field) string {
+func writeOptional(f parse.Field) string {
 	i := writeInput{
 		Field:    f,
 		FuncName: strings.Join(f.FieldNames, ""),
