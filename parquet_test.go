@@ -47,8 +47,8 @@ type Person struct {
 	BFF         string   `parquet:"bff"`
 	Hungry      bool     `parquet:"hungry"`
 	Secret      string   `parquet:"-"`
+	Hobby       *Hobby   `parquet:"hobby"`
 	Sleepy      bool
-	Hobby       *Hobby `parquet:"hobby"`
 }
 
 func TestParquet(t *testing.T) {

@@ -12,8 +12,6 @@ type {{.FieldType}} struct {
 	stats {{.TypeName}}optionalStats
 }
 
-{{writeFunc .}}
-
 func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:          read,

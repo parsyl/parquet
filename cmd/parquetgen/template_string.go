@@ -66,7 +66,7 @@ func (f *StringField) Scan(r *{{.Type}}) {
 }
 
 func (f *StringField) Add(r {{.Type}}) {
-	v := f.val(r)
+	v := f.read(r)
 	f.stats.add(v)
 	f.vals = append(f.vals, v)
 }

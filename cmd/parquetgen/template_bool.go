@@ -5,6 +5,7 @@ var boolTpl = `{{define "boolField"}}type BoolField struct {
 	vals []bool
 	read  func(r {{.Type}}) {{.TypeName}}
 	write func(r *{{.Type}}, vals []{{removeStar .TypeName}})
+    stats *boolStats
 }
 
 func NewBoolField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*{{parquetType .}})) *BoolField {
@@ -49,13 +50,12 @@ func (f *BoolField) Scan(r *{{.Type}}) {
 		return
 	}
 	
-	f.write(r, v, f.vals)
+	f.write(r, f.vals)
     f.vals = f.vals[1:]
 }
 
 func (f *BoolField) Add(r {{.Type}}) {
 	v := f.read(r)
-	f.stats.add(v)
 	f.vals = append(f.vals, v)
 }
 

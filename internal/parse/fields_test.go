@@ -91,6 +91,15 @@ func TestFields(t *testing.T) {
 			errors: []error{},
 		},
 		{
+			name: "optional nested struct v2",
+			typ:  "OptionalNested2",
+			expected: []parse.Field{
+				{Type: "OptionalNested2", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Being", "Name"}, FieldTypes: []string{"Thing", "string"}, ColumnName: "Being.Name", Category: "stringOptional", Optionals: []bool{true, false}},
+				{Type: "OptionalNested2", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", Optionals: []bool{true}},
+			},
+			errors: []error{},
+		},
+		{
 			name:   "unsupported fields",
 			typ:    "Unsupported",
 			errors: []error{fmt.Errorf("unsupported type: Time")},

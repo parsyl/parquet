@@ -65,6 +65,15 @@ type OptionalNested struct {
 	Anniversary *uint64
 }
 
+type Thing struct {
+	Name string
+}
+
+type OptionalNested2 struct {
+	Being       *Thing
+	Anniversary *uint64
+}
+
 type OptionalDoubleNested struct {
 	OptionalNested OptionalNested
 }

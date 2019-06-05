@@ -8,7 +8,7 @@ import (
 )
 
 func readRequired(f parse.Field) string {
-	return fmt.Sprintf(`func read%s(x *%s) %s {
+	return fmt.Sprintf(`func read%s(x %s) %s {
 	return x.%s
 }`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
@@ -29,9 +29,13 @@ func readOptional(f parse.Field) string {
 	out += fmt.Sprintf(`	default:
 		return %sx.%s, %d`, ptr, nilField(n, f), n)
 
-	return fmt.Sprintf(`func read%s(x *%s) (%s, int64) {
+	if !f.Optionals[len(f.Optionals)-1] {
+		ptr = "*"
+	}
+
+	return fmt.Sprintf(`func read%s(x %s) (%s%s, int64) {
 	switch {
 	%s
 	}
-}`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, out)
+}`, strings.Join(f.FieldNames, ""), f.Type, ptr, f.TypeName, out)
 }

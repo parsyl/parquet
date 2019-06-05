@@ -1,6 +1,6 @@
 package main
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}(func(x {{.Type}}) {{.TypeName}} { return x.{{join .FieldNames}} }, {{writeFuncName .}}, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
 
 var tpl = `package {{.Package}}
 
@@ -50,7 +50,8 @@ func Fields(compression compression) []Field {
 	}
 }
 
-{{range .Fields}}{{writeFunc .}}
+{{range .Fields}}{{readFunc .}}
+{{writeFunc .}}
 {{end}}
 
 func fieldCompression(c compression) []func(*parquet.RequiredField) {
@@ -338,7 +339,7 @@ func (p *ParquetReader) Scan(x *{{.Type}}) {
 
 {{range dedupe .Fields}}
 {{if eq .Category "numeric"}}
-{{ template "requiredField" .}}
+{{ template "numericField" .}}
 {{end}}
 {{if eq .Category "numericOptional"}}
 {{ template "optionalField" .}}

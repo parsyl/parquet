@@ -9,10 +9,6 @@ type {{.FieldType}} struct {
 	stats *{{.TypeName}}stats
 }
 
-{{readFunc .}}
-
-{{writeFunc .}}
-
 func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:           read,
