@@ -203,12 +203,13 @@ type Field interface {
 	Scan(r *{{.Type}})
 	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
+	Key() string
 }
 
 func getFields(ff []Field) map[string]Field {
 	m := make(map[string]Field, len(ff))
 	for _, f := range ff {
-		m[f.Name()] = f
+		m[f.Key()] = f
 	}
 	return m
 }
@@ -288,12 +289,12 @@ func (p *ParquetReader) readRowGroup() error {
 	p.rowGroupCount = rg.Rows
 	p.rowGroupCursor = 0
 	for _, col := range rg.Columns() {
-		name := strings.ToLower(col.MetaData.PathInSchema[len(col.MetaData.PathInSchema)-1])
+		name := strings.ToLower(strings.Join(col.MetaData.PathInSchema, "."))
 		f, ok := p.fields[name]
 		if !ok {
 			return fmt.Errorf("unknown field: %s", name)
 		}
-		pages := p.pages[f.Name()]
+		pages := p.pages[name]
 		if len(pages) <= p.index {
 			break
 		}
@@ -302,7 +303,7 @@ func (p *ParquetReader) readRowGroup() error {
 		if err := f.Read(p.r, pg); err != nil {
 			return fmt.Errorf("unable to read field %s, err: %s", f.Name(), err)
 		}
-		p.pages[f.Name()] = p.pages[f.Name()][1:]
+		p.pages[name] = p.pages[name][1:]
 	}
 	p.rowGroups = p.rowGroups[1:]
 	return nil

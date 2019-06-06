@@ -500,8 +500,7 @@ func (p *ParquetReader) readRowGroup() error {
 		if !ok {
 			return fmt.Errorf("unknown field: %s", name)
 		}
-
-		pages, ok := p.pages[name]
+		pages := p.pages[name]
 		if len(pages) <= p.index {
 			break
 		}

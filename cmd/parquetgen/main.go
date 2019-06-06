@@ -386,18 +386,17 @@ func fromStruct(pth string) {
 		log.Fatal(err)
 	}
 
-	// gocode, err := format.Source(buf.Bytes())
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	gocode, err := format.Source(buf.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	f, err := os.Create(*outPth)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//_, err = f.Write(gocode)
-	_, err = f.Write(buf.Bytes())
+	_, err = f.Write(gocode)
 	if err != nil {
 		log.Fatal(err)
 	}

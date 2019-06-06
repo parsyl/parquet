@@ -35,9 +35,8 @@ type schema struct {
 	lookup map[string]sch.SchemaElement
 }
 
-func (s schema) schema() []*sch.SchemaElement {
+func (s schema) schema() (int64, []*sch.SchemaElement) {
 	out := make([]*sch.SchemaElement, 0, len(s.fields)+1)
-
 	out = append(out, &sch.SchemaElement{
 		Name: "root",
 	})
@@ -47,18 +46,22 @@ func (s schema) schema() []*sch.SchemaElement {
 	m := map[string]*sch.SchemaElement{}
 	for _, f := range s.fields {
 		if len(f.Path) > 1 {
-			for _, name := range f.Path[:len(f.Path)-2] {
+			for _, name := range f.Path[:len(f.Path)-1] {
 				par, ok := m[name]
 				if !ok {
+					children++
+					rt := sch.FieldRepetitionType_OPTIONAL
 					par = &sch.SchemaElement{
-						Name:        name,
-						NumChildren: &z,
+						Name:           name,
+						RepetitionType: &rt,
+						NumChildren:    &z,
 					}
 					out = append(out, par)
 				}
 				n := *par.NumChildren
 				n++
 				par.NumChildren = &n
+				m[name] = par
 			}
 		} else if len(f.Path) == 1 {
 			children++
@@ -78,7 +81,7 @@ func (s schema) schema() []*sch.SchemaElement {
 	}
 
 	out[0].NumChildren = &children
-	return out
+	return int64(children), out
 }
 
 // Metadata keeps track of the things that need to
@@ -197,11 +200,11 @@ func (m *Metadata) Rows() int64 {
 
 // Footer writes the FileMetaData at the end of the file.
 func (m *Metadata) Footer(w io.Writer) error {
-	s := m.schema.schema()
+	l, s := m.schema.schema()
 	fmd := &sch.FileMetaData{
 		Version:   1,
 		Schema:    s,
-		NumRows:   m.rows / int64(len(s)-1),
+		NumRows:   m.rows / l,
 		RowGroups: make([]*sch.RowGroup, 0, len(m.rowGroups)),
 	}
 
