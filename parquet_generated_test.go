@@ -44,20 +44,20 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt32Field(readID, writeID, []string{"id"}, fieldCompression(compression)),
-		NewInt32OptionalField(readAge, writeAge, []string{"age"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1)),
+		NewInt32OptionalField(readAge, writeAge, []string{"age"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
 		NewInt64Field(readHappiness, writeHappiness, []string{"happiness"}, fieldCompression(compression)),
-		NewInt64OptionalField(readSadness, writeSadness, []string{"sadness"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1)),
-		NewStringOptionalField(readCode, writeCode, []string{"code"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1)),
+		NewInt64OptionalField(readSadness, writeSadness, []string{"sadness"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
+		NewStringOptionalField(readCode, writeCode, []string{"code"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
 		NewFloat32Field(readFunkiness, writeFunkiness, []string{"funkiness"}, fieldCompression(compression)),
 		NewFloat64Field(readBoldness, writeBoldness, []string{"boldness"}, fieldCompression(compression)),
-		NewFloat32OptionalField(readLameness, writeLameness, []string{"lameness"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1)),
-		NewBoolOptionalField(readKeen, writeKeen, []string{"keen"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1)),
+		NewFloat32OptionalField(readLameness, writeLameness, []string{"lameness"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
+		NewBoolOptionalField(readKeen, writeKeen, []string{"keen"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
 		NewUint32Field(readBirthday, writeBirthday, []string{"birthday"}, fieldCompression(compression)),
-		NewUint64OptionalField(readAnniversary, writeAnniversary, []string{"anniversary"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1)),
+		NewUint64OptionalField(readAnniversary, writeAnniversary, []string{"anniversary"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
 		NewStringField(readBFF, writeBFF, []string{"bff"}, fieldCompression(compression)),
 		NewBoolField(readHungry, writeHungry, []string{"hungry"}, fieldCompression(compression)),
-		NewStringOptionalField(readHobbyName, writeHobbyName, []string{"hobby", "name"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1)),
-		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(2)),
+		NewStringOptionalField(readHobbyName, writeHobbyName, []string{"hobby", "name"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionRequired)),
+		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(2), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
 		NewBoolField(readSleepy, writeSleepy, []string{"sleepy"}, fieldCompression(compression)),
 	}
 }
@@ -621,7 +621,7 @@ func NewInt32OptionalField(read func(r Person) (*int32, int64), write func(r *Pe
 }
 
 func (f *Int32OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int32Type, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int32Type, RepetitionType: f.RepetitionType}
 }
 
 func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -743,7 +743,7 @@ func NewInt64OptionalField(read func(r Person) (*int64, int64), write func(r *Pe
 }
 
 func (f *Int64OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: f.RepetitionType}
 }
 
 func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -807,7 +807,7 @@ func NewStringOptionalField(read func(r Person) (*string, int64), write func(r *
 }
 
 func (f *StringOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType}
 }
 
 func (f *StringOptionalField) Scan(r *Person) {
@@ -1004,7 +1004,7 @@ func NewFloat32OptionalField(read func(r Person) (*float32, int64), write func(r
 }
 
 func (f *Float32OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Float32Type, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Float32Type, RepetitionType: f.RepetitionType}
 }
 
 func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -1068,7 +1068,7 @@ func NewBoolOptionalField(read func(r Person) (*bool, int64), write func(r *Pers
 }
 
 func (f *BoolOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.BoolType, RepetitionType: f.RepetitionType}
 }
 
 func (f *BoolOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1193,7 +1193,7 @@ func NewUint64OptionalField(read func(r Person) (*uint64, int64), write func(r *
 }
 
 func (f *Uint64OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Uint64Type, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Uint64Type, RepetitionType: f.RepetitionType}
 }
 
 func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {

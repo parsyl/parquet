@@ -51,6 +51,13 @@ func (f Field) Depth() uint {
 	return out
 }
 
+func (f Field) RepetitionType() string {
+	if f.Optionals[len(f.Optionals)-1] {
+		return "parquet.RepetitionOptional"
+	}
+	return "parquet.RepetitionRequired"
+}
+
 func (f Field) Path() string {
 	out := make([]string, len(f.FieldNames))
 	for i, n := range f.FieldNames {

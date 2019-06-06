@@ -19,7 +19,7 @@ func NewStringOptionalField(read func(r {{.Type}}) ({{.TypeName}}, int64), write
 }
 
 func (f *StringOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType}
 }
 
 func (f *StringOptionalField) Scan(r *{{.Type}}) {

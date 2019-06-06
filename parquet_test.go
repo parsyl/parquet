@@ -455,7 +455,9 @@ func TestParquet(t *testing.T) {
 					expected = tc.input
 				}
 
-				assert.Equal(t, getLen(expected), int(r.Rows()), tc.name)
+				if !assert.Equal(t, getLen(expected), int(r.Rows()), tc.name) {
+					return
+				}
 
 				var i int
 				for r.Next() {

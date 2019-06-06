@@ -81,7 +81,7 @@ func (s schema) schema() (int64, []*sch.SchemaElement) {
 	}
 
 	out[0].NumChildren = &children
-	return int64(children), out
+	return int64(len(s.fields)), out
 }
 
 // Metadata keeps track of the things that need to
@@ -201,6 +201,7 @@ func (m *Metadata) Rows() int64 {
 // Footer writes the FileMetaData at the end of the file.
 func (m *Metadata) Footer(w io.Writer) error {
 	l, s := m.schema.schema()
+	fmt.Println("m.rows", m.rows, "l", l)
 	fmd := &sch.FileMetaData{
 		Version:   1,
 		Schema:    s,
@@ -221,14 +222,14 @@ func (m *Metadata) Footer(w io.Writer) error {
 				continue
 			}
 
-			ch.FileOffset = pos
+			ch.FileOffset = pos + ch.MetaData.TotalCompressedSize
 			ch.MetaData.DataPageOffset = pos
 			rg.TotalByteSize += ch.MetaData.TotalCompressedSize
 			rg.Columns = append(rg.Columns, &ch)
 			pos += ch.MetaData.TotalCompressedSize
 		}
 
-		rg.NumRows = rg.NumRows / int64(len(s)-1)
+		rg.NumRows = rg.NumRows / int64(l)
 		fmd.RowGroups = append(fmd.RowGroups, &rg)
 	}
 

@@ -137,19 +137,21 @@ func (f *RequiredField) Key() string {
 }
 
 type OptionalField struct {
-	Defs        []int64
-	col         string
-	pth         []string
-	Depth       uint
-	compression sch.CompressionCodec
+	Defs           []int64
+	col            string
+	pth            []string
+	Depth          uint
+	compression    sch.CompressionCodec
+	RepetitionType FieldFunc
 }
 
 func NewOptionalField(pth []string, opts ...func(*OptionalField)) OptionalField {
 	f := OptionalField{
-		col:         pth[len(pth)-1],
-		pth:         pth,
-		compression: sch.CompressionCodec_SNAPPY,
-		Depth:       1,
+		col:            pth[len(pth)-1],
+		pth:            pth,
+		compression:    sch.CompressionCodec_SNAPPY,
+		Depth:          1,
+		RepetitionType: RepetitionOptional,
 	}
 	for _, opt := range opts {
 		opt(&f)
@@ -174,6 +176,13 @@ func OptionalFieldUncompressed(o *OptionalField) {
 func OptionalFieldDepth(d uint) func(*OptionalField) {
 	return func(o *OptionalField) {
 		o.Depth = d
+	}
+}
+
+// OptionalFieldRepetition ...
+func OptionalFieldRepetitionType(f FieldFunc) func(*OptionalField) {
+	return func(o *OptionalField) {
+		o.RepetitionType = f
 	}
 }
 

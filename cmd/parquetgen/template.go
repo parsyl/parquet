@@ -1,6 +1,6 @@
 package main
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }, {{compressionFunc .}}(compression){{if .Optional}}, parquet.OptionalFieldDepth({{.Depth}}){{end}}),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }, {{compressionFunc .}}(compression){{if .Optional}}, parquet.OptionalFieldDepth({{.Depth}}), parquet.OptionalFieldRepetitionType({{.RepetitionType}}){{end}}),{{end}}`
 
 var tpl = `package {{.Package}}
 
