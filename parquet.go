@@ -372,7 +372,7 @@ func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, e
 	var pageHeaders []sch.PageHeader
 	for _, rg := range footer.RowGroups {
 		for _, col := range rg.Columns {
-			h, err := PageHeadersAtOffset(r, col.FileOffset, col.MetaData.NumValues)
+			h, err := PageHeadersAtOffset(r, col.MetaData.DataPageOffset, col.MetaData.NumValues)
 			if err != nil {
 				return nil, err
 			}
