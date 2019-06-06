@@ -3,6 +3,7 @@ package parquet
 import (
 	"bytes"
 	"math/bits"
+	"strings"
 
 	"fmt"
 
@@ -59,12 +60,17 @@ func (i UintStats) minmax(val uint64) []byte {
 
 type RequiredField struct {
 	col         string
+	pth         []string
 	compression sch.CompressionCodec
 }
 
 // NewRequiredField creates a new required field.
-func NewRequiredField(col string, opts ...func(*RequiredField)) RequiredField {
-	r := RequiredField{col: col, compression: sch.CompressionCodec_SNAPPY}
+func NewRequiredField(pth []string, opts ...func(*RequiredField)) RequiredField {
+	r := RequiredField{
+		col:         pth[len(pth)-1],
+		pth:         pth,
+		compression: sch.CompressionCodec_SNAPPY,
+	}
 	for _, opt := range opts {
 		opt(&r)
 	}
@@ -86,7 +92,7 @@ func RequiredFieldUncompressed(r *RequiredField) {
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	l, cl, vals := compress(f.compression, vals)
-	if err := meta.WritePageHeader(w, f.col, l, cl, count, f.compression, stats); err != nil {
+	if err := meta.WritePageHeader(w, f.pth, l, cl, count, f.compression, stats); err != nil {
 		return err
 	}
 
@@ -122,16 +128,26 @@ func (f *RequiredField) Name() string {
 	return f.col
 }
 
+func (f *RequiredField) Path() []string {
+	return f.pth
+}
+
+func (f *RequiredField) Key() string {
+	return strings.Join(f.pth, ".")
+}
+
 type OptionalField struct {
 	Defs        []int64
 	col         string
+	pth         []string
 	Depth       uint
 	compression sch.CompressionCodec
 }
 
-func NewOptionalField(col string, opts ...func(*OptionalField)) OptionalField {
+func NewOptionalField(pth []string, opts ...func(*OptionalField)) OptionalField {
 	f := OptionalField{
-		col:         col,
+		col:         pth[len(pth)-1],
+		pth:         pth,
 		compression: sch.CompressionCodec_SNAPPY,
 		Depth:       1,
 	}
@@ -182,14 +198,14 @@ func valsFromDefs(defs []int64, depth int64) int {
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
-	err := writeLevels(wc, f.Defs)
+	err := writeLevels(wc, f.Defs, int32(bits.Len(f.Depth)))
 	if err != nil {
 		return err
 	}
 
 	wc.Write(vals)
 	l, cl, vals := compress(f.compression, buf.Bytes())
-	if err := meta.WritePageHeader(w, f.col, l, cl, len(f.Defs), f.compression, stats); err != nil {
+	if err := meta.WritePageHeader(w, f.pth, l, cl, len(f.Defs), f.compression, stats); err != nil {
 		return err
 	}
 	_, err = w.Write(vals)
@@ -224,6 +240,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		}
 
 		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Depth)))
+
 		if err != nil {
 			return nil, nil, err
 		}
@@ -238,6 +255,14 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 // Name returns the column name of this field
 func (f *OptionalField) Name() string {
 	return f.col
+}
+
+func (f *OptionalField) Path() []string {
+	return f.pth
+}
+
+func (f *OptionalField) Key() string {
+	return strings.Join(f.pth, ".")
 }
 
 // writeCounter keeps track of the number of bytes written

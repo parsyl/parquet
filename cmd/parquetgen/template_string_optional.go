@@ -9,17 +9,17 @@ type StringOptionalField struct {
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(col, opts...),
+		OptionalField: parquet.NewOptionalField(path, opts...),
 		stats:         newStringOptionalStats(),
 	}
 }
 
 func (f *StringOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Type: parquet.StringType, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: parquet.RepetitionOptional}
 }
 
 func (f *StringOptionalField) Scan(r *{{.Type}}) {

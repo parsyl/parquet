@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"github.com/apache/thrift/lib/go/thrift"
 	sch "github.com/parsyl/parquet/generated"
@@ -15,6 +16,7 @@ import (
 // Field holds the type information for a parquet column
 type Field struct {
 	Name           string
+	Path           []string
 	Type           FieldFunc
 	RepetitionType FieldFunc
 }
@@ -29,8 +31,54 @@ type Page struct {
 }
 
 type schema struct {
-	schema []*sch.SchemaElement
+	fields []Field
 	lookup map[string]sch.SchemaElement
+}
+
+func (s schema) schema() []*sch.SchemaElement {
+	out := make([]*sch.SchemaElement, 0, len(s.fields)+1)
+
+	out = append(out, &sch.SchemaElement{
+		Name: "root",
+	})
+
+	var children int32
+	var z int32
+	m := map[string]*sch.SchemaElement{}
+	for _, f := range s.fields {
+		if len(f.Path) > 1 {
+			for _, name := range f.Path[:len(f.Path)-2] {
+				par, ok := m[name]
+				if !ok {
+					par = &sch.SchemaElement{
+						Name:        name,
+						NumChildren: &z,
+					}
+					out = append(out, par)
+				}
+				n := *par.NumChildren
+				n++
+				par.NumChildren = &n
+			}
+		} else if len(f.Path) == 1 {
+			children++
+		}
+
+		se := &sch.SchemaElement{
+			Name:       f.Name,
+			TypeLength: &z,
+			Scale:      &z,
+			Precision:  &z,
+			FieldID:    &z,
+		}
+
+		f.Type(se)
+		f.RepetitionType(se)
+		out = append(out, se)
+	}
+
+	out[0].NumChildren = &children
+	return out
 }
 
 // Metadata keeps track of the things that need to
@@ -88,7 +136,7 @@ func (m *Metadata) RowGroups() []RowGroup {
 }
 
 // WritePageHeader is called when no more data is written to a column chunk
-func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedLen, count int, comp sch.CompressionCodec, stats Stats) error {
+func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compressedLen, count int, comp sch.CompressionCodec, stats Stats) error {
 	m.rows += int64(count)
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
@@ -113,7 +161,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedL
 		return err
 	}
 
-	if err := m.updateRowGroup(col, dataLen, compressedLen, len(buf), count, comp); err != nil {
+	if err := m.updateRowGroup(pth, dataLen, compressedLen, len(buf), count, comp); err != nil {
 		return err
 	}
 
@@ -121,7 +169,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, col string, dataLen, compressedL
 	return err
 }
 
-func (m *Metadata) updateRowGroup(col string, dataLen, compressedLen, headerLen, count int, comp sch.CompressionCodec) error {
+func (m *Metadata) updateRowGroup(pth []string, dataLen, compressedLen, headerLen, count int, comp sch.CompressionCodec) error {
 	i := len(m.rowGroups)
 	if i == 0 {
 		return fmt.Errorf("no row groups, you must call StartRowGroup at least once")
@@ -130,19 +178,17 @@ func (m *Metadata) updateRowGroup(col string, dataLen, compressedLen, headerLen,
 	rg := m.rowGroups[i-1]
 
 	rg.rowGroup.NumRows += int64(count)
-	err := rg.updateColumnChunk(col, dataLen+headerLen, compressedLen+headerLen, count, m.schema, comp)
+	err := rg.updateColumnChunk(pth, dataLen+headerLen, compressedLen+headerLen, count, m.schema, comp)
 	m.rowGroups[i-1] = rg
 	return err
 }
 
 func columnType(col string, fields schema) (sch.Type, error) {
-	for _, f := range fields.schema {
-		if f.Name == col {
-			return *f.Type, nil
-		}
+	f, ok := fields.lookup[col]
+	if !ok {
+		return 0, fmt.Errorf("could not find type for column %s", col)
 	}
-
-	return 0, fmt.Errorf("could not find type for column %s", col)
+	return *f.Type, nil
 }
 
 func (m *Metadata) Rows() int64 {
@@ -151,10 +197,11 @@ func (m *Metadata) Rows() int64 {
 
 // Footer writes the FileMetaData at the end of the file.
 func (m *Metadata) Footer(w io.Writer) error {
-	f := &sch.FileMetaData{
+	s := m.schema.schema()
+	fmd := &sch.FileMetaData{
 		Version:   1,
-		Schema:    m.schema.schema,
-		NumRows:   m.rows / int64(len(m.schema.schema)-1),
+		Schema:    s,
+		NumRows:   m.rows / int64(len(s)-1),
 		RowGroups: make([]*sch.RowGroup, 0, len(m.rowGroups)),
 	}
 
@@ -165,10 +212,10 @@ func (m *Metadata) Footer(w io.Writer) error {
 			continue
 		}
 
-		for _, col := range mrg.fields.schema[1:] {
-			ch, ok := mrg.columns[col.Name]
+		for _, col := range mrg.fields.fields {
+			ch, ok := mrg.columns[strings.ToLower(strings.Join(col.Path, "."))]
 			if !ok {
-				return fmt.Errorf("unknown column %s", col.Name)
+				continue
 			}
 
 			ch.FileOffset = pos
@@ -178,11 +225,11 @@ func (m *Metadata) Footer(w io.Writer) error {
 			pos += ch.MetaData.TotalCompressedSize
 		}
 
-		rg.NumRows = rg.NumRows / int64(len(mrg.fields.schema)-1)
-		f.RowGroups = append(f.RowGroups, &rg)
+		rg.NumRows = rg.NumRows / int64(len(s)-1)
+		fmd.RowGroups = append(fmd.RowGroups, &rg)
 	}
 
-	buf, err := m.ts.Write(context.TODO(), f)
+	buf, err := m.ts.Write(context.TODO(), fmd)
 	if err != nil {
 		return err
 	}
@@ -212,7 +259,8 @@ func (r *RowGroup) Columns() []*sch.ColumnChunk {
 	return r.rowGroup.Columns
 }
 
-func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count int, fields schema, comp sch.CompressionCodec) error {
+func (r *RowGroup) updateColumnChunk(pth []string, dataLen, compressedLen, count int, fields schema, comp sch.CompressionCodec) error {
+	col := strings.Join(pth, ".")
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)
@@ -224,7 +272,7 @@ func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count i
 			MetaData: &sch.ColumnMetaData{
 				Type:         t,
 				Encodings:    []sch.Encoding{sch.Encoding_PLAIN},
-				PathInSchema: []string{col},
+				PathInSchema: pth,
 				Codec:        comp,
 			},
 		}
@@ -238,33 +286,23 @@ func (r *RowGroup) updateColumnChunk(col string, dataLen, compressedLen, count i
 }
 
 func schemaElements(fields []Field) schema {
-	out := make([]*sch.SchemaElement, len(fields)+1)
 	m := make(map[string]sch.SchemaElement)
-	l := int32(len(fields))
-	rt := sch.FieldRepetitionType_REQUIRED
-	out[0] = &sch.SchemaElement{
-		RepetitionType: &rt,
-		Name:           "root",
-		NumChildren:    &l,
-	}
-
-	for i, f := range fields {
+	for _, f := range fields {
 		var z int32
-		se := &sch.SchemaElement{
-			Name:       f.Name,
+		se := sch.SchemaElement{
+			Name:       strings.ToLower(f.Name),
 			TypeLength: &z,
 			Scale:      &z,
 			Precision:  &z,
 			FieldID:    &z,
 		}
 
-		f.Type(se)
-		f.RepetitionType(se)
-		out[i+1] = se
-		m[f.Name] = *se
+		f.Type(&se)
+		f.RepetitionType(&se)
+		m[strings.ToLower(strings.Join(f.Path, "."))] = se
 	}
 
-	return schema{schema: out, lookup: m}
+	return schema{lookup: m, fields: fields}
 }
 
 // Pages maps each column name its Pages
@@ -276,7 +314,7 @@ func (m *Metadata) Pages() (map[string][]Page, error) {
 	for _, rg := range m.metadata.RowGroups {
 		for _, ch := range rg.Columns {
 			pth := ch.MetaData.PathInSchema
-			se, ok := m.schema.lookup[pth[len(pth)-1]]
+			_, ok := m.schema.lookup[strings.ToLower(strings.Join(pth, "."))]
 			if !ok {
 				return nil, fmt.Errorf("could not find schema for %v", pth)
 			}
@@ -287,7 +325,8 @@ func (m *Metadata) Pages() (map[string][]Page, error) {
 				Size:   int(ch.MetaData.TotalCompressedSize),
 				Codec:  ch.MetaData.Codec,
 			}
-			out[se.Name] = append(out[se.Name], pg)
+			k := strings.ToLower(strings.Join(pth, "."))
+			out[k] = append(out[k], pg)
 		}
 	}
 	return out, nil
@@ -420,8 +459,8 @@ func StringType(se *sch.SchemaElement) {
 }
 
 // writeLevels writes vals to w as RLE/bitpack encoded data
-func writeLevels(w io.Writer, levels []int64) error {
-	enc, _ := rle.New(1, len(levels)) //TODO: len(levels) is probably too big.  Chop it down a bit?
+func writeLevels(w io.Writer, levels []int64, width int32) error {
+	enc, _ := rle.New(width, len(levels)) //TODO: len(levels) is probably too big.  Chop it down a bit?
 	for _, l := range levels {
 		enc.Write(l)
 	}

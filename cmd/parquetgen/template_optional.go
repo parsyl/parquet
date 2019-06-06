@@ -12,17 +12,17 @@ type {{.FieldType}} struct {
 	stats {{.TypeName}}optionalStats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, col string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(col, opts...),
+		OptionalField: parquet.NewOptionalField(path, opts...),
 		stats:         new{{removeStar .TypeName}}optionalStats(),
 	}
 }
 
 func (f *{{.FieldType}}) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Type: parquet.{{.ParquetType}}, RepetitionType: parquet.RepetitionOptional}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.{{.ParquetType}}, RepetitionType: parquet.RepetitionOptional}
 }
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {

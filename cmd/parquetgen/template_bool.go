@@ -8,16 +8,16 @@ var boolTpl = `{{define "boolField"}}type BoolField struct {
     stats *boolStats
 }
 
-func NewBoolField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*{{parquetType .}})) *BoolField {
+func NewBoolField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), path []string, opts ...func(*{{parquetType .}})) *BoolField {
 	return &BoolField{
 		read:          read,
 		write:         write,
-		RequiredField: parquet.NewRequiredField(col, opts...),
+		RequiredField: parquet.NewRequiredField(path, opts...),
 	}
 }
 
 func (f *BoolField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired}
 }
 
 

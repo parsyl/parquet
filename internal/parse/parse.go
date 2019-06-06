@@ -41,6 +41,24 @@ func (f Field) Optional() bool {
 	return false
 }
 
+func (f Field) Depth() uint {
+	var out uint
+	for _, o := range f.Optionals {
+		if o {
+			out++
+		}
+	}
+	return out
+}
+
+func (f Field) Path() string {
+	out := make([]string, len(f.FieldNames))
+	for i, n := range f.FieldNames {
+		out[i] = fmt.Sprintf(`"%s"`, strings.ToLower(n))
+	}
+	return strings.Join(out, ", ")
+}
+
 type field struct {
 	Field     Field
 	tagName   string

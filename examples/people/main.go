@@ -89,6 +89,11 @@ type Being struct {
 	Age *int32 `parquet:"age"`
 }
 
+type Hobby struct {
+	Name       string `parquet:"name"`
+	Difficulty *int32 `parquet:"difficulty"`
+}
+
 type Person struct {
 	Being
 	Happiness   int64    `parquet:"happiness"`
@@ -99,6 +104,8 @@ type Person struct {
 	Keen        *bool    `parquet:"keen"`
 	Birthday    uint32   `parquet:"birthday"`
 	Anniversary *uint64  `parquet:"anniversary"`
+	Difficulty  *int32   `parquet:"difficulty"`
+	Hobby       *Hobby   `parquet:"hobby"`
 
 	// Secret will not be part of parquet.
 	Secret string `parquet:"-"`

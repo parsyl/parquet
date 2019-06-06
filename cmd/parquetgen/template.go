@@ -1,6 +1,6 @@
 package main
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, "{{.ColumnName}}", {{compressionFunc .}}(compression)...),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }, {{compressionFunc .}}(compression){{if .Optional}}, parquet.OptionalFieldDepth({{.Depth}}){{end}}),{{end}}`
 
 var tpl = `package {{.Package}}
 
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"bytes"
+	"strings"
 	"encoding/binary"
 
 	"github.com/parsyl/parquet"
@@ -54,25 +55,25 @@ func Fields(compression compression) []Field {
 {{writeFunc .}}
 {{end}}
 
-func fieldCompression(c compression) []func(*parquet.RequiredField) {
+func fieldCompression(c compression) func(*parquet.RequiredField) {
 	switch c {
 	case compressionUncompressed:
-		return []func(*parquet.RequiredField){parquet.RequiredFieldUncompressed}
+		return parquet.RequiredFieldUncompressed
 	case compressionSnappy:
-		return []func(*parquet.RequiredField){parquet.RequiredFieldSnappy}
+		return parquet.RequiredFieldSnappy
 	default:
-		return []func(*parquet.RequiredField){}
+		return parquet.RequiredFieldUncompressed
 	}
 }
 
-func optionalFieldCompression(c compression) []func(*parquet.OptionalField) {
+func optionalFieldCompression(c compression) func(*parquet.OptionalField) {
 	switch c {
 	case compressionUncompressed:
-		return []func(*parquet.OptionalField){parquet.OptionalFieldUncompressed}
+		return parquet.OptionalFieldUncompressed
 	case compressionSnappy:
-		return []func(*parquet.OptionalField){parquet.OptionalFieldSnappy}
+		return parquet.OptionalFieldSnappy
 	default:
-		return []func(*parquet.OptionalField){}
+		return parquet.OptionalFieldUncompressed
 	}
 }
 
@@ -287,7 +288,7 @@ func (p *ParquetReader) readRowGroup() error {
 	p.rowGroupCount = rg.Rows
 	p.rowGroupCursor = 0
 	for _, col := range rg.Columns() {
-		name := col.MetaData.PathInSchema[len(col.MetaData.PathInSchema)-1]
+		name := strings.ToLower(col.MetaData.PathInSchema[len(col.MetaData.PathInSchema)-1])
 		f, ok := p.fields[name]
 		if !ok {
 			return fmt.Errorf("unknown field: %s", name)

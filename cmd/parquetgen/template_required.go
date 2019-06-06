@@ -9,17 +9,17 @@ type {{.FieldType}} struct {
 	stats *{{.TypeName}}stats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), path []string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:           read,
 		write:          write,
-		RequiredField: parquet.NewRequiredField(col, opts...),
+		RequiredField: parquet.NewRequiredField(path, opts...),
 		stats:         new{{camelCase .TypeName}}stats(),
 	}
 }
 
 func (f *{{.FieldType}}) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Type: parquet.{{.ParquetType}}, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.{{.ParquetType}}, RepetitionType: parquet.RepetitionRequired}
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {

@@ -9,17 +9,17 @@ type StringField struct {
 	stats *stringStats
 }
 
-func NewStringField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), col string, opts ...func(*parquet.RequiredField)) *StringField {
+func NewStringField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), path []string, opts ...func(*parquet.RequiredField)) *StringField {
 	return &StringField{
 		read:           read,
 		write:          write,
-		RequiredField: parquet.NewRequiredField(col, opts...),
+		RequiredField: parquet.NewRequiredField(path, opts...),
 		stats:         newStringStats(),
 	}
 }
 
 func (f *StringField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired}
 }
 
 func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {

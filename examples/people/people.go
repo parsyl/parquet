@@ -12,17 +12,21 @@ func init() {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func randString(n int) *string {
+func reallyRandString(n int) *string {
 	if rand.Intn(2) == 0 {
 		return nil
 	}
 
+	s := randString(n)
+	return &s
+}
+
+func randString(n int) string {
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
-	s := string(b)
-	return &s
+	return string(b)
 }
 
 func newPerson(i int) Person {
@@ -56,6 +60,15 @@ func newPerson(i int) Person {
 		anv = &x
 	}
 
+	var hobby *Hobby
+	if i%2 == 0 {
+		d := int32(i % 10)
+		hobby = &Hobby{
+			Name:       randString(10),
+			Difficulty: &d,
+		}
+	}
+
 	return Person{
 		Being: Being{
 			ID:  int32(i),
@@ -63,11 +76,12 @@ func newPerson(i int) Person {
 		},
 		Happiness:   int64(i * 2),
 		Sadness:     sadness,
-		Code:        randString(8),
+		Code:        reallyRandString(8),
 		Funkiness:   rand.Float32(),
 		Lameness:    lameness,
 		Keen:        keen,
 		Birthday:    uint32(i * 1000),
 		Anniversary: anv,
+		Hobby:       hobby,
 	}
 }

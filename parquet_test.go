@@ -68,6 +68,12 @@ func TestParquet(t *testing.T) {
 			},
 		},
 		{
+			name: "single nested person",
+			input: [][]Person{
+				{{Hobby: &Hobby{Name: "napping", Difficulty: pint32(10)}}},
+			},
+		},
+		{
 			name: "multiple people",
 			input: [][]Person{
 				{
@@ -83,6 +89,7 @@ func TestParquet(t *testing.T) {
 					{Secret: "hush hush"},
 					{Keen: pbool(false)},
 					{Sleepy: true},
+					{Hobby: &Hobby{Name: "napping", Difficulty: pint32(10)}},
 				},
 			},
 			expected: [][]Person{
@@ -99,6 +106,7 @@ func TestParquet(t *testing.T) {
 					{Secret: ""},
 					{Keen: pbool(false)},
 					{Sleepy: true},
+					{Hobby: &Hobby{Name: "napping", Difficulty: pint32(10)}},
 				},
 			},
 		},
@@ -438,7 +446,10 @@ func TestParquet(t *testing.T) {
 				assert.Nil(t, err, tc.name)
 
 				r, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
-				assert.Nil(t, err)
+				if !assert.NoError(t, err) {
+					return
+				}
+
 				expected := tc.expected
 				if expected == nil {
 					expected = tc.input
@@ -456,7 +467,7 @@ func TestParquet(t *testing.T) {
 				}
 
 				assert.Nil(t, r.Error(), tc.name)
-				assert.Equal(t, i, getLen(expected), tc.name)
+				assert.Equal(t, getLen(expected), i, tc.name)
 			})
 		}
 	}
