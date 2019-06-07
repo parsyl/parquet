@@ -201,7 +201,6 @@ func (m *Metadata) Rows() int64 {
 // Footer writes the FileMetaData at the end of the file.
 func (m *Metadata) Footer(w io.Writer) error {
 	l, s := m.schema.schema()
-	fmt.Println("m.rows", m.rows, "l", l)
 	fmd := &sch.FileMetaData{
 		Version:   1,
 		Schema:    s,

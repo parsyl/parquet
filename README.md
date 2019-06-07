@@ -137,8 +137,22 @@ type Person struct {
 }
 ```
 
-Nested structs, however, are not supported at this time.  If you want a field to be
-excluded from parquet you can tag it with a dash or make it private like so:
+Nested structs are supported too:
+
+```go
+type Being struct {
+	ID  int32  `parquet:"id"`
+	Age *int32 `parquet:"age"`
+}
+
+type Person struct {
+	Being Being
+	Username string `parquet:"username"`
+}
+```
+
+If you want a field to be excluded from parquet you can tag
+it with a dash or make it private like so:
 
 ```go
 type Being struct {
