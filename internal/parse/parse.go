@@ -13,27 +13,27 @@ import (
 const letters = "abcdefghijklmnopqrstuvwxyz"
 
 type Field struct {
-	Type        string
-	FieldNames  []string
-	FieldTypes  []string
-	TypeName    string
-	FieldType   string
-	ParquetType string
-	ColumnName  string
-	Category    string
-	Optionals   []bool
+	Type            string
+	FieldNames      []string
+	FieldTypes      []string
+	TypeName        string
+	FieldType       string
+	ParquetType     string
+	ColumnName      string
+	Category        string
+	RepetitionTypes []bool
 }
 
 func (f Field) Child(i int) Field {
 	return Field{
-		FieldNames: f.FieldNames[i:],
-		FieldTypes: f.FieldTypes[i:],
-		Optionals:  f.Optionals[i:],
+		FieldNames:      f.FieldNames[i:],
+		FieldTypes:      f.FieldTypes[i:],
+		RepetitionTypes: f.RepetitionTypes[i:],
 	}
 }
 
 func (f Field) Optional() bool {
-	for _, o := range f.Optionals {
+	for _, o := range f.RepetitionTypes {
 		if o {
 			return true
 		}
@@ -43,7 +43,7 @@ func (f Field) Optional() bool {
 
 func (f Field) Depth() uint {
 	var out uint
-	for _, o := range f.Optionals {
+	for _, o := range f.RepetitionTypes {
 		if o {
 			out++
 		}
@@ -52,7 +52,7 @@ func (f Field) Depth() uint {
 }
 
 func (f Field) RepetitionType() string {
-	if f.Optionals[len(f.Optionals)-1] {
+	if f.RepetitionTypes[len(f.RepetitionTypes)-1] {
 		return "parquet.RepetitionOptional"
 	}
 	return "parquet.RepetitionRequired"
@@ -130,7 +130,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 			if !fld.optional && (o || f.optional) {
 				fld = makeOptional(fld)
 			}
-			fld.Field.Optionals = append(append(f.Field.Optionals[:0:0], f.Field.Optionals...), o) //make a copy
+			fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
 			fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
 			fld.Field.FieldTypes = append(f.Field.FieldTypes, fld.Field.FieldTypes...)
 			i, out, errs = getOut(i, fld, fields, errs, out)
@@ -139,7 +139,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	} else if f.err == nil && f.embedded {
 		embeddedFields := fields[f.Field.TypeName]
 		for i, f := range embeddedFields {
-			f.Field.Optionals = append(f.Field.Optionals, strings.Contains(f.Field.TypeName, "*"))
+			f.Field.RepetitionTypes = append(f.Field.RepetitionTypes, strings.Contains(f.Field.TypeName, "*"))
 			embeddedFields[i] = f
 		}
 		out = append(out[:i], append(embeddedFields, out[i:]...)...)
@@ -147,7 +147,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	} else if f.err == nil {
 		_, ok := types[f.fieldType]
 		if ok {
-			f.Field.Optionals = append(f.Field.Optionals, o)
+			f.Field.RepetitionTypes = append(f.Field.RepetitionTypes, o)
 			out = append(out, f)
 			i++
 		} else {

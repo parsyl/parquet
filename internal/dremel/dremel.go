@@ -17,7 +17,7 @@ func Read(f parse.Field) string {
 }
 
 func isOptional(f parse.Field) bool {
-	for _, o := range f.Optionals {
+	for _, o := range f.RepetitionTypes {
 		if o {
 			return true
 		}

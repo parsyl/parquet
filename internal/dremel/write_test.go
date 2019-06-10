@@ -18,14 +18,14 @@ func TestWrite(t *testing.T) {
 	}{
 		{
 			name: "required and not nested",
-			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, Optionals: []bool{false}},
+			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, RepetitionTypes: []bool{false}},
 			result: `func writeID(x *Person, vals []int32) {
 	x.ID = vals[0]
 }`,
 		},
 		{
 			name: "optional and not nested",
-			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, Optionals: []bool{true}},
+			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, RepetitionTypes: []bool{true}},
 			result: `func writeID(x *Person, vals []int32, def int64) bool {
 	switch def {
 	case 1:
@@ -38,14 +38,14 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "required and nested",
-			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, Optionals: []bool{false, false, false}},
+			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, RepetitionTypes: []bool{false, false, false}},
 			result: `func writeOtherHobbyDifficulty(x *Person, vals []int32) {
 	x.Other.Hobby.Difficulty = vals[0]
 }`,
 		},
 		{
 			name: "optional and nested",
-			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, Optionals: []bool{true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []bool{true, true}},
 			result: `func writeHobbyDifficulty(x *Person, vals []int32, def int64) bool {
 	switch def {
 	case 1:
@@ -66,7 +66,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "mix of optional and required and nested",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, Optionals: []bool{true, false}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []bool{true, false}},
 			result: `func writeHobbyName(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -83,7 +83,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "mix of optional and required and nested v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, Optionals: []bool{false, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []bool{false, true}},
 			result: `func writeHobbyName(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -96,7 +96,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested 3 deep",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, false, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{true, false, true}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -117,7 +117,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested 3 deep v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{false, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{false, true, true}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -138,7 +138,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested 3 deep v3",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, true, false}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{true, true, false}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -159,7 +159,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "nested 3 deep all optional",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, Optionals: []bool{true, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{true, true, true}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -188,7 +188,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "four deep",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, Optionals: []bool{true, true, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []bool{true, true, true, true}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -227,7 +227,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "four deep mixed",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, Optionals: []bool{false, true, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []bool{false, true, true, true}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
@@ -256,7 +256,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "four deep mixed v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, Optionals: []bool{true, true, true, false}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []bool{true, true, true, false}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, def int64) bool {
 	switch def {
 	case 1:
