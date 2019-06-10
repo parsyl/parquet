@@ -148,7 +148,7 @@ func templateDict(values ...interface{}) (map[string]interface{}, error) {
 }
 
 func writeCase(i int, f parse.Field) string {
-	if !f.RepetitionTypes[i] {
+	if f.RepetitionTypes[i] != parse.Optional {
 		return ""
 	}
 
@@ -181,7 +181,7 @@ func pointer(i, n int, levels []bool) string {
 }
 
 func readSwitch(i int, f parse.Field) string {
-	if !f.RepetitionTypes[i] {
+	if f.RepetitionTypes[i] != parse.Optional {
 		return ""
 	}
 	joined := strings.Join(f.FieldNames[:i+1], ".")

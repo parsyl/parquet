@@ -10,6 +10,14 @@ import (
 	"go/ast"
 )
 
+type RepetitionType int
+
+const (
+	Required RepetitionType = 0
+	Optional RepetitionType = 1
+	Repeated RepetitionType = 2
+)
+
 const letters = "abcdefghijklmnopqrstuvwxyz"
 
 type Field struct {
@@ -21,7 +29,7 @@ type Field struct {
 	ParquetType     string
 	ColumnName      string
 	Category        string
-	RepetitionTypes []bool
+	RepetitionTypes []RepetitionType
 }
 
 func (f Field) Child(i int) Field {
@@ -33,8 +41,8 @@ func (f Field) Child(i int) Field {
 }
 
 func (f Field) Optional() bool {
-	for _, o := range f.RepetitionTypes {
-		if o {
+	for _, t := range f.RepetitionTypes {
+		if t == Optional {
 			return true
 		}
 	}
@@ -43,8 +51,8 @@ func (f Field) Optional() bool {
 
 func (f Field) Depth() uint {
 	var out uint
-	for _, o := range f.RepetitionTypes {
-		if o {
+	for _, t := range f.RepetitionTypes {
+		if t == Optional {
 			out++
 		}
 	}
@@ -52,7 +60,7 @@ func (f Field) Depth() uint {
 }
 
 func (f Field) RepetitionType() string {
-	if f.RepetitionTypes[len(f.RepetitionTypes)-1] {
+	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == Optional {
 		return "parquet.RepetitionOptional"
 	}
 	return "parquet.RepetitionRequired"
@@ -124,10 +132,14 @@ func Fields(typ, pth string) (*Result, error) {
 
 func getOut(i int, f field, fields map[string][]field, errs []error, out []field) (int, []field, []error) {
 	flds, ok := fields[f.fieldType]
-	o := strings.Contains(f.Field.TypeName, "*")
+
+	var o RepetitionType = Required
+	if strings.Contains(f.Field.TypeName, "*") {
+		o = Optional
+	}
 	if ok {
 		for _, fld := range flds {
-			if !fld.optional && (o || f.optional) {
+			if !fld.optional && (o == Optional || f.optional) {
 				fld = makeOptional(fld)
 			}
 			fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
@@ -139,7 +151,11 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	} else if f.err == nil && f.embedded {
 		embeddedFields := fields[f.Field.TypeName]
 		for i, f := range embeddedFields {
-			f.Field.RepetitionTypes = append(f.Field.RepetitionTypes, strings.Contains(f.Field.TypeName, "*"))
+			var rt RepetitionType = Required
+			if strings.Contains(f.Field.TypeName, "*") {
+				rt = Optional
+			}
+			f.Field.RepetitionTypes = append(f.Field.RepetitionTypes, rt)
 			embeddedFields[i] = f
 		}
 		out = append(out[:i], append(embeddedFields, out[i:]...)...)

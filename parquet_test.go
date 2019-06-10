@@ -704,7 +704,7 @@ func getPageHeaders(r io.ReadSeeker, name string, footer *sch.FileMetaData) ([]s
 		for _, col := range rg.Columns {
 			pth := col.MetaData.PathInSchema
 			if pth[len(pth)-1] == name {
-				h, err := parquet.PageHeadersAtOffset(r, col.FileOffset, col.MetaData.NumValues)
+				h, err := parquet.PageHeadersAtOffset(r, col.MetaData.DataPageOffset, col.MetaData.NumValues)
 				if err != nil {
 					return nil, err
 				}

@@ -23,13 +23,13 @@ func readOptional(f parse.Field) string {
 	}
 
 	var ptr string
-	if !f.RepetitionTypes[len(f.RepetitionTypes)-1] {
+	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Required {
 		ptr = "&"
 	}
 	out += fmt.Sprintf(`	default:
 		return %sx.%s, %d`, ptr, nilField(n, f), n)
 
-	if !f.RepetitionTypes[len(f.RepetitionTypes)-1] {
+	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Required {
 		ptr = "*"
 	}
 

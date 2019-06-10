@@ -92,7 +92,7 @@ func ifelse(i, def int, f parse.Field) string {
 	}
 
 	var stmt, brace, val, field, cmp string
-	if i == 0 && defs(f) == 1 && f.RepetitionTypes[len(f.RepetitionTypes)-1] {
+	if i == 0 && defs(f) == 1 && (f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional) {
 		return fmt.Sprintf(`x.%s = &v`, strings.Join(f.FieldNames, "."))
 	} else if i == 0 {
 		stmt = "if"
@@ -111,7 +111,7 @@ func ifelse(i, def int, f parse.Field) string {
 	} else {
 		stmt = " else"
 		val = "v"
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] {
+		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
 			val = "&v"
 		}
 		brace = "}"
@@ -137,7 +137,7 @@ func nilField(i int, f parse.Field) string {
 	var count int
 	for j, o := range f.RepetitionTypes {
 		fields = append(fields, f.FieldNames[j])
-		if o {
+		if o == parse.Optional {
 			count++
 		}
 		if count > i {
@@ -150,7 +150,7 @@ func nilField(i int, f parse.Field) string {
 func defIndex(i int, f parse.Field) int {
 	var count int
 	for j, o := range f.RepetitionTypes {
-		if o {
+		if o == parse.Optional {
 			count++
 		}
 		if count > i {
@@ -164,7 +164,7 @@ func defIndex(i int, f parse.Field) int {
 func defs(f parse.Field) int {
 	var out int
 	for _, o := range f.RepetitionTypes {
-		if o {
+		if o == parse.Optional {
 			out++
 		}
 	}

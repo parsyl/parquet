@@ -15,14 +15,14 @@ func Init(def int, f parse.Field) string {
 func doInit(def, i int, f parse.Field) string {
 	var j int
 	for _, o := range f.RepetitionTypes[:i+1] {
-		if o {
+		if o == parse.Optional {
 			j++
 		}
 	}
 
 	if def == nDefs(f) && i == len(f.RepetitionTypes)-1 {
 		var ptr string
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] {
+		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
 			ptr = "&"
 		}
 		return fmt.Sprintf("%s: %sv", f.FieldNames[i], ptr)
@@ -41,7 +41,7 @@ func doInit(def, i int, f parse.Field) string {
 	var ptr string
 	if i < nDefs(f) {
 		typ = f.FieldTypes[i]
-		if f.RepetitionTypes[i] {
+		if f.RepetitionTypes[i] == parse.Optional {
 			ptr = "&"
 		}
 	}
@@ -52,7 +52,7 @@ func doInit(def, i int, f parse.Field) string {
 func nDefs(f parse.Field) int {
 	var out int
 	for _, o := range f.RepetitionTypes {
-		if o {
+		if o == parse.Optional {
 			out++
 		}
 	}

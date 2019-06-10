@@ -18,14 +18,14 @@ func TestRead(t *testing.T) {
 	}{
 		{
 			name: "required and not nested",
-			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, RepetitionTypes: []bool{false}},
+			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
 			result: `func readID(x Person) int32 {
 	return x.ID
 }`,
 		},
 		{
 			name: "optional and not nested",
-			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, RepetitionTypes: []bool{true}},
+			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, RepetitionTypes: []parse.RepetitionType{parse.Optional}},
 			result: `func readID(x Person) (*int32, int64) {
 	switch {
 	case x.ID == nil:
@@ -37,14 +37,14 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "required and nested",
-			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, RepetitionTypes: []bool{false, false, false}},
+			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
 			result: `func readOtherHobbyDifficulty(x Person) int32 {
 	return x.Other.Hobby.Difficulty
 }`,
 		},
 		{
 			name: "optional and nested",
-			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []bool{true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
 			result: `func readHobbyDifficulty(x Person) (*int32, int64) {
 	switch {
 	case x.Hobby == nil:
@@ -58,7 +58,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "mix of optional and required and nested",
-			f:    parse.Field{Type: "Person", TypeName: "string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []bool{true, false}},
+			f:    parse.Field{Type: "Person", TypeName: "string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
 			result: `func readHobbyName(x Person) (*string, int64) {
 	switch {
 	case x.Hobby == nil:
@@ -70,7 +70,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "mix of optional and required and nested v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []bool{false, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
 			result: `func readHobbyName(x Person) (*string, int64) {
 	switch {
 	case x.Hobby.Name == nil:
@@ -82,7 +82,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested 3 deep",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{true, false, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Optional}},
 			result: `func readFriendHobbyName(x Person) (*string, int64) {
 	switch {
 	case x.Friend == nil:
@@ -96,7 +96,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested 3 deep v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{false, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
 			result: `func readFriendHobbyName(x Person) (*string, int64) {
 	switch {
 	case x.Friend.Hobby == nil:
@@ -110,7 +110,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "mix of optional and require and nested 3 deep v3",
-			f:    parse.Field{Type: "Person", TypeName: "string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{true, true, false}},
+			f:    parse.Field{Type: "Person", TypeName: "string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}},
 			result: `func readFriendHobbyName(x Person) (*string, int64) {
 	switch {
 	case x.Friend == nil:
@@ -124,7 +124,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "nested 3 deep all optional",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []bool{true, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
 			result: `func readFriendHobbyName(x Person) (*string, int64) {
 	switch {
 	case x.Friend == nil:
@@ -140,7 +140,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "four deep",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []bool{true, true, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Optional}},
 			result: `func readFriendHobbyNameFirst(x Person) (*string, int64) {
 	switch {
 	case x.Friend == nil:
@@ -158,7 +158,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "four deep mixed",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []bool{false, true, true, true}},
+			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional, parse.Optional}},
 			result: `func readFriendHobbyNameFirst(x Person) (*string, int64) {
 	switch {
 	case x.Friend.Hobby == nil:
@@ -174,7 +174,7 @@ func TestRead(t *testing.T) {
 		},
 		{
 			name: "four deep mixed v2",
-			f:    parse.Field{Type: "Person", TypeName: "string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []bool{true, true, true, false}},
+			f:    parse.Field{Type: "Person", TypeName: "string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Required}},
 			result: `func readFriendHobbyNameFirst(x Person) (*string, int64) {
 	switch {
 	case x.Friend == nil:
