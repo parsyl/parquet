@@ -1,5 +1,9 @@
 package dremel
 
+// Package dremel generates code that parquetgen
+// uses to encode/decode a struct for writing and
+// reading parquet files.
+
 import "github.com/parsyl/parquet/internal/parse"
 
 func Write(f parse.Field) string {
