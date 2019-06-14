@@ -6,12 +6,94 @@ import (
 	"log"
 	"testing"
 
+	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/parse"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
 	log.SetOutput(ioutil.Discard)
+}
+
+func TestParquet(t *testing.T) {
+	type testInput struct {
+		name     string
+		schema   []*sch.SchemaElement
+		expected []parse.Field
+		errors   []error
+	}
+
+	testCases := []testInput{
+		{
+			name: "single field",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(1)},
+				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+			},
+			expected: []parse.Field{
+				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			},
+		},
+		{
+			name: "single nested field",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(1)},
+				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(1)},
+				{Name: "name", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+			},
+			expected: []parse.Field{
+				{FieldNames: []string{"hobby", "name"}, FieldTypes: []string{"hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+			},
+		},
+		{
+			name: "two nested fields",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(1)},
+				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(2)},
+				{Name: "name", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+			},
+			expected: []parse.Field{
+				{FieldNames: []string{"hobby", "name"}, FieldTypes: []string{"hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+			},
+		},
+		{
+			name: "nested then not",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(2)},
+				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(2)},
+				{Name: "name", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+			},
+			expected: []parse.Field{
+				{FieldNames: []string{"hobby", "name"}, FieldTypes: []string{"hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
+			out, err := parse.Parquet(tc.schema)
+			if !assert.Nil(t, err, tc.name) {
+				return
+			}
+
+			assert.Equal(t, tc.expected, out.Fields, tc.name)
+			if assert.Equal(t, len(tc.errors), len(out.Errors), tc.name) {
+				for i, err := range out.Errors {
+					assert.EqualError(t, tc.errors[i], err.Error(), tc.name)
+				}
+			} else {
+				for _, err := range out.Errors {
+					fmt.Println(err)
+				}
+			}
+		})
+	}
 }
 
 func TestFields(t *testing.T) {
@@ -187,4 +269,16 @@ func TestFields(t *testing.T) {
 			}
 		})
 	}
+}
+
+func pint32(i int32) *int32 {
+	return &i
+}
+
+func prt(rt sch.FieldRepetitionType) *sch.FieldRepetitionType {
+	return &rt
+}
+
+func pt(t sch.Type) *sch.Type {
+	return &t
 }

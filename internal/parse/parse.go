@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"go/ast"
+
+	sch "github.com/parsyl/parquet/generated"
 )
 
 type RepetitionType int
@@ -348,4 +350,70 @@ func (f *finder) findTypes(n ast.Node) ast.Visitor {
 	}
 
 	return nil
+}
+
+// Parquet reads the parquet schema and returns a list of Fields
+func Parquet(se []*sch.SchemaElement) (*Result, error) {
+	return &Result{
+		Fields: getSchemaFields(se[0], se[1:]),
+	}, nil
+}
+
+func getSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement) []Field {
+	var out []Field
+	var i, j int
+	for i < int(*parent.NumChildren) {
+		ch := children[i+j]
+		f := schemaField(*ch).field()
+		if ch.NumChildren != nil && int(*ch.NumChildren) > 0 {
+			fields := getSchemaFields(ch, children[j+1:])
+			for _, ff := range fields {
+				out = append(out, Field{
+					FieldNames:      append(f.FieldNames, ff.FieldNames...),
+					FieldTypes:      append(f.FieldTypes, ff.FieldTypes...),
+					RepetitionTypes: append(f.RepetitionTypes, ff.RepetitionTypes...),
+				})
+			}
+			j += len(fields) //this isn't correct for deeper nesting, I think
+		} else {
+			out = append(out, f)
+		}
+		i++
+	}
+
+	return out
+}
+
+var parquetTypes = map[string]string{
+	"BOOLEAN":    "bool",
+	"INT32":      "int32",
+	"INT64":      "int64",
+	"FLOAT":      "float32",
+	"DOUBLE":     "float64",
+	"BYTE_ARRAY": "string",
+}
+
+type schemaField sch.SchemaElement
+
+func (s schemaField) field() Field {
+	var t string
+	if s.NumChildren != nil && *s.NumChildren > 0 {
+		t = s.Name
+	} else {
+		t = getFieldType(sch.SchemaElement(s))
+	}
+	return Field{
+		FieldNames:      []string{s.Name},
+		FieldTypes:      []string{t},
+		RepetitionTypes: []RepetitionType{RepetitionType(*s.RepetitionType)},
+	}
+}
+
+func getFieldType(se sch.SchemaElement) string {
+	s := se.Type.String()
+	out, ok := parquetTypes[s]
+	if !ok {
+		log.Fatalf("unsupported parquet schema type: %s", s)
+	}
+	return out
 }
