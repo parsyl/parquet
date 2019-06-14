@@ -293,17 +293,15 @@ func fromParquet() {
 		log.Fatal(err)
 	}
 
-	fields := make([]structField, len(footer.Schema[1:]))
-	for i, s := range footer.Schema[1:] {
-		fields[i] = structField{
-			Name: s.Name,
-			Type: getFieldType(s),
-		}
+	fields, err := parse.Parquet(footer.Schema)
+	if err != nil {
+		log.Fatal(err)
 	}
+
 	n := newStruct{
 		Package:    *pkg,
 		StructName: *typ,
-		Fields:     fields,
+		Fields:     fields.Fields,
 	}
 
 	var buf bytes.Buffer
