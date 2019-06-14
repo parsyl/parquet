@@ -73,6 +73,60 @@ func TestParquet(t *testing.T) {
 				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
 			},
 		},
+		{
+			name: "nested 3 deep",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(2)},
+				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(2)},
+				{Name: "name", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(2)},
+				{Name: "first", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "last", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+			},
+			expected: []parse.Field{
+				{FieldNames: []string{"hobby", "name", "first"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Optional}},
+				{FieldNames: []string{"hobby", "name", "last"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
+				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			},
+		},
+		{
+			name: "nested 3 deep v2",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(2)},
+				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(2)},
+				{Name: "name", RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL), NumChildren: pint32(2)},
+				{Name: "first", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "last", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+			},
+			expected: []parse.Field{
+				{FieldNames: []string{"hobby", "name", "first"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
+				{FieldNames: []string{"hobby", "name", "last"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Required}},
+				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			},
+		},
+		{
+			name: "nested 3 deep v3",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(2)},
+				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL), NumChildren: pint32(2)},
+				{Name: "name", RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL), NumChildren: pint32(2)},
+				{Name: "first", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "last", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+			},
+			expected: []parse.Field{
+				{FieldNames: []string{"hobby", "name", "first"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
+				{FieldNames: []string{"hobby", "name", "last"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}},
+				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
+				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -82,7 +136,11 @@ func TestParquet(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tc.expected, out.Fields, tc.name)
+			if !assert.Equal(t, tc.expected, out.Fields, tc.name) {
+				for _, f := range out.Fields {
+					fmt.Printf("%+v\n", f)
+				}
+			}
 			if assert.Equal(t, len(tc.errors), len(out.Errors), tc.name) {
 				for i, err := range out.Errors {
 					assert.EqualError(t, tc.errors[i], err.Error(), tc.name)

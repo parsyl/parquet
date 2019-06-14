@@ -360,13 +360,18 @@ func Parquet(se []*sch.SchemaElement) (*Result, error) {
 }
 
 func getSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement) []Field {
+	f, _ := doGetSchemaFields(parent, children)
+	return f
+}
+
+func doGetSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement) ([]Field, int) {
 	var out []Field
 	var i, j int
 	for i < int(*parent.NumChildren) {
 		ch := children[i+j]
 		f := schemaField(*ch).field()
 		if ch.NumChildren != nil && int(*ch.NumChildren) > 0 {
-			fields := getSchemaFields(ch, children[j+1:])
+			fields, n := doGetSchemaFields(ch, children[i+j+1:])
 			for _, ff := range fields {
 				out = append(out, Field{
 					FieldNames:      append(f.FieldNames, ff.FieldNames...),
@@ -374,14 +379,15 @@ func getSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement) [
 					RepetitionTypes: append(f.RepetitionTypes, ff.RepetitionTypes...),
 				})
 			}
-			j += len(fields) //this isn't correct for deeper nesting, I think
+			j += n
+			i++
 		} else {
 			out = append(out, f)
+			i++
 		}
-		i++
 	}
 
-	return out
+	return out, i + j
 }
 
 var parquetTypes = map[string]string{
