@@ -360,18 +360,18 @@ func Parquet(se []*sch.SchemaElement) (*Result, error) {
 }
 
 func getSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement) []Field {
-	f, _ := doGetSchemaFields(parent, children)
+	_, f := doGetSchemaFields(parent, children)
 	return f
 }
 
-func doGetSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement) ([]Field, int) {
+func doGetSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement) (int, []Field) {
 	var out []Field
 	var i, j int
 	for i < int(*parent.NumChildren) {
 		ch := children[i+j]
 		f := schemaField(*ch).field()
 		if ch.NumChildren != nil && int(*ch.NumChildren) > 0 {
-			fields, n := doGetSchemaFields(ch, children[i+j+1:])
+			n, fields := doGetSchemaFields(ch, children[i+j+1:])
 			for _, ff := range fields {
 				out = append(out, Field{
 					FieldNames:      append(f.FieldNames, ff.FieldNames...),
@@ -380,14 +380,13 @@ func doGetSchemaFields(parent *sch.SchemaElement, children []*sch.SchemaElement)
 				})
 			}
 			j += n
-			i++
 		} else {
 			out = append(out, f)
-			i++
 		}
+		i++
 	}
 
-	return out, i + j
+	return i + j, out
 }
 
 var parquetTypes = map[string]string{

@@ -202,15 +202,10 @@ func readSwitch(i int, f parse.Field) string {
 	return out
 }
 
-type structField struct {
-	Name string
-	Type string
-}
-
 type newStruct struct {
 	Package    string
 	StructName string
-	Fields     []structField
+	Fields     []parse.Field
 }
 
 type fieldType struct {
