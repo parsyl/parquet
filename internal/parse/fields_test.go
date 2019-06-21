@@ -31,7 +31,7 @@ func TestParquet(t *testing.T) {
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 			},
 			expected: []parse.Field{
-				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+				{FieldNames: []string{"Id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
 			},
 		},
 		{
@@ -42,7 +42,7 @@ func TestParquet(t *testing.T) {
 				{Name: "name", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
 			},
 			expected: []parse.Field{
-				{FieldNames: []string{"hobby", "name"}, FieldTypes: []string{"hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
 			},
 		},
 		{
@@ -54,8 +54,8 @@ func TestParquet(t *testing.T) {
 				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
 			},
 			expected: []parse.Field{
-				{FieldNames: []string{"hobby", "name"}, FieldTypes: []string{"hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
-				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
 			},
 		},
 		{
@@ -68,9 +68,9 @@ func TestParquet(t *testing.T) {
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 			},
 			expected: []parse.Field{
-				{FieldNames: []string{"hobby", "name"}, FieldTypes: []string{"hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
-				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
-				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+				{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"Id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
 			},
 		},
 		{
@@ -85,10 +85,10 @@ func TestParquet(t *testing.T) {
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 			},
 			expected: []parse.Field{
-				{FieldNames: []string{"hobby", "name", "first"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Optional}},
-				{FieldNames: []string{"hobby", "name", "last"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
-				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
-				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+				{FieldNames: []string{"Hobby", "Name", "First"}, FieldTypes: []string{"Hobby", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Optional}},
+				{FieldNames: []string{"Hobby", "Name", "Last"}, FieldTypes: []string{"Hobby", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
+				{FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"Id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
 			},
 		},
 		{
@@ -103,10 +103,10 @@ func TestParquet(t *testing.T) {
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 			},
 			expected: []parse.Field{
-				{FieldNames: []string{"hobby", "name", "first"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
-				{FieldNames: []string{"hobby", "name", "last"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Required}},
-				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
-				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+				{FieldNames: []string{"Hobby", "Name", "First"}, FieldTypes: []string{"Hobby", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
+				{FieldNames: []string{"Hobby", "Name", "Last"}, FieldTypes: []string{"Hobby", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Required}},
+				{FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+				{FieldNames: []string{"Id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
 			},
 		},
 		{
@@ -121,10 +121,10 @@ func TestParquet(t *testing.T) {
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 			},
 			expected: []parse.Field{
-				{FieldNames: []string{"hobby", "name", "first"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
-				{FieldNames: []string{"hobby", "name", "last"}, FieldTypes: []string{"hobby", "name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}},
-				{FieldNames: []string{"hobby", "difficulty"}, FieldTypes: []string{"hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
-				{FieldNames: []string{"id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+				{FieldNames: []string{"Hobby", "Name", "First"}, FieldTypes: []string{"Hobby", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
+				{FieldNames: []string{"Hobby", "Name", "Last"}, FieldTypes: []string{"Hobby", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}},
+				{FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
+				{FieldNames: []string{"Id"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
 			},
 		},
 	}

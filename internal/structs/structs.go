@@ -63,15 +63,12 @@ func nDefs(f parse.Field) int {
 
 // Struct generates a struct definition based on the
 // parquet schema.
-func Struct(schema []*sch.SchemaElement) string {
+func Struct(structName string, schema []*sch.SchemaElement) string {
 	if len(schema) == 0 {
 		return ""
 	}
 
-	if schema[0].Name == "" {
-		schema[0].Name = "GeneratedStruct"
-	}
-
+	schema[0].Name = structName
 	_, out := getStruct(schema[0], schema[1:])
 	if strings.Contains(out, "%s") {
 		out = fmt.Sprintf(out, "")

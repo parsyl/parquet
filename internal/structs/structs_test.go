@@ -153,8 +153,7 @@ type Name struct {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			s := structs.Struct(tc.schema)
-			//fmt.Println(s)
+			s := structs.Struct("Root", tc.schema)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			if !assert.Equal(t, tc.expected, string(gocode)) {

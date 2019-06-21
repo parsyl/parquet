@@ -402,13 +402,14 @@ type schemaField sch.SchemaElement
 
 func (s schemaField) field() Field {
 	var t string
+	n := strings.Title(s.Name)
 	if s.NumChildren != nil && *s.NumChildren > 0 {
-		t = s.Name
+		t = n
 	} else {
 		t = getFieldType(sch.SchemaElement(s))
 	}
 	return Field{
-		FieldNames:      []string{s.Name},
+		FieldNames:      []string{n},
 		FieldTypes:      []string{t},
 		RepetitionTypes: []RepetitionType{RepetitionType(*s.RepetitionType)},
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/parsyl/parquet/internal/cases"
 	"github.com/parsyl/parquet/internal/dremel"
 	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/structs"
 )
 
 var (
@@ -84,7 +85,6 @@ var (
 		"join": func(names []string) string {
 			return strings.Join(names, ".")
 		},
-		"readSwitch": readSwitch,
 		"imports": func(fields []parse.Field) []string {
 			var out []string
 			var intFound, stringFound bool
@@ -147,65 +147,10 @@ func templateDict(values ...interface{}) (map[string]interface{}, error) {
 	return dict, nil
 }
 
-func writeCase(i int, f parse.Field) string {
-	if f.RepetitionTypes[i] != parse.Optional {
-		return ""
-	}
-
-	name := strings.Join(f.FieldNames[:i+1], ".")
-	if i+1 == len(f.FieldNames) {
-		return writeFinalCase(i, f, name)
-	}
-
-	return fmt.Sprintf(`case %d:
-	x.%s = %s`, i+1, name)
-}
-
-func writeFinalCase(i int, f parse.Field, name string) string {
-	return fmt.Sprintf(`if x.%s == nil {
-	x.%s`)
-}
-
-func initStruct(i, n int, levels []bool, names []string) string {
-	if i == n {
-		return "%s"
-	}
-	return fmt.Sprintf(`%s%s{%s}`, pointer(i, n, levels), names[i], initStruct(i+1, n, levels, names))
-}
-
-func pointer(i, n int, levels []bool) string {
-	if levels[i] && i < n-1 {
-		return "&"
-	}
-	return ""
-}
-
-func readSwitch(i int, f parse.Field) string {
-	if f.RepetitionTypes[i] != parse.Optional {
-		return ""
-	}
-	joined := strings.Join(f.FieldNames[:i+1], ".")
-	if i == len(f.FieldNames)-1 {
-		out := fmt.Sprintf(`case r.%s == nil:
-			return nil, %d
-		default:
-			return r.%s, %d
-`, joined, i, joined, i+1)
-		fmt.Println(out)
-		return out
-	}
-
-	out := fmt.Sprintf(`case r.%s == nil:
-			return nil, %d
-`, joined, i)
-	fmt.Println(out)
-	return out
-}
-
 type newStruct struct {
-	Package    string
-	StructName string
-	Fields     []parse.Field
+	Package string
+	Structs string
+	Fields  []parse.Field
 }
 
 type fieldType struct {
@@ -283,20 +228,9 @@ func fromParquet() {
 		log.Fatal(err)
 	}
 
-	tmpl, err = tmpl.Parse(structFieldTpl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fields, err := parse.Parquet(footer.Schema)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	n := newStruct{
-		Package:    *pkg,
-		StructName: *typ,
-		Fields:     fields.Fields,
+		Package: *pkg,
+		Structs: structs.Struct(*typ, footer.Schema),
 	}
 
 	var buf bytes.Buffer
