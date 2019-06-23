@@ -3,12 +3,12 @@ package main
 var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	read   func(r {{.Type}}) ({{.TypeName}}, int64)
-	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool
+	read   func(r {{.Type}}) ({{.TypeName}}, uint8)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def uint8) bool
 	stats *boolOptionalStats
 }
 
-func NewBoolOptionalField(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+func NewBoolOptionalField(read func(r {{.Type}}) ({{.TypeName}}, uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		read:          read,
 		write:         write,

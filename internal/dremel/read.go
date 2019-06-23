@@ -33,7 +33,7 @@ func readOptional(f parse.Field) string {
 		ptr = "*"
 	}
 
-	return fmt.Sprintf(`func read%s(x %s) (%s%s, int64) {
+	return fmt.Sprintf(`func read%s(x %s) (%s%s, uint8) {
 	switch {
 	%s
 	}

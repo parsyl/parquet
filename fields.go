@@ -137,7 +137,7 @@ func (f *RequiredField) Key() string {
 }
 
 type OptionalField struct {
-	Defs           []int64
+	Defs           []uint8
 	col            string
 	pth            []string
 	Depth          uint
@@ -189,10 +189,10 @@ func OptionalFieldRepetitionType(f FieldFunc) func(*OptionalField) {
 // Values reads the definition levels and uses them
 // to return the values from the page data.
 func (f *OptionalField) Values() int {
-	return valsFromDefs(f.Defs, int64(f.Depth))
+	return valsFromDefs(f.Defs, uint8(f.Depth))
 }
 
-func valsFromDefs(defs []int64, depth int64) int {
+func valsFromDefs(defs []uint8, depth uint8) int {
 	var out int
 	for _, d := range defs {
 		if d == depth {
@@ -254,7 +254,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
-		sizes = append(sizes, valsFromDefs(defs, int64(f.Depth)))
+		sizes = append(sizes, valsFromDefs(defs, uint8(f.Depth)))
 		out = append(out, data[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}

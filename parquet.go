@@ -462,7 +462,7 @@ func StringType(se *sch.SchemaElement) {
 }
 
 // writeLevels writes vals to w as RLE/bitpack encoded data
-func writeLevels(w io.Writer, levels []int64, width int32) error {
+func writeLevels(w io.Writer, levels []uint8, width int32) error {
 	enc, _ := rle.New(width, len(levels)) //TODO: len(levels) is probably too big.  Chop it down a bit?
 	for _, l := range levels {
 		enc.Write(l)
@@ -472,8 +472,8 @@ func writeLevels(w io.Writer, levels []int64, width int32) error {
 }
 
 // readLevels reads the RLE/bitpack encoded definition levels
-func readLevels(in io.Reader, width int32) ([]int64, int, error) {
-	var out []int64
+func readLevels(in io.Reader, width int32) ([]uint8, int, error) {
+	var out []uint8
 	dec, _ := rle.New(width, 0)
 	out, n, err := dec.Read(in)
 	if err != nil {

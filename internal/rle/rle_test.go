@@ -3,7 +3,6 @@ package rle_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/parsyl/parquet/internal/rle"
@@ -13,7 +12,7 @@ import (
 type testCase struct {
 	width int32
 	name  string
-	in    []int64
+	in    []uint8
 	out   []byte
 	err   error
 }
@@ -53,17 +52,17 @@ func TestRLE(t *testing.T) {
 		{
 			name:  "single value",
 			width: 1,
-			in:    []int64{1},
+			in:    []uint8{1},
 		},
 		{
 			name:  "odd number of non-repeated values",
 			width: 1,
-			in:    []int64{1, 0, 1, 1, 0},
+			in:    []uint8{1, 0, 1, 1, 0},
 		},
 		{
 			name:  "width 2",
 			width: 2,
-			in:    []int64{1, 2, 3},
+			in:    []uint8{1, 2, 3},
 		},
 		{
 			name:  "width 4",
@@ -96,10 +95,10 @@ func TestRLE(t *testing.T) {
 	}
 }
 
-func mod(m, c int) []int64 {
-	out := make([]int64, c)
+func mod(m, c int) []uint8 {
+	out := make([]uint8, c)
 	for i := range out {
-		out[i] = int64(i % m)
+		out[i] = uint8(i % m)
 	}
 	return out
 }
@@ -107,52 +106,15 @@ func mod(m, c int) []int64 {
 func modbytes(m, c int) []byte {
 	out := make([]byte, c)
 	for i := range out {
-		out[i] = byte(int64(i % m))
+		out[i] = byte(uint8(i % m))
 	}
 	return out
 }
 
-func repeat(v int64, c int) []int64 {
-	out := make([]int64, c)
+func repeat(v uint8, c int) []uint8 {
+	out := make([]uint8, c)
 	for i := range out {
 		out[i] = v
 	}
 	return out
-}
-
-func readRLEBitPacked(r io.Reader, header, width uint64) ([]int64, error) {
-	count := (header >> 1) * 8
-	if width == 0 {
-		return make([]int64, count), nil
-	}
-
-	byteCount := (width * count) / 8
-	rawBytes := make([]byte, byteCount)
-	if _, err := r.Read(rawBytes); err != nil {
-		return nil, err
-	}
-
-	current := 0
-	data := uint64(rawBytes[current])
-	mask := uint64((1 << width) - 1)
-	left := uint64(8)
-	right := uint64(0)
-	out := make([]int64, 0, count)
-	total := uint64(len(rawBytes) * 8)
-	for total >= width {
-		if right >= 8 {
-			right -= 8
-			left -= 8
-			data >>= 8
-		} else if left-right >= width {
-			out = append(out, int64((data>>right)&mask))
-			total -= width
-			right += width
-		} else if current+1 < len(rawBytes) {
-			current++
-			data |= uint64(rawBytes[current] << left)
-			left += 8
-		}
-	}
-	return out, nil
 }

@@ -68,7 +68,7 @@ func readID(x Person) int32 {
 func writeID(x *Person, vals []int32) {
 	x.ID = vals[0]
 }
-func readAge(x Person) (*int32, int64) {
+func readAge(x Person) (*int32, uint8) {
 	switch {
 	case x.Age == nil:
 		return nil, 0
@@ -76,7 +76,7 @@ func readAge(x Person) (*int32, int64) {
 		return x.Age, 1
 	}
 }
-func writeAge(x *Person, vals []int32, def int64) bool {
+func writeAge(x *Person, vals []int32, def uint8) bool {
 	switch def {
 	case 1:
 		v := vals[0]
@@ -91,7 +91,7 @@ func readHappiness(x Person) int64 {
 func writeHappiness(x *Person, vals []int64) {
 	x.Happiness = vals[0]
 }
-func readSadness(x Person) (*int64, int64) {
+func readSadness(x Person) (*int64, uint8) {
 	switch {
 	case x.Sadness == nil:
 		return nil, 0
@@ -99,7 +99,7 @@ func readSadness(x Person) (*int64, int64) {
 		return x.Sadness, 1
 	}
 }
-func writeSadness(x *Person, vals []int64, def int64) bool {
+func writeSadness(x *Person, vals []int64, def uint8) bool {
 	switch def {
 	case 1:
 		v := vals[0]
@@ -108,7 +108,7 @@ func writeSadness(x *Person, vals []int64, def int64) bool {
 	}
 	return false
 }
-func readCode(x Person) (*string, int64) {
+func readCode(x Person) (*string, uint8) {
 	switch {
 	case x.Code == nil:
 		return nil, 0
@@ -116,7 +116,7 @@ func readCode(x Person) (*string, int64) {
 		return x.Code, 1
 	}
 }
-func writeCode(x *Person, vals []string, def int64) bool {
+func writeCode(x *Person, vals []string, def uint8) bool {
 	switch def {
 	case 1:
 		v := vals[0]
@@ -137,7 +137,7 @@ func readBoldness(x Person) float64 {
 func writeBoldness(x *Person, vals []float64) {
 	x.Boldness = vals[0]
 }
-func readLameness(x Person) (*float32, int64) {
+func readLameness(x Person) (*float32, uint8) {
 	switch {
 	case x.Lameness == nil:
 		return nil, 0
@@ -145,7 +145,7 @@ func readLameness(x Person) (*float32, int64) {
 		return x.Lameness, 1
 	}
 }
-func writeLameness(x *Person, vals []float32, def int64) bool {
+func writeLameness(x *Person, vals []float32, def uint8) bool {
 	switch def {
 	case 1:
 		v := vals[0]
@@ -154,7 +154,7 @@ func writeLameness(x *Person, vals []float32, def int64) bool {
 	}
 	return false
 }
-func readKeen(x Person) (*bool, int64) {
+func readKeen(x Person) (*bool, uint8) {
 	switch {
 	case x.Keen == nil:
 		return nil, 0
@@ -162,7 +162,7 @@ func readKeen(x Person) (*bool, int64) {
 		return x.Keen, 1
 	}
 }
-func writeKeen(x *Person, vals []bool, def int64) bool {
+func writeKeen(x *Person, vals []bool, def uint8) bool {
 	switch def {
 	case 1:
 		v := vals[0]
@@ -177,7 +177,7 @@ func readBirthday(x Person) uint32 {
 func writeBirthday(x *Person, vals []uint32) {
 	x.Birthday = vals[0]
 }
-func readAnniversary(x Person) (*uint64, int64) {
+func readAnniversary(x Person) (*uint64, uint8) {
 	switch {
 	case x.Anniversary == nil:
 		return nil, 0
@@ -185,7 +185,7 @@ func readAnniversary(x Person) (*uint64, int64) {
 		return x.Anniversary, 1
 	}
 }
-func writeAnniversary(x *Person, vals []uint64, def int64) bool {
+func writeAnniversary(x *Person, vals []uint64, def uint8) bool {
 	switch def {
 	case 1:
 		v := vals[0]
@@ -206,7 +206,7 @@ func readHungry(x Person) bool {
 func writeHungry(x *Person, vals []bool) {
 	x.Hungry = vals[0]
 }
-func readHobbyName(x Person) (*string, int64) {
+func readHobbyName(x Person) (*string, uint8) {
 	switch {
 	case x.Hobby == nil:
 		return nil, 0
@@ -214,7 +214,7 @@ func readHobbyName(x Person) (*string, int64) {
 		return &x.Hobby.Name, 1
 	}
 }
-func writeHobbyName(x *Person, vals []string, def int64) bool {
+func writeHobbyName(x *Person, vals []string, def uint8) bool {
 	switch def {
 	case 1:
 		v := vals[0]
@@ -227,7 +227,7 @@ func writeHobbyName(x *Person, vals []string, def int64) bool {
 	}
 	return false
 }
-func readHobbyDifficulty(x Person) (*int32, int64) {
+func readHobbyDifficulty(x Person) (*int32, uint8) {
 	switch {
 	case x.Hobby == nil:
 		return nil, 0
@@ -237,7 +237,7 @@ func readHobbyDifficulty(x Person) (*int32, int64) {
 		return x.Hobby.Difficulty, 2
 	}
 }
-func writeHobbyDifficulty(x *Person, vals []int32, def int64) bool {
+func writeHobbyDifficulty(x *Person, vals []int32, def uint8) bool {
 	switch def {
 	case 1:
 		if x.Hobby == nil {
@@ -606,12 +606,12 @@ func (f *Int32Field) Add(r Person) {
 type Int32OptionalField struct {
 	parquet.OptionalField
 	vals  []int32
-	read  func(r Person) (*int32, int64)
-	write func(r *Person, vals []int32, def int64) bool
+	read  func(r Person) (*int32, uint8)
+	write func(r *Person, vals []int32, def uint8) bool
 	stats *int32optionalStats
 }
 
-func NewInt32OptionalField(read func(r Person) (*int32, int64), write func(r *Person, vals []int32, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
+func NewInt32OptionalField(read func(r Person) (*int32, uint8), write func(r *Person, vals []int32, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
 	return &Int32OptionalField{
 		read:          read,
 		write:         write,
@@ -728,12 +728,12 @@ func (f *Int64Field) Add(r Person) {
 type Int64OptionalField struct {
 	parquet.OptionalField
 	vals  []int64
-	read  func(r Person) (*int64, int64)
-	write func(r *Person, vals []int64, def int64) bool
+	read  func(r Person) (*int64, uint8)
+	write func(r *Person, vals []int64, def uint8) bool
 	stats *int64optionalStats
 }
 
-func NewInt64OptionalField(read func(r Person) (*int64, int64), write func(r *Person, vals []int64, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+func NewInt64OptionalField(read func(r Person) (*int64, uint8), write func(r *Person, vals []int64, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
 	return &Int64OptionalField{
 		read:          read,
 		write:         write,
@@ -792,12 +792,12 @@ func (f *Int64OptionalField) Scan(r *Person) {
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
-	read  func(r Person) (*string, int64)
-	write func(r *Person, vals []string, def int64) bool
+	read  func(r Person) (*string, uint8)
+	write func(r *Person, vals []string, def uint8) bool
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r Person) (*string, int64), write func(r *Person, vals []string, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r Person) (*string, uint8), write func(r *Person, vals []string, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
@@ -989,12 +989,12 @@ func (f *Float64Field) Add(r Person) {
 type Float32OptionalField struct {
 	parquet.OptionalField
 	vals  []float32
-	read  func(r Person) (*float32, int64)
-	write func(r *Person, vals []float32, def int64) bool
+	read  func(r Person) (*float32, uint8)
+	write func(r *Person, vals []float32, def uint8) bool
 	stats *float32optionalStats
 }
 
-func NewFloat32OptionalField(read func(r Person) (*float32, int64), write func(r *Person, vals []float32, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
+func NewFloat32OptionalField(read func(r Person) (*float32, uint8), write func(r *Person, vals []float32, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
 	return &Float32OptionalField{
 		read:          read,
 		write:         write,
@@ -1053,12 +1053,12 @@ func (f *Float32OptionalField) Scan(r *Person) {
 type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	read  func(r Person) (*bool, int64)
-	write func(r *Person, vals []bool, def int64) bool
+	read  func(r Person) (*bool, uint8)
+	write func(r *Person, vals []bool, def uint8) bool
 	stats *boolOptionalStats
 }
 
-func NewBoolOptionalField(read func(r Person) (*bool, int64), write func(r *Person, vals []bool, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+func NewBoolOptionalField(read func(r Person) (*bool, uint8), write func(r *Person, vals []bool, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		read:          read,
 		write:         write,
@@ -1178,12 +1178,12 @@ func (f *Uint32Field) Add(r Person) {
 type Uint64OptionalField struct {
 	parquet.OptionalField
 	vals  []uint64
-	read  func(r Person) (*uint64, int64)
-	write func(r *Person, vals []uint64, def int64) bool
+	read  func(r Person) (*uint64, uint8)
+	write func(r *Person, vals []uint64, def uint8) bool
 	stats *uint64optionalStats
 }
 
-func NewUint64OptionalField(read func(r Person) (*uint64, int64), write func(r *Person, vals []uint64, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *Uint64OptionalField {
+func NewUint64OptionalField(read func(r Person) (*uint64, uint8), write func(r *Person, vals []uint64, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Uint64OptionalField {
 	return &Uint64OptionalField{
 		read:          read,
 		write:         write,

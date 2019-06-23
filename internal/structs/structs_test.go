@@ -149,6 +149,32 @@ type Name struct {
 	Last  string
 }`,
 		},
+		{
+			name: "nested 3 deep v2",
+			schema: []*sch.SchemaElement{
+				{Name: "root", NumChildren: pint32(2)},
+				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(2)},
+				{Name: "name", RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL), NumChildren: pint32(2)},
+				{Name: "first", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+				{Name: "last", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
+				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
+			},
+			expected: `type Root struct {
+	Hobby Hobby
+	Id    *int32
+}
+
+type Hobby struct {
+	Name       *Name
+	Difficulty int32
+}
+
+type Name struct {
+	First *string
+	Last  string
+}`,
+		},
 	}
 
 	for i, tc := range testCases {

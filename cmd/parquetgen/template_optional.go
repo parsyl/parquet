@@ -7,12 +7,12 @@ var optionalNumericTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
 	vals  []{{removeStar .TypeName}}
-	read   func(r {{.Type}}) ({{.TypeName}}, int64)
-	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool
+	read   func(r {{.Type}}) ({{.TypeName}}, uint8)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def uint8) bool
 	stats {{.TypeName}}optionalStats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, int64), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def int64) bool, path []string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:          read,
 		write:         write,
