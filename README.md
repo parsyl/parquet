@@ -16,7 +16,7 @@ possibilities.
     
     go get -u github.com/parsyl/parquet/...
 
-This will also install paruqet's only dependency: thift
+This will also install parquet's only dependency: thift
 
 ## Usage
 
@@ -154,7 +154,7 @@ type Person struct {
 ```
 
 If you want a field to be excluded from parquet you can tag
-it with a dash or make it private like so:
+it with a dash or make it unexported like so:
 
 ```go
 type Being struct {
