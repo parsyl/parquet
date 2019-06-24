@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	mask1 = uint8(0x7F)
-	mask2 = uint8(0x80)
+	mask1 = uint64(0x7F)
+	mask2 = uint64(0x80)
 )
 
 type RLE struct {
@@ -161,7 +161,7 @@ func (r *RLE) Read(in io.Reader) ([]uint8, int, error) {
 	}
 
 	rr := bytes.NewReader(buf)
-	var header uint8
+	var header uint64
 	var vals []uint8
 	var err error
 	for rr.Len() > 0 {
@@ -186,7 +186,7 @@ func (r *RLE) Read(in io.Reader) ([]uint8, int, error) {
 	return out, int(length) + 4, nil
 }
 
-func readRLEBitPacked(r io.Reader, header, width uint8) ([]uint8, error) {
+func readRLEBitPacked(r io.Reader, header uint64, width uint8) ([]uint8, error) {
 	count := (int(header) >> 1) * 8
 	if width == 0 {
 		return make([]uint8, count), nil
@@ -207,7 +207,7 @@ func readRLEBitPacked(r io.Reader, header, width uint8) ([]uint8, error) {
 	return out, nil
 }
 
-func readRLE(r io.Reader, header uint8, bitWidth uint64) ([]uint8, error) {
+func readRLE(r io.Reader, header uint64, bitWidth uint64) ([]uint8, error) {
 	count := header >> 1
 	value, err := readIntLittleEndianPaddedOnBitWidth(r, int(bitWidth))
 	if err != nil {
@@ -263,16 +263,16 @@ func readIntLittleEndianOnTwoBytes(in io.Reader) (uint8, error) {
 	return (uint8(b[1]) << 8) + (uint8(b[0]) << 0), nil
 }
 
-func readLEB128(r io.Reader) (uint8, error) {
+func readLEB128(r io.Reader) (uint64, error) {
 	var err error
-	var out, shift, x uint8
+	var out, shift, x uint64
 	b := make([]byte, 1)
 	for {
 		_, err = r.Read(b)
 		if err != nil {
 			return out, err
 		}
-		x = uint8(b[0])
+		x = uint64(b[0])
 		out |= (x & mask1) << shift
 		if (x & mask2) == 0 {
 			return out, nil
