@@ -13,8 +13,10 @@ there are other parquet options that will cause problems since there are so many
 possibilities.
 
 ## Installation
-
+    
     go get -u github.com/parsyl/parquet/...
+
+This will also install paruqet's only dependency: thift
 
 ## Usage
 
