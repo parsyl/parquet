@@ -82,6 +82,7 @@ type field struct {
 	omit      bool
 	embedded  bool
 	optional  bool
+	repeated  bool
 	err       error
 }
 
@@ -136,6 +137,8 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	var o RepetitionType = Required
 	if strings.Contains(f.Field.TypeName, "*") {
 		o = Optional
+	} else if f.repeated {
+		o = Repeated
 	}
 	if ok {
 		for _, fld := range flds {
@@ -195,6 +198,13 @@ func getFields(typ string, fields []field, m map[string][]field) []Field {
 			continue
 		}
 
+		if f.repeated {
+			f.Field.TypeName = fmt.Sprintf("[]%s", f.Field.TypeName)
+			//rt := f.Field.RepetitionTypes
+			//f.Field.RepetitionTypes = f.Field.RepetitionTypes
+			fmt.Printf("%+v\n", f)
+		}
+
 		f.Field.Type = typ
 		if f.tagName != "" {
 			f.Field.ColumnName = f.tagName
@@ -220,6 +230,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 	fields := map[string][]field{}
 	for k, n := range n {
 		ast.Inspect(n, func(n ast.Node) bool {
+			//fmt.Printf("node: %+v, type: %T\n", n, n)
 			switch x := n.(type) {
 			case *ast.Field:
 				if len(x.Names) == 1 && !isPrivate(x) {
@@ -228,6 +239,12 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 				} else if len(x.Names) == 0 && !isPrivate(x) {
 					fields[k] = append(fields[k], field{embedded: true, Field: Field{TypeName: fmt.Sprintf("%s", x.Type)}})
 				}
+			case *ast.ArrayType:
+				s := fields[k]
+				f := s[len(s)-1]
+				f.repeated = true
+				s[len(s)-1] = f
+				fields[k] = s
 			}
 			return true
 		})
