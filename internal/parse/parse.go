@@ -133,7 +133,6 @@ func Fields(typ, pth string) (*Result, error) {
 
 func getOut(i int, f field, fields map[string][]field, errs []error, out []field) (int, []field, []error) {
 	flds, ok := fields[f.fieldType]
-
 	var o RepetitionType = Required
 	if strings.Contains(f.Field.TypeName, "*") {
 		o = Optional
@@ -142,7 +141,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	}
 	if ok {
 		for _, fld := range flds {
-			if !fld.optional && (o == Optional || f.optional) {
+			if (!fld.optional && (o == Optional || f.optional)) || (!fld.repeated && (o == Repeated || f.repeated)) {
 				fld = makeOptional(fld)
 			}
 			fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
@@ -202,7 +201,7 @@ func getFields(typ string, fields []field, m map[string][]field) []Field {
 			f.Field.TypeName = fmt.Sprintf("[]%s", f.Field.TypeName)
 			//rt := f.Field.RepetitionTypes
 			//f.Field.RepetitionTypes = f.Field.RepetitionTypes
-			fmt.Printf("%+v\n", f)
+			//fmt.Printf("%+v\n", f)
 		}
 
 		f.Field.Type = typ
@@ -230,7 +229,6 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 	fields := map[string][]field{}
 	for k, n := range n {
 		ast.Inspect(n, func(n ast.Node) bool {
-			//fmt.Printf("node: %+v, type: %T\n", n, n)
 			switch x := n.(type) {
 			case *ast.Field:
 				if len(x.Names) == 1 && !isPrivate(x) {
@@ -254,7 +252,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 
 func getField(name string, x ast.Node) field {
 	var typ, tag string
-	var optional bool
+	var optional, repeated bool
 	ast.Inspect(x, func(n ast.Node) bool {
 		switch t := n.(type) {
 		case *ast.Field:
@@ -262,6 +260,11 @@ func getField(name string, x ast.Node) field {
 				tag = parseTag(t.Tag.Value)
 			}
 			typ = fmt.Sprintf("%s", t.Type)
+		case *ast.ArrayType:
+			at := n.(*ast.ArrayType)
+			s := fmt.Sprintf("%v", at.Elt)
+			typ = s
+			repeated = true
 		case *ast.StarExpr:
 			optional = true
 			typ = fmt.Sprintf("%s", t.X)
@@ -289,6 +292,7 @@ func getField(name string, x ast.Node) field {
 		tagName:   tag,
 		omit:      tag == "-",
 		optional:  optional,
+		repeated:  repeated,
 	}
 }
 

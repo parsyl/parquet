@@ -199,8 +199,7 @@ func TestFields(t *testing.T) {
 			typ:  "Slice4",
 			expected: []parse.Field{
 				{Type: "Slice4", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice4", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, ColumnName: "Hobby.Name", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required}},
-				{Type: "Slice4", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+				{Type: "Slice4", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Hobbies", "Name"}, FieldTypes: []string{"Hobby", "string"}, ColumnName: "Hobbies.Name", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required}},
 			},
 		},
 	}
