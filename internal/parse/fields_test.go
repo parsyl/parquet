@@ -174,7 +174,7 @@ func TestFields(t *testing.T) {
 			name: "repeated",
 			typ:  "Slice",
 			expected: []parse.Field{
-				{Type: "Slice", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+				{Type: "Slice", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
 			},
 		},
 		{
@@ -182,7 +182,7 @@ func TestFields(t *testing.T) {
 			typ:  "Slice2",
 			expected: []parse.Field{
 				{Type: "Slice2", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice2", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+				{Type: "Slice2", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
 			},
 		},
 		{
@@ -190,7 +190,7 @@ func TestFields(t *testing.T) {
 			typ:  "Slice3",
 			expected: []parse.Field{
 				{Type: "Slice3", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice3", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+				{Type: "Slice3", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
 				{Type: "Slice3", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
 			},
 		},
@@ -200,6 +200,30 @@ func TestFields(t *testing.T) {
 			expected: []parse.Field{
 				{Type: "Slice4", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
 				{Type: "Slice4", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Hobbies", "Name"}, FieldTypes: []string{"Hobby", "string"}, ColumnName: "Hobbies.Name", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required}},
+			},
+		},
+		{
+			name: "nested and repeated v2",
+			typ:  "Slice5",
+			expected: []parse.Field{
+				{Type: "Slice5", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
+				{Type: "Slice5", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Hobby", "Names"}, FieldTypes: []string{"Hobby2", "string"}, ColumnName: "Hobby.Names", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated}},
+			},
+		},
+		{
+			name: "repeated and repeated",
+			typ:  "Slice6",
+			expected: []parse.Field{
+				{Type: "Slice6", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
+				{Type: "Slice6", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Hobbies", "Names"}, FieldTypes: []string{"Hobby2", "string"}, ColumnName: "Hobbies.Names", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated}},
+			},
+		},
+		{
+			name: "nested repeated and repeated",
+			typ:  "Slice7",
+			expected: []parse.Field{
+				{Type: "Slice7", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Thing", "ID"}, FieldTypes: []string{"Slice6", "int32"}, ColumnName: "Thing.ID", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
+				{Type: "Slice7", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Thing", "Hobbies", "Names"}, FieldTypes: []string{"Slice6", "Hobby2", "string"}, ColumnName: "Thing.Hobbies.Names", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated, parse.Repeated}},
 			},
 		},
 	}

@@ -1,112 +1,114 @@
 package parse_test
 
-// type Being struct {
-// 	ID  int32
-// 	Age *int32
-// }
+import "time"
 
-// type Person struct {
-// 	Being
-// 	Happiness   int64
-// 	Sadness     *int64
-// 	Code        string
-// 	Funkiness   float32
-// 	Lameness    *float32
-// 	Keen        *bool
-// 	Birthday    uint32
-// 	Anniversary *uint64
-// }
+type Being struct {
+	ID  int32
+	Age *int32
+}
 
-// type NewOrderPerson struct {
-// 	Happiness int64
-// 	Sadness   *int64
-// 	Code      string
-// 	Funkiness float32
-// 	Lameness  *float32
-// 	Keen      *bool
-// 	Birthday  uint32
-// 	Being
-// 	Anniversary *uint64
-// }
+type Person struct {
+	Being
+	Happiness   int64
+	Sadness     *int64
+	Code        string
+	Funkiness   float32
+	Lameness    *float32
+	Keen        *bool
+	Birthday    uint32
+	Anniversary *uint64
+}
 
-// type IgnoreMe struct {
-// 	ID     int32  `parquet:"id"`
-// 	Secret string `parquet:"-"`
-// }
+type NewOrderPerson struct {
+	Happiness int64
+	Sadness   *int64
+	Code      string
+	Funkiness float32
+	Lameness  *float32
+	Keen      *bool
+	Birthday  uint32
+	Being
+	Anniversary *uint64
+}
 
-// type Tagged struct {
-// 	ID   int32  `parquet:"id"`
-// 	Name string `parquet:"name"`
-// }
+type IgnoreMe struct {
+	ID     int32  `parquet:"id"`
+	Secret string `parquet:"-"`
+}
 
-// type Private struct {
-// 	Being
-// 	name string
-// }
+type Tagged struct {
+	ID   int32  `parquet:"id"`
+	Name string `parquet:"name"`
+}
 
-// type Nested struct {
-// 	Being       Being
-// 	Anniversary *uint64
-// }
+type Private struct {
+	Being
+	name string
+}
 
-// type Nested2 struct {
-// 	Info        Being
-// 	Anniversary *uint64
-// }
+type Nested struct {
+	Being       Being
+	Anniversary *uint64
+}
 
-// type DoubleNested struct {
-// 	Nested Nested
-// }
+type Nested2 struct {
+	Info        Being
+	Anniversary *uint64
+}
 
-// type OptionalNested struct {
-// 	Being       *Being
-// 	Anniversary *uint64
-// }
+type DoubleNested struct {
+	Nested Nested
+}
 
-// type Thing struct {
-// 	Name string
-// }
+type OptionalNested struct {
+	Being       *Being
+	Anniversary *uint64
+}
 
-// type OptionalNested2 struct {
-// 	Being       *Thing
-// 	Anniversary *uint64
-// }
+type Thing struct {
+	Name string
+}
 
-// type OptionalDoubleNested struct {
-// 	OptionalNested OptionalNested
-// }
+type OptionalNested2 struct {
+	Being       *Thing
+	Anniversary *uint64
+}
 
-// type Unsupported struct {
-// 	Being
-// 	// This field will be ignored because it's not one of the
-// 	// supported types.
-// 	Time time.Time
-// }
+type OptionalDoubleNested struct {
+	OptionalNested OptionalNested
+}
 
-// type SupportedAndUnsupported struct {
-// 	Happiness int64
-// 	x         int
-// 	T1        time.Time
-// 	Being
-// 	y           int
-// 	T2          time.Time
-// 	Anniversary *uint64
-// }
+type Unsupported struct {
+	Being
+	// This field will be ignored because it's not one of the
+	// supported types.
+	Time time.Time
+}
 
-// type Slice struct {
-// 	IDs []int32 `parquet:"ids"`
-// }
+type SupportedAndUnsupported struct {
+	Happiness int64
+	x         int
+	T1        time.Time
+	Being
+	y           int
+	T2          time.Time
+	Anniversary *uint64
+}
 
-// type Slice2 struct {
-// 	ID  int32   `parquet:"id"`
-// 	IDs []int32 `parquet:"ids"`
-// }
+type Slice struct {
+	IDs []int32 `parquet:"ids"`
+}
 
-// type Slice3 struct {
-// 	ID  int32   `parquet:"id"`
-// 	IDs []int32 `parquet:"ids"`
-// 	Age *int32
-// }
+type Slice2 struct {
+	ID  int32   `parquet:"id"`
+	IDs []int32 `parquet:"ids"`
+}
+
+type Slice3 struct {
+	ID  int32   `parquet:"id"`
+	IDs []int32 `parquet:"ids"`
+	Age *int32
+}
 
 type Hobby struct {
 	Name string
@@ -115,4 +117,22 @@ type Hobby struct {
 type Slice4 struct {
 	ID      int32 `parquet:"id"`
 	Hobbies []Hobby
+}
+
+type Hobby2 struct {
+	Names []string
+}
+
+type Slice5 struct {
+	ID    int32 `parquet:"id"`
+	Hobby Hobby2
+}
+
+type Slice6 struct {
+	ID      int32
+	Hobbies []Hobby2
+}
+
+type Slice7 struct {
+	Thing *Slice6
 }

@@ -136,7 +136,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	var o RepetitionType = Required
 	if strings.Contains(f.Field.TypeName, "*") {
 		o = Optional
-	} else if f.repeated {
+	} else if f.repeated || strings.Contains(f.Field.TypeName, "[]") {
 		o = Repeated
 	}
 	if ok {
@@ -177,7 +177,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 
 func makeOptional(f field) field {
 	f.optional = true
-	fn, cat, pt := lookupTypeAndCategory(f.Field.TypeName, true)
+	fn, cat, pt := lookupTypeAndCategory(f.Field.TypeName, true, true)
 	f.Field.FieldType = fn
 	f.Field.ParquetType = pt
 	f.Field.Category = cat
@@ -278,7 +278,7 @@ func getField(name string, x ast.Node) field {
 		return true
 	})
 
-	fn, cat, pt := lookupTypeAndCategory(typ, optional)
+	fn, cat, pt := lookupTypeAndCategory(typ, optional, repeated)
 	return field{
 		Field: Field{
 			FieldNames:  []string{name},
@@ -313,9 +313,9 @@ func getTypeName(s string, optional bool) string {
 	return fmt.Sprintf("%s%s", star, s)
 }
 
-func lookupTypeAndCategory(name string, optional bool) (string, string, string) {
+func lookupTypeAndCategory(name string, optional, repeated bool) (string, string, string) {
 	var op string
-	if optional {
+	if optional || repeated {
 		op = "Optional"
 	}
 	f, ok := types[name]
