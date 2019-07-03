@@ -4,12 +4,12 @@ var stringOptionalTpl = `{{define "stringOptionalField"}}
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals []string
-	read   func(r {{.Type}}) ({{.TypeName}}, uint8)
-	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def uint8) bool
+	read   func(r {{.Type}}) ({{.TypeName}}, uint8, uint8)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r {{.Type}}) ({{.TypeName}}, uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r {{.Type}}) ({{.TypeName}}, uint8, uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,

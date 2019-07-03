@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang/snappy"
 	sch "github.com/parsyl/parquet/generated"
+	"github.com/parsyl/parquet/internal/rle"
 )
 
 // RequiredField writes the raw data for required columns
@@ -138,11 +139,13 @@ func (f *RequiredField) Key() string {
 
 type OptionalField struct {
 	Defs           []uint8
+	Reps           []uint8
 	col            string
 	pth            []string
 	Depth          uint
 	compression    sch.CompressionCodec
 	RepetitionType FieldFunc
+	repeated       bool
 }
 
 func NewOptionalField(pth []string, opts ...func(*OptionalField)) OptionalField {
@@ -189,10 +192,10 @@ func OptionalFieldRepetitionType(f FieldFunc) func(*OptionalField) {
 // Values reads the definition levels and uses them
 // to return the values from the page data.
 func (f *OptionalField) Values() int {
-	return valsFromDefs(f.Defs, uint8(f.Depth))
+	return f.valsFromDefs(f.Defs, uint8(f.Depth))
 }
 
-func valsFromDefs(defs []uint8, depth uint8) int {
+func (f *OptionalField) valsFromDefs(defs []uint8, depth uint8) int {
 	var out int
 	for _, d := range defs {
 		if d == depth {
@@ -210,6 +213,13 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	err := writeLevels(wc, f.Defs, int32(bits.Len(f.Depth)))
 	if err != nil {
 		return err
+	}
+
+	if f.repeated {
+		err := writeLevels(wc, f.Reps, int32(bits.Len(f.Depth)))
+		if err != nil {
+			return err
+		}
 	}
 
 	wc.Write(vals)
@@ -249,12 +259,22 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		}
 
 		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Depth)))
-
 		if err != nil {
 			return nil, nil, err
 		}
+
 		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
-		sizes = append(sizes, valsFromDefs(defs, uint8(f.Depth)))
+		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.Depth)))
+
+		if f.repeated {
+			reps, l2, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Depth)))
+			if err != nil {
+				return nil, nil, err
+			}
+			l += l2
+			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeader.NumValues)]...)
+		}
+
 		out = append(out, data[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
@@ -327,4 +347,26 @@ func compress(codec sch.CompressionCodec, vals []byte) (int, int, []byte) {
 		cl = len(vals)
 	}
 	return l, cl, vals
+}
+
+// writeLevels writes vals to w as RLE/bitpack encoded data
+func writeLevels(w io.Writer, levels []uint8, width int32) error {
+	enc, _ := rle.New(width, len(levels)) //TODO: len(levels) is probably too big.  Chop it down a bit?
+	for _, l := range levels {
+		enc.Write(l)
+	}
+	_, err := w.Write(enc.Bytes())
+	return err
+}
+
+// readLevels reads the RLE/bitpack encoded definition and repetition levels
+func readLevels(in io.Reader, width int32) ([]uint8, int, error) {
+	var out []uint8
+	dec, _ := rle.New(width, 0)
+	out, n, err := dec.Read(in)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return out, n, nil
 }

@@ -177,7 +177,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 
 func makeOptional(f field) field {
 	f.optional = true
-	fn, cat, pt := lookupTypeAndCategory(f.Field.TypeName, true, true)
+	fn, cat, pt := lookupTypeAndCategory(strings.Replace(strings.Replace(f.Field.TypeName, "*", "", 1), "[]", "", 1), true, true)
 	f.Field.FieldType = fn
 	f.Field.ParquetType = pt
 	f.Field.Category = cat
@@ -199,9 +199,6 @@ func getFields(typ string, fields []field, m map[string][]field) []Field {
 
 		if f.repeated {
 			f.Field.TypeName = fmt.Sprintf("[]%s", f.Field.TypeName)
-			//rt := f.Field.RepetitionTypes
-			//f.Field.RepetitionTypes = f.Field.RepetitionTypes
-			//fmt.Printf("%+v\n", f)
 		}
 
 		f.Field.Type = typ

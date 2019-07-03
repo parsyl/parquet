@@ -19,7 +19,7 @@ func init() {
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, def uint8) bool {
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool {
 	switch def { {{range .Cases}}
 	{{.}}{{end}} }
 	return false

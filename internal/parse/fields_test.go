@@ -226,6 +226,18 @@ func TestFields(t *testing.T) {
 				{Type: "Slice7", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Thing", "Hobbies", "Names"}, FieldTypes: []string{"Slice6", "Hobby2", "string"}, ColumnName: "Thing.Hobbies.Names", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated, parse.Repeated}},
 			},
 		},
+		{
+			name: "dremel paper example",
+			typ:  "Document",
+			expected: []parse.Field{
+				{Type: "Document", FieldNames: []string{"DocID"}, FieldTypes: []string{"int64"}, TypeName: "int64", FieldType: "Int64Field", ParquetType: "Int64Type", ColumnName: "DocID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{0}},
+				{Type: "Document", FieldNames: []string{"Links", "Backward"}, FieldTypes: []string{"Link", "int64"}, TypeName: "[]int64", FieldType: "Int64OptionalField", ParquetType: "Int64Type", ColumnName: "Links.Backward", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{2, 2}},
+				{Type: "Document", FieldNames: []string{"Links", "Forward"}, FieldTypes: []string{"Link", "int64"}, TypeName: "[]int64", FieldType: "Int64OptionalField", ParquetType: "Int64Type", ColumnName: "Links.Forward", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{2, 2}},
+				{Type: "Document", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, TypeName: "string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.Languages.Code", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{2, 2, 0}},
+				{Type: "Document", FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, TypeName: "*string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.Languages.Country", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{2, 2, 1}},
+				{Type: "Document", FieldNames: []string{"Names", "URL"}, FieldTypes: []string{"Name", "string"}, TypeName: "*string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.URL", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{2, 1}},
+			},
+		},
 	}
 
 	for i, tc := range testCases {

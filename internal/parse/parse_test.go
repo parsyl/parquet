@@ -136,3 +136,24 @@ type Slice6 struct {
 type Slice7 struct {
 	Thing *Slice6
 }
+
+type Link struct {
+	Backward []int64
+	Forward  []int64
+}
+
+type Language struct {
+	Code    string
+	Country *string
+}
+
+type Name struct {
+	Languages []Language
+	URL       *string
+}
+
+type Document struct {
+	DocID int64
+	Links []Link
+	Names []Name
+}

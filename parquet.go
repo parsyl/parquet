@@ -10,7 +10,6 @@ import (
 
 	"github.com/apache/thrift/lib/go/thrift"
 	sch "github.com/parsyl/parquet/generated"
-	"github.com/parsyl/parquet/internal/rle"
 )
 
 // Field holds the type information for a parquet column
@@ -459,28 +458,6 @@ func BoolType(se *sch.SchemaElement) {
 func StringType(se *sch.SchemaElement) {
 	t := sch.Type_BYTE_ARRAY
 	se.Type = &t
-}
-
-// writeLevels writes vals to w as RLE/bitpack encoded data
-func writeLevels(w io.Writer, levels []uint8, width int32) error {
-	enc, _ := rle.New(width, len(levels)) //TODO: len(levels) is probably too big.  Chop it down a bit?
-	for _, l := range levels {
-		enc.Write(l)
-	}
-	_, err := w.Write(enc.Bytes())
-	return err
-}
-
-// readLevels reads the RLE/bitpack encoded definition levels
-func readLevels(in io.Reader, width int32) ([]uint8, int, error) {
-	var out []uint8
-	dec, _ := rle.New(width, 0)
-	out, n, err := dec.Read(in)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return out, n, nil
 }
 
 // GetBools reads a byte array and turns each bit into a bool

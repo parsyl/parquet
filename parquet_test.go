@@ -16,40 +16,13 @@ import (
 )
 
 //go:generate parquetgen -input parquet_test.go -type Person -package parquet_test -output parquet_generated_test.go
+//go:generate parquetgen -input parquet_test.go -type Document -package parquet_test -output parquet_generated_dremel_test.go
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-type Being struct {
-	ID  int32  `parquet:"id"`
-	Age *int32 `parquet:"age"`
-}
-
-type Hobby struct {
-	Name       string `parquet:"name"`
-	Difficulty *int32 `parquet:"difficulty"`
-}
-
-type Person struct {
-	Being
-	Happiness   int64    `parquet:"happiness"`
-	Sadness     *int64   `parquet:"sadness"`
-	Code        *string  `parquet:"code"`
-	Funkiness   float32  `parquet:"funkiness"`
-	Boldness    float64  `parquet:"boldness"`
-	Lameness    *float32 `parquet:"lameness"`
-	Keen        *bool    `parquet:"keen"`
-	Birthday    uint32   `parquet:"birthday"`
-	Anniversary *uint64  `parquet:"anniversary"`
-	BFF         string   `parquet:"bff"`
-	Hungry      bool     `parquet:"hungry"`
-	Secret      string   `parquet:"-"`
-	Hobby       *Hobby   `parquet:"hobby"`
-	Sleepy      bool
-}
 
 func TestParquet(t *testing.T) {
 	type testCase struct {
@@ -932,4 +905,69 @@ func writeFloat64(f float64) []byte {
 	var buf bytes.Buffer
 	binary.Write(&buf, binary.LittleEndian, f)
 	return buf.Bytes()
+}
+
+type Being struct {
+	ID  int32  `parquet:"id"`
+	Age *int32 `parquet:"age"`
+}
+
+type Hobby struct {
+	Name       string `parquet:"name"`
+	Difficulty *int32 `parquet:"difficulty"`
+}
+
+type Person struct {
+	Being
+	Happiness   int64    `parquet:"happiness"`
+	Sadness     *int64   `parquet:"sadness"`
+	Code        *string  `parquet:"code"`
+	Funkiness   float32  `parquet:"funkiness"`
+	Boldness    float64  `parquet:"boldness"`
+	Lameness    *float32 `parquet:"lameness"`
+	Keen        *bool    `parquet:"keen"`
+	Birthday    uint32   `parquet:"birthday"`
+	Anniversary *uint64  `parquet:"anniversary"`
+	BFF         string   `parquet:"bff"`
+	Hungry      bool     `parquet:"hungry"`
+	Secret      string   `parquet:"-"`
+	Hobby       *Hobby   `parquet:"hobby"`
+	Sleepy      bool
+}
+
+/*
+type Name struct {
+}
+
+message Document {
+  required int64 DocId;
+  optional group Links {
+    repeated int64 Backward;
+    repeated int64 Forward; }
+  repeated group Name {
+    repeated group Language {
+      required string Code;
+      optional string Country; }
+    optional string Url; }}
+*/
+
+type Link struct {
+	Backward []int64
+	Forward  []int64
+}
+
+type Language struct {
+	Code    string
+	Country *string
+}
+
+type Name struct {
+	Languages []Language
+	URL       *string
+}
+
+type Document struct {
+	DocID int64
+	Links []Link
+	Names []Name
 }
