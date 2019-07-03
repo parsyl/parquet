@@ -11,7 +11,7 @@ func TestDremel(t *testing.T) {
 	docs := []Document{
 		{
 			DocID: 10,
-			Links: []Link{{Forward: []int64{20, 40, 60}}},
+			Links: &Link{{Forward: []int64{20, 40, 60}}},
 			Names: []Name{
 				{
 					Languages: []Language{
@@ -32,7 +32,7 @@ func TestDremel(t *testing.T) {
 		},
 		{
 			DocID: 20,
-			Links: []Link{{Backward: []int64{10, 30}, Forward: []int64{80}}},
+			Links: &Link{{Backward: []int64{10, 30}, Forward: []int64{80}}},
 			Names: []Name{{URL: pstring("http://C")}},
 		},
 	}
@@ -61,7 +61,7 @@ type Name struct {
 
 type Document struct {
 	DocID int64
-	Links []Link
+	Links *Link
 	Names []Name
 }
 
