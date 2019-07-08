@@ -2,6 +2,8 @@ package dremel_test
 
 import (
 	"bytes"
+	"fmt"
+	"log"
 	"testing"
 )
 
@@ -11,7 +13,7 @@ func TestDremel(t *testing.T) {
 	docs := []Document{
 		{
 			DocID: 10,
-			Links: &Link{{Forward: []int64{20, 40, 60}}},
+			Links: &Link{Forward: []int64{20, 40, 60}},
 			Names: []Name{
 				{
 					Languages: []Language{
@@ -32,15 +34,34 @@ func TestDremel(t *testing.T) {
 		},
 		{
 			DocID: 20,
-			Links: &Link{{Backward: []int64{10, 30}, Forward: []int64{80}}},
+			Links: &Link{Backward: []int64{10, 30}, Forward: []int64{80}},
 			Names: []Name{{URL: pstring("http://C")}},
 		},
 	}
 
 	var buf bytes.Buffer
-	pw := NewParquetWriter(&buf)
+	pw, err := NewParquetWriter(&buf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for _, doc := range docs {
-		pw.Write(doc)
+		pw.Add(doc)
+	}
+
+	if err := pw.Write(); err != nil {
+		log.Fatal(err)
+	}
+
+	pw.Close()
+
+	pr, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, l := range pr.Levels() {
+		fmt.Println(l)
 	}
 }
 

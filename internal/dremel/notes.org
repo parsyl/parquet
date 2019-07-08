@@ -14,7 +14,7 @@ Links.Forward (2nd record)
 Links.Backward (1st record) 
 | value | r | d | what to do |
 |-------+---+---+------------|
-|  NULL | 0 | 2 | do nothing |
+|  NULL | 0 | 2 |            |
 |    10 | 0 | 2 | return     |
 |    30 | 1 | 2 |            |
 
@@ -25,29 +25,40 @@ Links.Backward (2nd record)
 |    30 | 1 | 2 | doc.Links.Backward = append(doc.Links.Backward, 30) |
 
 Names.Languages.Code 
-| value   | r | d | what to do                                                              |
-|---------+---+---+-------------------------------------------------------------------------|
-| 'us-en' | 0 | 2 | doc.Names = append(doc.Names, Name{Languages: Language{Code: 'us-en'}}) |
-| 'en'    | 2 | 2 | doc.Names = append(doc.Names, Name{Languages: Language{Code: 'en'}})    |
-| NULL    | 1 | 1 | doc.Names = append(doc.Names, Name{})                                   |
-| 'en-gb' | 1 | 2 | doc.Names = append(doc.Names, Name{Languages: Language{Code: 'en'}})    |
-| NULL    | 0 | 1 | return                                                                  |
+| value   | r | d | what to do                                                                             |
+|---------+---+---+----------------------------------------------------------------------------------------|
+| 'us-en' | 0 | 2 | doc.Names = append(doc.Names, Name{Languages: Language{Code: 'us-en'}})                |
+| 'en'    | 2 | 2 | doc.Names[0].Languages = append(doc.Namesdoc.Names[0].Languages, Language{Code: 'en'}) |
+| NULL    | 1 | 1 | doc.Names = append(doc.Names, Name{})                                                  |
+| 'en-gb' | 1 | 2 | doc.Names = append(doc.Names, Name{Languages: Language{Code: 'en'}})                   |
+| NULL    | 0 | 1 | return                                                                                 |
+
+Names.Languages.Code (2nd record)
+| value | r | d | what to do                            |
+|-------+---+---+---------------------------------------|
+| NULL  | 0 | 1 | doc.Names = append(doc.Names, Name{}) |
+|       |   |   |                                       |
 
 Names.Languages.Country (Names.Languages has been handled by Names.Languages.Code)
 | value | r | d | what to do                               |
 |-------+---+---+------------------------------------------|
 | us    | 0 | 3 | doc.Names[0].Languages[0].Country = 'us' |
-| NULL  | 2 | 2 | do nothing                               |
-| NULL  | 1 | 1 | do nothing                               |
+| NULL  | 2 | 2 |                                          |
+| NULL  | 1 | 1 |                                          |
 | gb    | 1 | 3 | doc.Names[2].Languages[0].Country = 'gb' |
 | NULL  | 0 | 1 | return                                   |
+
+Names.Languages.Country (2nd record)
+| value | r | d | what to do |
+|-------+---+---+------------|
+| NULL  | 0 | 1 |            |
 
 Names.URL (Names has been handled by Names.Languages.Code)
 | value    | r | d | what to do                    |
 |----------+---+---+-------------------------------|
 | http://A | 0 | 2 | doc.Names[0].URL = "http://A" |
 | http://B | 1 | 2 | doc.Names[1].URL = "http://B" |
-| NULL     | 1 | 1 | do nothing                    |
+| NULL     | 1 | 1 |                               |
 | http://C | 0 | 2 | return                        |
 
 #+BEGIN_SRC go

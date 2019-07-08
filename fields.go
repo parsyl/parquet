@@ -182,6 +182,11 @@ func OptionalFieldDepth(d uint) func(*OptionalField) {
 	}
 }
 
+// OptionalFieldRepeated...
+func OptionalFieldRepeated(o *OptionalField) {
+	o.repeated = true
+}
+
 // OptionalFieldRepetition ...
 func OptionalFieldRepetitionType(f FieldFunc) func(*OptionalField) {
 	return func(o *OptionalField) {
@@ -216,7 +221,7 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	}
 
 	if f.repeated {
-		err := writeLevels(wc, f.Reps, int32(bits.Len(f.Depth)))
+		err := writeLevels(wc, f.Reps, int32(bits.Len(f.Depth))) //TODO: f.Depth not correct
 		if err != nil {
 			return err
 		}
@@ -267,7 +272,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.Depth)))
 
 		if f.repeated {
-			reps, l2, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Depth)))
+			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(f.Depth))) //TODO: f.Depth is not correct
 			if err != nil {
 				return nil, nil, err
 			}

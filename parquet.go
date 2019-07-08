@@ -307,7 +307,7 @@ func schemaElements(fields []Field) schema {
 	return schema{lookup: m, fields: fields}
 }
 
-// Pages maps each column name its Pages
+// Pages maps each column name to its Pages
 func (m *Metadata) Pages() (map[string][]Page, error) {
 	if len(m.metadata.RowGroups) == 0 {
 		return nil, nil
@@ -413,6 +413,11 @@ func RepetitionRequired(se *sch.SchemaElement) {
 
 func RepetitionOptional(se *sch.SchemaElement) {
 	t := sch.FieldRepetitionType_OPTIONAL
+	se.RepetitionType = &t
+}
+
+func RepetitionRepeated(se *sch.SchemaElement) {
+	t := sch.FieldRepetitionType_REPEATED
 	se.RepetitionType = &t
 }
 
