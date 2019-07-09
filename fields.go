@@ -139,19 +139,16 @@ func (f *RequiredField) Key() string {
 }
 
 type MaxLevel struct {
-	Def uint
-	Rep uint
+	Def uint8
+	Rep uint8
 }
 
 type OptionalField struct {
-	Defs   []uint8
-	Reps   []uint8
-	col    string
-	pth    []string
-	Levels struct {
-		Def uint
-		Rep uint
-	}
+	Defs           []uint8
+	Reps           []uint8
+	col            string
+	pth            []string
+	MaxLevels      MaxLevel
 	compression    sch.CompressionCodec
 	RepetitionType FieldFunc
 	repeated       bool
@@ -169,7 +166,7 @@ func NewOptionalField(pth []string, types []parse.RepetitionType, opts ...func(*
 		col:         pth[len(pth)-1],
 		pth:         pth,
 		compression: sch.CompressionCodec_SNAPPY,
-		Levels: MaxLevel{
+		MaxLevels: MaxLevel{
 			Def: rts.MaxDef(),
 			Rep: rts.MaxRep(),
 		},
@@ -198,7 +195,7 @@ func OptionalFieldUncompressed(o *OptionalField) {
 // Values reads the definition levels and uses them
 // to return the values from the page data.
 func (f *OptionalField) Values() int {
-	return f.valsFromDefs(f.Defs, uint8(f.Levels.Def))
+	return f.valsFromDefs(f.Defs, uint8(f.MaxLevels.Def))
 }
 
 func (f *OptionalField) valsFromDefs(defs []uint8, depth uint8) int {
@@ -216,13 +213,13 @@ func (f *OptionalField) valsFromDefs(defs []uint8, depth uint8) int {
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
-	err := writeLevels(wc, f.Defs, int32(bits.Len(f.Levels.Def)))
+	err := writeLevels(wc, f.Defs, int32(bits.Len(uint(f.MaxLevels.Def))))
 	if err != nil {
 		return err
 	}
 
 	if f.repeated {
-		err := writeLevels(wc, f.Reps, int32(bits.Len(f.Levels.Rep)))
+		err := writeLevels(wc, f.Reps, int32(bits.Len(uint(f.MaxLevels.Rep))))
 		if err != nil {
 			return err
 		}
@@ -264,14 +261,14 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 
-		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Levels.Def)))
+		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(uint(f.MaxLevels.Def))))
 		if err != nil {
 			return nil, nil, err
 		}
 
 		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
 		if f.repeated {
-			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(f.Levels.Rep)))
+			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(uint(f.MaxLevels.Rep))))
 			if err != nil {
 				return nil, nil, err
 			}
@@ -279,7 +276,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeader.NumValues)]...)
 		}
 
-		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.Levels.Def)))
+		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.MaxLevels.Def)))
 		out = append(out, data[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}

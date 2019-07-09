@@ -755,12 +755,14 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	start := len(f.Defs)
 	rr, _, err := f.DoRead(r, pg)
+
 	if err != nil {
 		return err
 	}
 
 	for j := 0; j < pg.N; j++ {
-		if f.Defs[start+j] == 0 {
+		fmt.Println("def", f.Defs[start+j])
+		if f.Defs[start+j] < f.MaxLevels.Def {
 			continue
 		}
 

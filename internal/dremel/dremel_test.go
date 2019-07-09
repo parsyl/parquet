@@ -2,9 +2,10 @@ package dremel_test
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 //go:generate parquetgen -input dremel_test.go -type Document -package dremel_test -output dremel_generated_test.go
@@ -60,9 +61,15 @@ func TestDremel(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	for _, l := range pr.Levels() {
-		fmt.Printf("%+v\n", l)
+	expected := []Levels{
+		{Name: "docid", Defs: []uint8{}, Reps: []uint8{}},
+		{Name: "backward", Defs: []uint8{}, Reps: []uint8{}},
+		{Name: "forward", Defs: []uint8{}, Reps: []uint8{}},
+		{Name: "code", Defs: []uint8{2, 2, 1, 2, 0}, Reps: []uint8{0, 2, 1, 1, 0}},
+		{Name: "country", Defs: []uint8{}, Reps: []uint8{}},
+		{Name: "url", Defs: []uint8{}, Reps: []uint8{}},
 	}
+	assert.Equal(t, expected, pr.Levels())
 }
 
 type Link struct {
