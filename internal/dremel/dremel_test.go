@@ -61,7 +61,7 @@ func TestDremel(t *testing.T) {
 	}
 
 	for _, l := range pr.Levels() {
-		fmt.Println(l)
+		fmt.Printf("%+v\n", l)
 	}
 }
 

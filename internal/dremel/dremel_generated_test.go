@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/parsyl/parquet"
+	"github.com/parsyl/parquet/internal/parse"
 
 	"math"
 	"sort"
@@ -44,11 +45,11 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt64Field(readDocID, writeDocID, []string{"docid"}, fieldCompression(compression)),
-		NewInt64OptionalField(readLinksBackward, writeLinksBackward, []string{"links", "backward"}, optionalFieldCompression(compression), parquet.OptionalFieldRepeated),
-		NewInt64OptionalField(readLinksForward, writeLinksForward, []string{"links", "forward"}, optionalFieldCompression(compression), parquet.OptionalFieldRepeated, parquet.OptionalFieldRepetitionType(parquet.RepetitionRepeated)),
-		NewStringOptionalField(readNamesLanguagesCode, writeNamesLanguagesCode, []string{"names", "languages", "code"}, optionalFieldCompression(compression), parquet.OptionalFieldRepeated, parquet.OptionalFieldRepetitionType(parquet.RepetitionRepeated)),
-		NewStringOptionalField(readNamesLanguagesCountry, writeNamesLanguagesCountry, []string{"names", "languages", "country"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(3), parquet.OptionalFieldRepetitionType(parquet.RepetitionRepeated), parquet.OptionalFieldRepeated),
-		NewStringOptionalField(readNamesURL, writeNamesURL, []string{"names", "url"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(2), parquet.OptionalFieldRepetitionType(parquet.RepetitionRepeated), parquet.OptionalFieldRepeated),
+		NewInt64OptionalField(readLinksBackward, writeLinksBackward, []string{"links", "backward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
+		NewInt64OptionalField(readLinksForward, writeLinksForward, []string{"links", "forward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readNamesLanguagesCode, writeNamesLanguagesCode, []string{"names", "languages", "code"}, []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readNamesLanguagesCountry, writeNamesLanguagesCountry, []string{"names", "languages", "country"}, []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Optional}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readNamesURL, writeNamesURL, []string{"names", "url"}, []parse.RepetitionType{parse.Repeated, parse.Optional}, optionalFieldCompression(compression)),
 	}
 }
 
@@ -80,9 +81,7 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
 	var lastRep uint8
-	fmt.Println("rnlc", x.Names)
 	for i0, n := range x.Names {
-		fmt.Println("rnlc name", n)
 		if i0 > 0 {
 			lastRep = 1
 		}
@@ -94,7 +93,6 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 				if i1 > 0 {
 					lastRep = 2
 				}
-				fmt.Println("rnlc lang", l, lastRep)
 				vals = append(vals, l.Code)
 				defs = append(defs, 2)
 				reps = append(reps, lastRep)
@@ -484,7 +482,6 @@ type Levels struct {
 func (p *ParquetReader) Levels() []Levels {
 	var out []Levels
 	//for {
-	fmt.Println("p.fields", p.fields)
 	for _, f := range p.fields {
 		d, r := f.Levels()
 		out = append(out, Levels{Name: f.Name(), Defs: d, Reps: r})
@@ -627,18 +624,17 @@ func (f *Int64Field) Add(r Document) {
 
 type Int64OptionalField struct {
 	parquet.OptionalField
-	vals     []int64
-	read     func(r Document) ([]int64, []uint8, []uint8)
-	write    func(r *Document, vals []int64, defs, reps []uint8) (int, int)
-	stats    *int64optionalStats
-	repeated bool
+	vals  []int64
+	read  func(r Document) ([]int64, []uint8, []uint8)
+	write func(r *Document, vals []int64, defs, reps []uint8) (int, int)
+	stats *int64optionalStats
 }
 
-func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), write func(r *Document, vals []int64, defs, reps []uint8) (int, int), path []string, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), write func(r *Document, vals []int64, defs, reps []uint8) (int, int), path []string, types []parse.RepetitionType, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
 	return &Int64OptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
 		stats:         newint64optionalStats(),
 	}
 }
@@ -678,9 +674,7 @@ func (f *Int64OptionalField) Add(r Document) {
 	//f.stats.add(v)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
-	if f.repeated {
-		f.Reps = append(f.Reps, reps...)
-	}
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *Int64OptionalField) Scan(r *Document) {
@@ -699,18 +693,17 @@ func (f *Int64OptionalField) Scan(r *Document) {
 
 type StringOptionalField struct {
 	parquet.OptionalField
-	vals     []string
-	read     func(r Document) ([]string, []uint8, []uint8)
-	write    func(r *Document, vals []string, defs, reps []uint8) (int, int)
-	stats    *stringOptionalStats
-	repeated bool
+	vals  []string
+	read  func(r Document) ([]string, []uint8, []uint8)
+	write func(r *Document, vals []string, defs, reps []uint8) (int, int)
+	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, types []parse.RepetitionType, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
 		stats:         newStringOptionalStats(),
 	}
 }
@@ -743,9 +736,7 @@ func (f *StringOptionalField) Add(r Document) {
 
 	}
 	f.Defs = append(f.Defs, defs...)
-	if f.repeated {
-		f.Reps = append(f.Reps, reps...)
-	}
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {

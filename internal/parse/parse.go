@@ -20,6 +20,28 @@ const (
 
 const letters = "abcdefghijklmnopqrstuvwxyz"
 
+type RepetitionTypes []RepetitionType
+
+func (r RepetitionTypes) MaxDef() uint {
+	var out uint
+	for _, rt := range r {
+		if rt == Optional || rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
+func (r RepetitionTypes) MaxRep() uint {
+	var out uint
+	for _, rt := range r {
+		if rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
 type Field struct {
 	Type            string
 	FieldNames      []string

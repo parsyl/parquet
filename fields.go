@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang/snappy"
 	sch "github.com/parsyl/parquet/generated"
+	"github.com/parsyl/parquet/internal/parse"
 	"github.com/parsyl/parquet/internal/rle"
 )
 
@@ -137,25 +138,45 @@ func (f *RequiredField) Key() string {
 	return strings.Join(f.pth, ".")
 }
 
+type MaxLevel struct {
+	Def uint
+	Rep uint
+}
+
 type OptionalField struct {
-	Defs           []uint8
-	Reps           []uint8
-	col            string
-	pth            []string
-	Depth          uint
+	Defs   []uint8
+	Reps   []uint8
+	col    string
+	pth    []string
+	Levels struct {
+		Def uint
+		Rep uint
+	}
 	compression    sch.CompressionCodec
 	RepetitionType FieldFunc
 	repeated       bool
 }
 
-func NewOptionalField(pth []string, opts ...func(*OptionalField)) OptionalField {
-	f := OptionalField{
-		col:            pth[len(pth)-1],
-		pth:            pth,
-		compression:    sch.CompressionCodec_SNAPPY,
-		Depth:          1,
-		RepetitionType: RepetitionOptional,
+func NewOptionalField(pth []string, types []parse.RepetitionType, opts ...func(*OptionalField)) OptionalField {
+	rts := parse.RepetitionTypes(types)
+	ff := RepetitionOptional
+	if rts.MaxRep() > 0 {
+		ff = RepetitionRepeated
 	}
+	fmt.Println(pth, rts.MaxDef())
+
+	f := OptionalField{
+		col:         pth[len(pth)-1],
+		pth:         pth,
+		compression: sch.CompressionCodec_SNAPPY,
+		Levels: MaxLevel{
+			Def: rts.MaxDef(),
+			Rep: rts.MaxRep(),
+		},
+		RepetitionType: ff,
+		repeated:       rts.MaxRep() > 0,
+	}
+
 	for _, opt := range opts {
 		opt(&f)
 	}
@@ -174,30 +195,10 @@ func OptionalFieldUncompressed(o *OptionalField) {
 	o.compression = sch.CompressionCodec_UNCOMPRESSED
 }
 
-// OptionalFieldDepth sets the depth, as in the maximum
-// definition level.
-func OptionalFieldDepth(d uint) func(*OptionalField) {
-	return func(o *OptionalField) {
-		o.Depth = d
-	}
-}
-
-// OptionalFieldRepeated...
-func OptionalFieldRepeated(o *OptionalField) {
-	o.repeated = true
-}
-
-// OptionalFieldRepetition ...
-func OptionalFieldRepetitionType(f FieldFunc) func(*OptionalField) {
-	return func(o *OptionalField) {
-		o.RepetitionType = f
-	}
-}
-
 // Values reads the definition levels and uses them
 // to return the values from the page data.
 func (f *OptionalField) Values() int {
-	return f.valsFromDefs(f.Defs, uint8(f.Depth))
+	return f.valsFromDefs(f.Defs, uint8(f.Levels.Def))
 }
 
 func (f *OptionalField) valsFromDefs(defs []uint8, depth uint8) int {
@@ -215,13 +216,13 @@ func (f *OptionalField) valsFromDefs(defs []uint8, depth uint8) int {
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
-	err := writeLevels(wc, f.Defs, int32(bits.Len(f.Depth)))
+	err := writeLevels(wc, f.Defs, int32(bits.Len(f.Levels.Def)))
 	if err != nil {
 		return err
 	}
 
 	if f.repeated {
-		err := writeLevels(wc, f.Reps, int32(bits.Len(f.Depth))) //TODO: f.Depth not correct
+		err := writeLevels(wc, f.Reps, int32(bits.Len(f.Levels.Rep)))
 		if err != nil {
 			return err
 		}
@@ -263,16 +264,14 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 
-		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Depth)))
+		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(f.Levels.Def)))
 		if err != nil {
 			return nil, nil, err
 		}
 
 		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
-		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.Depth)))
-
 		if f.repeated {
-			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(f.Depth))) //TODO: f.Depth is not correct
+			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(f.Levels.Rep)))
 			if err != nil {
 				return nil, nil, err
 			}
@@ -280,6 +279,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeader.NumValues)]...)
 		}
 
+		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.Levels.Def)))
 		out = append(out, data[l:]...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
