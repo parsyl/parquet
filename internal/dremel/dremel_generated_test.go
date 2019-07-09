@@ -512,7 +512,7 @@ func (p *ParquetWriter) Close() error {
 }
 
 func (p *ParquetWriter) Add(rec Document) {
-	p.meta.Docs(1)
+	p.meta.NextDoc()
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here

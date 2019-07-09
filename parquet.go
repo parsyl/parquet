@@ -126,8 +126,11 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 	})
 }
 
-func (m *Metadata) Docs(d int64) {
-	m.docs += d
+// NextDoc keeps track of how many documents have been
+// added to this parquet file.  The final value of m.docs
+// is used for the FileMetaData.NumRows
+func (m *Metadata) NextDoc() {
+	m.docs++
 }
 
 // RowGroups returns a summary of each schema.RowGroup

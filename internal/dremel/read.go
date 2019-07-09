@@ -39,3 +39,9 @@ func readOptional(f parse.Field) string {
 	}
 }`, strings.Join(f.FieldNames, ""), f.Type, ptr, f.TypeName, out)
 }
+
+func readRepeated(f parse.Field) string {
+	var out string
+
+	return out
+}

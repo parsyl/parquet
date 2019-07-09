@@ -164,7 +164,7 @@ func defIndex(i int, f parse.Field) int {
 func defs(f parse.Field) int {
 	var out int
 	for _, o := range f.RepetitionTypes {
-		if o == parse.Optional {
+		if o == parse.Optional || o == parse.Repeated {
 			out++
 		}
 	}
@@ -175,5 +175,9 @@ func pointer(i, n int, p string, levels []bool) string {
 	if levels[n] && n < i {
 		return p
 	}
+	return ""
+}
+
+func writeRepeated(f parse.Field) string {
 	return ""
 }
