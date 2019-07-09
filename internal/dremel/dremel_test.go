@@ -62,13 +62,14 @@ func TestDremel(t *testing.T) {
 	}
 
 	expected := []Levels{
-		{Name: "docid", Defs: []uint8{}, Reps: []uint8{}},
-		{Name: "backward", Defs: []uint8{}, Reps: []uint8{}},
-		{Name: "forward", Defs: []uint8{}, Reps: []uint8{}},
-		{Name: "code", Defs: []uint8{2, 2, 1, 2, 0}, Reps: []uint8{0, 2, 1, 1, 0}},
-		{Name: "country", Defs: []uint8{}, Reps: []uint8{}},
-		{Name: "url", Defs: []uint8{}, Reps: []uint8{}},
+		{Name: "docid"},
+		{Name: "backward", Defs: []uint8{1, 2, 2}, Reps: []uint8{0, 0, 1}},
+		{Name: "forward", Defs: []uint8{2, 2, 2, 2}, Reps: []uint8{0, 1, 1, 0}},
+		{Name: "code", Defs: []uint8{2, 2, 1, 2, 1}, Reps: []uint8{0, 2, 1, 1, 0}},
+		{Name: "country", Defs: []uint8{3, 2, 1, 3, 1}, Reps: []uint8{0, 2, 1, 1, 0}},
+		{Name: "url", Defs: []uint8{2, 2, 1, 2}, Reps: []uint8{0, 1, 1, 0}},
 	}
+
 	assert.Equal(t, expected, pr.Levels())
 }
 

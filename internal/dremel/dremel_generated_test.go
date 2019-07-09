@@ -482,7 +482,8 @@ type Levels struct {
 func (p *ParquetReader) Levels() []Levels {
 	var out []Levels
 	//for {
-	for _, f := range p.fields {
+	for _, ff := range Fields(compressionUnknown) {
+		f := p.fields[ff.Name()]
 		d, r := f.Levels()
 		out = append(out, Levels{Name: f.Name(), Defs: d, Reps: r})
 	}
