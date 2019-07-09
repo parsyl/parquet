@@ -75,6 +75,67 @@ func TestLevels(t *testing.T) {
 	assert.Equal(t, expected, pr.Levels())
 }
 
+func TestDremel(t *testing.T) {
+	docs := []Document{
+		{
+			DocID: 10,
+			Link:  &Link{Forward: []int64{20, 40, 60}},
+			Names: []Name{
+				{
+					Languages: []Language{
+						{Code: "en-us", Country: pstring("us")},
+						{Code: "en"},
+					},
+					URL: pstring("http://A"),
+				},
+				{
+					URL: pstring("http://B"),
+				},
+				{
+					Languages: []Language{
+						{Code: "en-gb", Country: pstring("gb")},
+					},
+				},
+			},
+		},
+		{
+			DocID: 20,
+			Link:  &Link{Backward: []int64{10, 30}, Forward: []int64{80}},
+			Names: []Name{{URL: pstring("http://C")}},
+		},
+	}
+
+	var buf bytes.Buffer
+	pw, err := NewParquetWriter(&buf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, doc := range docs {
+		pw.Add(doc)
+	}
+
+	if err := pw.Write(); err != nil {
+		log.Fatal(err)
+	}
+
+	pw.Close()
+
+	pr, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var out []Document
+	for pr.Next() {
+		var d Document
+		pr.Scan(&d)
+		out = append(out, d)
+	}
+
+	assert.Equal(t, out, docs)
+}
+
 type Link struct {
 	Backward []int64
 	Forward  []int64
