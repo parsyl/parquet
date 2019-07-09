@@ -10,11 +10,13 @@ import (
 
 //go:generate parquetgen -input dremel_test.go -type Document -package dremel_test -output dremel_generated_test.go
 
-func TestDremel(t *testing.T) {
+// TestLevels verifies that the example from the dremel paper
+// results in the correct definition and repetition levels.
+func TestLevels(t *testing.T) {
 	docs := []Document{
 		{
 			DocID: 10,
-			Links: &Link{Forward: []int64{20, 40, 60}},
+			Link:  &Link{Forward: []int64{20, 40, 60}},
 			Names: []Name{
 				{
 					Languages: []Language{
@@ -35,7 +37,7 @@ func TestDremel(t *testing.T) {
 		},
 		{
 			DocID: 20,
-			Links: &Link{Backward: []int64{10, 30}, Forward: []int64{80}},
+			Link:  &Link{Backward: []int64{10, 30}, Forward: []int64{80}},
 			Names: []Name{{URL: pstring("http://C")}},
 		},
 	}
@@ -63,11 +65,11 @@ func TestDremel(t *testing.T) {
 
 	expected := []Levels{
 		{Name: "docid"},
-		{Name: "backward", Defs: []uint8{1, 2, 2}, Reps: []uint8{0, 0, 1}},
-		{Name: "forward", Defs: []uint8{2, 2, 2, 2}, Reps: []uint8{0, 1, 1, 0}},
-		{Name: "code", Defs: []uint8{2, 2, 1, 2, 1}, Reps: []uint8{0, 2, 1, 1, 0}},
-		{Name: "country", Defs: []uint8{3, 2, 1, 3, 1}, Reps: []uint8{0, 2, 1, 1, 0}},
-		{Name: "url", Defs: []uint8{2, 2, 1, 2}, Reps: []uint8{0, 1, 1, 0}},
+		{Name: "link.backward", Defs: []uint8{1, 2, 2}, Reps: []uint8{0, 0, 1}},
+		{Name: "link.forward", Defs: []uint8{2, 2, 2, 2}, Reps: []uint8{0, 1, 1, 0}},
+		{Name: "names.languages.code", Defs: []uint8{2, 2, 1, 2, 1}, Reps: []uint8{0, 2, 1, 1, 0}},
+		{Name: "names.languages.country", Defs: []uint8{3, 2, 1, 3, 1}, Reps: []uint8{0, 2, 1, 1, 0}},
+		{Name: "names.url", Defs: []uint8{2, 2, 1, 2}, Reps: []uint8{0, 1, 1, 0}},
 	}
 
 	assert.Equal(t, expected, pr.Levels())
@@ -90,7 +92,7 @@ type Name struct {
 
 type Document struct {
 	DocID int64
-	Links *Link
+	Link  *Link
 	Names []Name
 }
 

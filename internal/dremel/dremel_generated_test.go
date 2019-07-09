@@ -45,8 +45,8 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt64Field(readDocID, writeDocID, []string{"docid"}, fieldCompression(compression)),
-		NewInt64OptionalField(readLinksBackward, writeLinksBackward, []string{"links", "backward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
-		NewInt64OptionalField(readLinksForward, writeLinksForward, []string{"links", "forward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
+		NewInt64OptionalField(readLinkBackward, writeLinkBackward, []string{"link", "backward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
+		NewInt64OptionalField(readLinkForward, writeLinkForward, []string{"link", "forward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readNamesLanguagesCode, writeNamesLanguagesCode, []string{"names", "languages", "code"}, []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readNamesLanguagesCountry, writeNamesLanguagesCountry, []string{"names", "languages", "country"}, []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Optional}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readNamesURL, writeNamesURL, []string{"names", "url"}, []parse.RepetitionType{parse.Repeated, parse.Optional}, optionalFieldCompression(compression)),
@@ -61,19 +61,59 @@ func writeDocID(x *Document, vals []int64) {
 	x.DocID = vals[0]
 }
 
-func readLinksBackward(x Document) ([]int64, []uint8, []uint8) {
-	return nil, nil, nil
+func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
+	var vals []int64
+	var defs, reps []uint8
+	var lastRep uint8
+	if x.Link == nil {
+		return vals, []uint8{0}, []uint8{0}
+	}
+
+	if len(x.Link.Backward) == 0 {
+		return vals, []uint8{1}, []uint8{0}
+	}
+
+	for i0, x0 := range x.Link.Backward {
+		if i0 > 0 {
+			lastRep = 1
+		}
+		vals = append(vals, x0)
+		defs = append(defs, 2)
+		reps = append(reps, lastRep)
+	}
+
+	return vals, defs, reps
 }
 
-func writeLinksBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	return 0, 0
 }
 
-func readLinksForward(x Document) ([]int64, []uint8, []uint8) {
-	return nil, nil, nil
+func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
+	var vals []int64
+	var defs, reps []uint8
+	var lastRep uint8
+	if x.Link == nil {
+		return vals, []uint8{0}, []uint8{0}
+	}
+
+	if len(x.Link.Forward) == 0 {
+		return vals, []uint8{1}, []uint8{0}
+	}
+
+	for i0, x0 := range x.Link.Forward {
+		if i0 > 0 {
+			lastRep = 1
+		}
+		vals = append(vals, x0)
+		defs = append(defs, 2)
+		reps = append(reps, lastRep)
+	}
+
+	return vals, defs, reps
 }
 
-func writeLinksForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	return 0, 0
 }
 
@@ -81,15 +121,19 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
 	var lastRep uint8
-	for i0, n := range x.Names {
+	if len(x.Names) == 0 {
+		return vals, []uint8{0}, []uint8{0}
+	}
+
+	for i0, x0 := range x.Names {
 		if i0 > 0 {
 			lastRep = 1
 		}
-		if len(n.Languages) == 0 {
-			defs = append(defs, zeroOr(i0, 1))
+		if len(x0.Languages) == 0 {
+			defs = append(defs, 1)
 			reps = append(reps, lastRep)
 		} else {
-			for i1, l := range n.Languages {
+			for i1, l := range x0.Languages {
 				if i1 > 0 {
 					lastRep = 2
 				}
@@ -100,13 +144,6 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 		}
 	}
 	return vals, defs, reps
-}
-
-func zeroOr(i int, val uint8) uint8 {
-	if i == 0 {
-		return 0
-	}
-	return val
 }
 
 func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
@@ -183,7 +220,37 @@ func findLevel(levels []uint8, j uint8) int {
 }
 
 func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
-	return nil, nil, nil
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+	if len(x.Names) == 0 {
+		return vals, []uint8{0}, []uint8{0}
+	}
+
+	for i0, x0 := range x.Names {
+		if i0 > 0 {
+			lastRep = 1
+		}
+		if len(x0.Languages) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i1, x1 := range x0.Languages {
+				if i1 > 0 {
+					lastRep = 2
+				}
+				if x1.Country == nil {
+					defs = append(defs, 2)
+					reps = append(reps, lastRep)
+				} else {
+					vals = append(vals, *x1.Country)
+					defs = append(defs, 3)
+					reps = append(reps, lastRep)
+				}
+			}
+		}
+	}
+	return vals, defs, reps
 }
 
 func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
@@ -221,7 +288,28 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 }
 
 func readNamesURL(x Document) ([]string, []uint8, []uint8) {
-	return nil, nil, nil
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+	if len(x.Names) == 0 {
+		return vals, []uint8{0}, []uint8{0}
+	}
+
+	for i0, x0 := range x.Names {
+		if i0 > 0 {
+			lastRep = 1
+		}
+		if x0.URL == nil {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			vals = append(vals, *x0.URL)
+			defs = append(defs, 2)
+			reps = append(reps, lastRep)
+		}
+	}
+
+	return vals, defs, reps
 }
 
 func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
@@ -730,7 +818,6 @@ func (f *StringOptionalField) Scan(r *Document) {
 
 func (f *StringOptionalField) Add(r Document) {
 	v, defs, reps := f.read(r)
-	fmt.Println("defs and reps", defs, reps)
 	//f.stats.add(v)
 	if v != nil {
 		f.vals = append(f.vals, v...)
@@ -762,7 +849,6 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	}
 
 	for j := 0; j < pg.N; j++ {
-		fmt.Println("def", f.Defs[start+j])
 		if f.Defs[start+j] < f.MaxLevels.Def {
 			continue
 		}

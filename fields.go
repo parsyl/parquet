@@ -61,7 +61,6 @@ func (i UintStats) minmax(val uint64) []byte {
 }
 
 type RequiredField struct {
-	col         string
 	pth         []string
 	compression sch.CompressionCodec
 }
@@ -69,7 +68,6 @@ type RequiredField struct {
 // NewRequiredField creates a new required field.
 func NewRequiredField(pth []string, opts ...func(*RequiredField)) RequiredField {
 	r := RequiredField{
-		col:         pth[len(pth)-1],
 		pth:         pth,
 		compression: sch.CompressionCodec_SNAPPY,
 	}
@@ -127,7 +125,7 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 }
 
 func (f *RequiredField) Name() string {
-	return f.col
+	return strings.Join(f.pth, ".")
 }
 
 func (f *RequiredField) Path() []string {
@@ -146,7 +144,6 @@ type MaxLevel struct {
 type OptionalField struct {
 	Defs           []uint8
 	Reps           []uint8
-	col            string
 	pth            []string
 	MaxLevels      MaxLevel
 	compression    sch.CompressionCodec
@@ -160,10 +157,8 @@ func NewOptionalField(pth []string, types []parse.RepetitionType, opts ...func(*
 	if rts.MaxRep() > 0 {
 		ff = RepetitionRepeated
 	}
-	fmt.Println(pth, rts.MaxDef())
 
 	f := OptionalField{
-		col:         pth[len(pth)-1],
 		pth:         pth,
 		compression: sch.CompressionCodec_SNAPPY,
 		MaxLevels: MaxLevel{
@@ -285,7 +280,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 
 // Name returns the column name of this field
 func (f *OptionalField) Name() string {
-	return f.col
+	return strings.Join(f.pth, ".")
 }
 
 func (f *OptionalField) Path() []string {
