@@ -86,7 +86,34 @@ func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
 }
 
 func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
-	return 0, 0
+	l := findLevel(reps[1:], 0) + 1
+	ds := defs[:l]
+	rs := reps[:l]
+
+	var v int
+	for i := range ds {
+		def := ds[i]
+		rep := rs[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		switch def {
+		case 1:
+			x.Link = &Link{}
+		case 2:
+			if x.Link == nil {
+				x.Link = &Link{}
+			}
+			switch rep {
+			case 0, 1:
+				x.Link.Backward = append(x.Link.Backward, vals[v])
+				v++
+			}
+		}
+	}
+
+	return v, l
 }
 
 func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
@@ -114,7 +141,29 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 }
 
 func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
-	return 0, 0
+	l := findLevel(reps[1:], 0) + 1
+	defs = defs[:l]
+	reps = reps[:l]
+
+	var v int
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0, 1:
+				x.Link.Forward = append(x.Link.Forward, vals[v])
+				v++
+			}
+		}
+	}
+
+	return v, l
 }
 
 func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
@@ -216,7 +265,7 @@ func findLevel(levels []uint8, j uint8) int {
 			return i
 		}
 	}
-	return len(levels) - 1
+	return len(levels)
 }
 
 func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
@@ -257,8 +306,6 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
 	reps = reps[:l]
-	d := findLevel(defs, 3) // 3 should be written by parquetgen based on the 'depth' field
-	vals = vals[:d]
 
 	var v int
 	indices := make([]int, 2) // 2 should be written by parquetgen based on the number of repeated fields
@@ -284,7 +331,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 		}
 	}
 
-	return d, l
+	return v, l
 }
 
 func readNamesURL(x Document) ([]string, []uint8, []uint8) {
@@ -316,8 +363,6 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
 	reps = reps[:l]
-	d := findLevel(defs, 2) // 2 should be written by parquetgen based on the 'depth' field
-	vals = vals[:d]
 
 	var v int
 	indices := make([]int, 1) // 1 should be written by parquetgen based on the number of repeated fields
@@ -340,7 +385,7 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 		}
 	}
 
-	return d, l
+	return v, l
 }
 
 func fieldCompression(c compression) func(*parquet.RequiredField) {
@@ -467,6 +512,7 @@ func (p *ParquetWriter) Close() error {
 }
 
 func (p *ParquetWriter) Add(rec Document) {
+	p.meta.Docs(1)
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
@@ -644,7 +690,8 @@ func (p *ParquetReader) Scan(x *Document) {
 		return
 	}
 
-	for _, f := range p.fields {
+	for _, ff := range Fields(compressionUnknown) {
+		f := p.fields[ff.Name()]
 		f.Scan(x)
 	}
 }

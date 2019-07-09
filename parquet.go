@@ -90,6 +90,7 @@ type Metadata struct {
 	ts        *thrift.TSerializer
 	schema    schema
 	rows      int64
+	docs      int64
 	rowGroups []RowGroup
 
 	metadata *sch.FileMetaData
@@ -123,6 +124,10 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 		fields:  schemaElements(fields),
 		columns: make(map[string]sch.ColumnChunk),
 	})
+}
+
+func (m *Metadata) Docs(d int64) {
+	m.docs += d
 }
 
 // RowGroups returns a summary of each schema.RowGroup
@@ -203,7 +208,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 	fmd := &sch.FileMetaData{
 		Version:   1,
 		Schema:    s,
-		NumRows:   m.rows / l,
+		NumRows:   m.docs,
 		RowGroups: make([]*sch.RowGroup, 0, len(m.rowGroups)),
 	}
 
@@ -227,7 +232,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 			pos += ch.MetaData.TotalCompressedSize
 		}
 
-		rg.NumRows = rg.NumRows / int64(l)
+		rg.NumRows = rg.NumRows / int64(l) //TODO: not correct
 		fmd.RowGroups = append(fmd.RowGroups, &rg)
 	}
 

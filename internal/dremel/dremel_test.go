@@ -133,7 +133,7 @@ func TestDremel(t *testing.T) {
 		out = append(out, d)
 	}
 
-	assert.Equal(t, out, docs)
+	assert.Equal(t, docs, out)
 }
 
 type Link struct {
