@@ -225,40 +225,6 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 	return v, l
 }
 
-// if doc.Names.URL so happened to write first
-func writeNamesLanguagesCodeV2(x *Document, vals []string, defs, reps []uint8) (int, int) {
-	// l := findLevel(reps[1:], 0) + 1
-	// defs = defs[:l]
-	// reps = reps[:l]
-	// d := findLevel(defs, 3) // 3 should be written by parquetgen based on the 'depth' field
-	// vals = vals[:d]
-
-	// var v int
-	// for i := range defs {
-	// 	def := defs[i]
-	// 	rep := reps[i]
-	// 	if i > 0 && ref == 0 {
-	// 		break
-	// 	}
-
-	// 	switch def {
-	// 	case 2:
-	// 		switch rep {
-	// 		case 0, 1:
-	// 			doc.Names = append(doc.Names, Name{Languages: Language{Code: vals[v]}})
-	// 		case 2:
-	// 			doc.Names[len(doc.Names)-1].Languages = append(doc.Names[len(doc.Names)-1].Languages, Language{Code: vals[v]})
-	// 		}
-	// 		v++
-	// 	case 1:
-	// 		doc.Names = append(doc.Names, Name{})
-	// 	}
-	// }
-
-	// return d, l
-	return 0, 0
-}
-
 func findLevel(levels []uint8, j uint8) int {
 	for i, l := range levels {
 		if l == j {
@@ -272,33 +238,36 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
 	var lastRep uint8
-	if len(x.Names) == 0 {
-		return vals, []uint8{0}, []uint8{0}
-	}
 
-	for i0, x0 := range x.Names {
-		if i0 > 0 {
-			lastRep = 1
-		}
-		if len(x0.Languages) == 0 {
-			defs = append(defs, 1)
-			reps = append(reps, lastRep)
-		} else {
-			for i1, x1 := range x0.Languages {
-				if i1 > 0 {
-					lastRep = 2
-				}
-				if x1.Country == nil {
-					defs = append(defs, 2)
-					reps = append(reps, lastRep)
-				} else {
-					vals = append(vals, *x1.Country)
-					defs = append(defs, 3)
-					reps = append(reps, lastRep)
+	if len(x.Names) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, 0)
+	} else {
+		for i0, x0 := range x.Names {
+			if i0 > 0 {
+				lastRep = 1
+			}
+			if len(x0.Languages) == 0 {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				for i1, x1 := range x0.Languages {
+					if i1 > 0 {
+						lastRep = 2
+					}
+					if x1.Country == nil {
+						defs = append(defs, 2)
+						reps = append(reps, lastRep)
+					} else {
+						vals = append(vals, *x1.Country)
+						defs = append(defs, 3)
+						reps = append(reps, lastRep)
+					}
 				}
 			}
 		}
 	}
+
 	return vals, defs, reps
 }
 
@@ -561,6 +530,7 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 
 	schema := make([]parquet.Field, len(ff))
 	for i, f := range ff {
+		pr.fieldNames = append(pr.fieldNames, f.Name())
 		schema[i] = f.Schema()
 	}
 
@@ -594,6 +564,7 @@ func readerIndex(i int) func(*ParquetReader) {
 // ParquetReader reads one page from a row group.
 type ParquetReader struct {
 	fields         map[string]Field
+	fieldNames     []string
 	index          int
 	cursor         int64
 	rows           int64
@@ -616,8 +587,8 @@ type Levels struct {
 func (p *ParquetReader) Levels() []Levels {
 	var out []Levels
 	//for {
-	for _, ff := range Fields(compressionUnknown) {
-		f := p.fields[ff.Name()]
+	for _, name := range p.fieldNames {
+		f := p.fields[name]
 		d, r := f.Levels()
 		out = append(out, Levels{Name: f.Name(), Defs: d, Reps: r})
 	}
@@ -690,8 +661,8 @@ func (p *ParquetReader) Scan(x *Document) {
 		return
 	}
 
-	for _, ff := range Fields(compressionUnknown) {
-		f := p.fields[ff.Name()]
+	for _, name := range p.fieldNames {
+		f := p.fields[name]
 		f.Scan(x)
 	}
 }
