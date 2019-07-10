@@ -15,6 +15,42 @@ func init() {
 	log.SetOutput(ioutil.Discard)
 }
 
+func TestField(t *testing.T) {
+	type testInput struct {
+		f        parse.Field
+		expected []string
+	}
+
+	testCases := []testInput{
+		{
+			f: parse.Field{FieldNames: []string{"Friends", "Name", "First"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Optional}},
+			expected: []string{
+				"Friends",
+				"Friends.Name.First",
+			},
+		},
+		{
+			f: parse.Field{FieldNames: []string{"Friend", "Name", "First"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Optional}},
+			expected: []string{
+				"Friend.Name.First",
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+			if !assert.Equal(t, len(tc.expected), int(tc.f.MaxDef())) {
+				return
+			}
+
+			for i := 0; i < int(tc.f.MaxDef()); i++ {
+				s := tc.f.NilField(i)
+				assert.Equal(t, tc.expected[i], s)
+			}
+		})
+	}
+}
+
 func TestFields(t *testing.T) {
 
 	type testInput struct {

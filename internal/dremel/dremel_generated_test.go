@@ -120,21 +120,24 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 	var vals []int64
 	var defs, reps []uint8
 	var lastRep uint8
+
 	if x.Link == nil {
-		return vals, []uint8{0}, []uint8{0}
-	}
-
-	if len(x.Link.Forward) == 0 {
-		return vals, []uint8{1}, []uint8{0}
-	}
-
-	for i0, x0 := range x.Link.Forward {
-		if i0 > 0 {
-			lastRep = 1
+		defs = append(defs, 0)
+		reps = append(reps, 0)
+	} else {
+		if len(x.Link.Forward) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, 0)
+		} else {
+			for i0, x0 := range x.Link.Forward {
+				if i0 > 0 {
+					lastRep = 1
+				}
+				vals = append(vals, x0)
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+			}
 		}
-		vals = append(vals, x0)
-		defs = append(defs, 2)
-		reps = append(reps, lastRep)
 	}
 
 	return vals, defs, reps
@@ -170,25 +173,27 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
 	var lastRep uint8
-	if len(x.Names) == 0 {
-		return vals, []uint8{0}, []uint8{0}
-	}
 
-	for i0, x0 := range x.Names {
-		if i0 > 0 {
-			lastRep = 1
-		}
-		if len(x0.Languages) == 0 {
-			defs = append(defs, 1)
-			reps = append(reps, lastRep)
-		} else {
-			for i1, l := range x0.Languages {
-				if i1 > 0 {
-					lastRep = 2
-				}
-				vals = append(vals, l.Code)
-				defs = append(defs, 2)
+	if len(x.Names) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, 0)
+	} else {
+		for i0, x0 := range x.Names {
+			if i0 > 0 {
+				lastRep = 1
+			}
+			if len(x0.Languages) == 0 {
+				defs = append(defs, 1)
 				reps = append(reps, lastRep)
+			} else {
+				for i1, l := range x0.Languages {
+					if i1 > 0 {
+						lastRep = 2
+					}
+					vals = append(vals, l.Code)
+					defs = append(defs, 2)
+					reps = append(reps, lastRep)
+				}
 			}
 		}
 	}

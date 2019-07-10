@@ -71,14 +71,48 @@ func (f Field) Optional() bool {
 	return false
 }
 
-func (f Field) Depth() uint {
+func (f Field) Repeated() bool {
+	for _, t := range f.RepetitionTypes {
+		if t == Repeated {
+			return true
+		}
+	}
+	return false
+}
+
+func (f Field) MaxDef() uint {
 	var out uint
 	for _, t := range f.RepetitionTypes {
-		if t == Optional {
+		if t == Optional || t == Repeated {
 			out++
 		}
 	}
 	return out
+}
+
+func (f Field) MaxRep() uint {
+	var out uint
+	for _, t := range f.RepetitionTypes {
+		if t == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
+func (f Field) NilField(i int) string {
+	var fields []string
+	var count int
+	for j, o := range f.RepetitionTypes {
+		fields = append(fields, f.FieldNames[j])
+		if o == Optional || o == Repeated {
+			count++
+		}
+		if count > i {
+			break
+		}
+	}
+	return strings.Join(fields, ".")
 }
 
 func (f Field) RepetitionType() string {

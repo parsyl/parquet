@@ -194,6 +194,35 @@ func TestRead(t *testing.T) {
 			result: `func readFriends(x Person) ([]string, []uint8, []uint8) {
 }`,
 		},
+		{
+			name:   "readLinkFoward",
+			f:      parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			result: "",
+			// 			result: `func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
+			// 	var vals []int64
+			// 	var defs, reps []uint8
+			// 	var lastRep uint8
+			// 	if x.Link == nil {
+			// 		defs = append(defs, 0)
+			// 		reps = append(reps, 0)
+			// 	} else {
+			// 		if len(x.Link.Forward) == 0 {
+			// 			return vals, []uint8{1}, []uint8{0}
+			// 		}
+
+			// 		for i0, x0 := range x.Link.Forward {
+			// 			if i0 > 0 {
+			// 				lastRep = 1
+			// 			}
+			// 			vals = append(vals, x0)
+			// 			defs = append(defs, 2)
+			// 			reps = append(reps, lastRep)
+			// 		}
+			// 	}
+
+			// 	return vals, defs, reps
+			// }`,
+		},
 	}
 
 	for i, tc := range testCases {

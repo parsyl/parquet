@@ -7,6 +7,20 @@ import (
 	"github.com/parsyl/parquet/internal/parse"
 )
 
+var (
+	readRepeatedTemplate = `if len({{.Field}}) == 0 {
+		{{if gt 0 .I}}if i0 > 0 {
+				lastRep = {{.Rep}}
+			}{{end}}
+		defs = append(defs, {{.Def}})
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Names {
+			
+		}
+	}`
+)
+
 func readRequired(f parse.Field) string {
 	return fmt.Sprintf(`func read%s(x %s) %s {
 	return x.%s
