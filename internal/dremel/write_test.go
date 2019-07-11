@@ -283,6 +283,35 @@ func TestWrite(t *testing.T) {
 	return false
 }`,
 		},
+		{
+			name: "readLinkFoward",
+			f:    parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+	l := findLevel(reps[1:], 0) + 1
+	defs = defs[:l]
+	reps = reps[:l]
+
+	var v int
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0, 1:
+				x.Link.Forward = append(x.Link.Forward, vals[v])
+				v++
+			}
+		}
+	}
+
+	return v, l
+}`,
+		},
 	}
 
 	for i, tc := range testCases {

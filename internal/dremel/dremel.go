@@ -4,18 +4,30 @@ package dremel
 // uses to encode/decode a struct for writing and
 // reading parquet files.
 
-import "github.com/parsyl/parquet/internal/parse"
+import (
+	"fmt"
 
-func Write(f parse.Field) string {
+	"github.com/parsyl/parquet/internal/parse"
+)
+
+func Write(fields []parse.Field) string {
+	var out string
+	for i, f := range fields {
+		out += fmt.Sprintf("\n%s", write(f, fields, i))
+	}
+
+	return out
+}
+
+func write(f parse.Field, fields []parse.Field, i int) string {
+	if !isOptional(f) && !isRepeated(f) {
+		return writeRequired(f)
+	}
 	if isOptional(f) && !isRepeated(f) {
 		return writeOptional(f)
 	}
 
-	if isRepeated(f) {
-		return writeRepeated(f)
-	}
-
-	return writeRequired(f)
+	return writeRepeated(f, fields, i)
 }
 
 func Read(f parse.Field) string {

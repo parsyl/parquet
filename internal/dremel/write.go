@@ -177,7 +177,3 @@ func pointer(i, n int, p string, levels []bool) string {
 	}
 	return ""
 }
-
-func writeRepeated(f parse.Field) string {
-	return ""
-}

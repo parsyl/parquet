@@ -230,13 +230,35 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 	return v, l
 }
 
-func findLevel(levels []uint8, j uint8) int {
-	for i, l := range levels {
-		if l == j {
-			return i
+func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	l := findLevel(reps[1:], 0) + 1
+	defs = defs[:l]
+	reps = reps[:l]
+
+	var v int
+	indices := make([]int, 2) // 2 should be written by parquetgen based on the number of repeated fields
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		if rep > 0 {
+			indices[rep-1] = indices[rep-1] + 1
+			for i := 0; i < int(rep)-1; i++ {
+				indices[i] = 0
+			}
+		}
+
+		if def == 3 { // 3 should be written by parquetgen based on the 'depth' field
+			s := vals[v]
+			x.Names[indices[0]].Languages[indices[1]].Country = &s
+			v++
 		}
 	}
-	return len(levels)
+
+	return v, l
 }
 
 func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
@@ -274,38 +296,6 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 	}
 
 	return vals, defs, reps
-}
-
-func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
-	l := findLevel(reps[1:], 0) + 1
-	defs = defs[:l]
-	reps = reps[:l]
-
-	var v int
-	indices := make([]int, 2) // 2 should be written by parquetgen based on the number of repeated fields
-	for i := range defs {
-		def := defs[i]
-		rep := reps[i]
-		if i > 0 && rep == 0 {
-			break
-		}
-
-		switch rep {
-		case 2:
-			indices[1] = indices[1] + 1
-		case 1:
-			indices[0] = indices[0] + 1
-			indices[1] = 0
-		}
-
-		if def == 3 { // 3 should be written by parquetgen based on the 'depth' field
-			s := vals[v]
-			x.Names[indices[0]].Languages[indices[1]].Country = &s
-			v++
-		}
-	}
-
-	return v, l
 }
 
 func readNamesURL(x Document) ([]string, []uint8, []uint8) {
@@ -354,7 +344,7 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 			indices[0] = indices[0] + 1
 		}
 
-		if def == 2 { // 2 should be written by parquetgen based on the 'depth' field
+		if def == 2 { // 2 should be written by parquetgen based on the max definition level
 			s := vals[v]
 			x.Names[indices[0]].URL = &s
 			v++
@@ -362,6 +352,15 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	}
 
 	return v, l
+}
+
+func findLevel(levels []uint8, j uint8) int {
+	for i, l := range levels {
+		if l == j {
+			return i
+		}
+	}
+	return len(levels)
 }
 
 func fieldCompression(c compression) func(*parquet.RequiredField) {

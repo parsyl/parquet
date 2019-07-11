@@ -83,7 +83,8 @@ func doReadRepeated(f parse.Field, i int, varName string) string {
 			varName = fmt.Sprintf("*%s", varName)
 		}
 		if f.RepetitionTypes[len(f.RepetitionTypes)-1] != parse.Repeated {
-			varName = strings.Join(append([]string{varName}, f.FieldNames[len(f.FieldNames)-1]), ".")
+			n := lastRepeated(f.RepetitionTypes)
+			varName = strings.Join(append([]string{varName}, f.FieldNames[n+1:]...), ".")
 		}
 		return fmt.Sprintf(`defs = append(defs, %d)
 reps = append(reps, lastRep)
@@ -115,4 +116,14 @@ vals = append(vals, %s)`, i, varName)
 	}
 
 	return fmt.Sprintf(string(buf.Bytes()), doReadRepeated(f, i+1, nextVar))
+}
+
+func lastRepeated(rts []parse.RepetitionType) int {
+	var l int
+	for i, rt := range rts {
+		if rt == parse.Repeated {
+			l = i
+		}
+	}
+	return l
 }

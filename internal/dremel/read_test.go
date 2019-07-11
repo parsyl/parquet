@@ -348,6 +348,86 @@ func TestRead(t *testing.T) {
 	return vals, defs, reps
 }`,
 		},
+		{
+			name: "run of required",
+			f:    parse.Field{Type: "Document", TypeName: "string", FieldNames: []string{"Friends", "Name", "Last"}, FieldTypes: []string{"Friend", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Required}},
+			result: `func readFriendsNameLast(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Friends) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Friends {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+			vals = append(vals, x0.Name.Last)
+		}
+	}
+
+	return vals, defs, reps
+}`,
+		},
+		{
+			name: "run of required v2",
+			f:    parse.Field{Type: "Document", TypeName: "string", FieldNames: []string{"Friend", "Name", "Aliases"}, FieldTypes: []string{"Friend", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Repeated}},
+			result: `func readFriendNameAliases(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Friend.Name.Aliases) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Friend.Name.Aliases {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+			vals = append(vals, x0)
+		}
+	}
+
+	return vals, defs, reps
+}`,
+		},
+		{
+			name: "run of required v3",
+			f:    parse.Field{Type: "Document", TypeName: "string", FieldNames: []string{"Other", "Friends", "Name", "Middle"}, FieldTypes: []string{"Other", "Friend", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated, parse.Required, parse.Required}},
+			result: `func readOtherFriendsNameMiddle(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Other == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Other.Friends) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Other.Friends {
+				if i0 == 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0.Name.Middle)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}`,
+		},
 	}
 
 	for i, tc := range testCases {

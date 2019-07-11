@@ -51,9 +51,20 @@ func Fields(compression compression) []Field {
 	}
 }
 
+
 {{range .Fields}}{{readFunc .}}
-{{writeFunc .}}
 {{end}}
+
+{{writeFuncs .Fields}}
+
+func findLevel(levels []uint8, j uint8) int {
+	for i, l := range levels {
+		if l == j {
+			return i
+		}
+	}
+	return len(levels)
+}
 
 func fieldCompression(c compression) func(*parquet.RequiredField) {
 	switch c {
