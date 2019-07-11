@@ -74,7 +74,7 @@ func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
 	}
 
 	for i0, x0 := range x.Link.Backward {
-		if i0 > 0 {
+		if i0 == 1 {
 			lastRep = 1
 		}
 		vals = append(vals, x0)
@@ -94,7 +94,7 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 	for i := range ds {
 		def := ds[i]
 		rep := rs[i]
-		if i > 0 && rep == 0 {
+		if i == 1 && rep == 0 {
 			break
 		}
 
@@ -130,7 +130,7 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 			reps = append(reps, 0)
 		} else {
 			for i0, x0 := range x.Link.Forward {
-				if i0 > 0 {
+				if i0 == 1 {
 					lastRep = 1
 				}
 				defs = append(defs, 2)
@@ -176,10 +176,10 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 
 	if len(x.Names) == 0 {
 		defs = append(defs, 0)
-		reps = append(reps, 0)
+		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 > 0 {
+			if i0 == 1 {
 				lastRep = 1
 			}
 			if len(x0.Languages) == 0 {
@@ -187,7 +187,7 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 				reps = append(reps, lastRep)
 			} else {
 				for i1, l := range x0.Languages {
-					if i1 > 0 {
+					if i1 == 1 {
 						lastRep = 2
 					}
 					vals = append(vals, l.Code)
@@ -246,10 +246,10 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 
 	if len(x.Names) == 0 {
 		defs = append(defs, 0)
-		reps = append(reps, 0)
+		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 > 0 {
+			if i0 == 1 {
 				lastRep = 1
 			}
 			if len(x0.Languages) == 0 {
@@ -257,16 +257,16 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 				reps = append(reps, lastRep)
 			} else {
 				for i1, x1 := range x0.Languages {
-					if i1 > 0 {
+					if i1 == 1 {
 						lastRep = 2
 					}
 					if x1.Country == nil {
 						defs = append(defs, 2)
 						reps = append(reps, lastRep)
 					} else {
-						vals = append(vals, *x1.Country)
 						defs = append(defs, 3)
 						reps = append(reps, lastRep)
+						vals = append(vals, *x1.Country)
 					}
 				}
 			}
@@ -312,21 +312,23 @@ func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
 	var lastRep uint8
-	if len(x.Names) == 0 {
-		return vals, []uint8{0}, []uint8{0}
-	}
 
-	for i0, x0 := range x.Names {
-		if i0 > 0 {
-			lastRep = 1
-		}
-		if x0.URL == nil {
-			defs = append(defs, 1)
-			reps = append(reps, lastRep)
-		} else {
-			vals = append(vals, *x0.URL)
-			defs = append(defs, 2)
-			reps = append(reps, lastRep)
+	if len(x.Names) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Names {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			if x0.URL == nil {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				vals = append(vals, *x0.URL)
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+			}
 		}
 	}
 

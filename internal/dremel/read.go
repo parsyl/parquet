@@ -2,20 +2,10 @@ package dremel
 
 import (
 	"fmt"
-	"log"
 	"strings"
-	"text/template"
 
 	"github.com/parsyl/parquet/internal/parse"
 )
-
-func init() {
-	var err error
-	readRepeatedTpl, err = template.New("output").Parse(readRepeatedText)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func readRequired(f parse.Field) string {
 	return fmt.Sprintf(`func read%s(x %s) %s {

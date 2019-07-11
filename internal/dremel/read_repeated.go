@@ -1,6 +1,7 @@
 package dremel
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"strings"
@@ -10,27 +11,53 @@ import (
 )
 
 func init() {
+	m := template.FuncMap{
+		"inc": func(i int) int {
+			return i + 1
+		},
+	}
+
 	var err error
-	readRepeatedTpl, err = template.New("output").Parse(readRepeatedText)
+	readRepeatedRepeatedTpl, err = template.New("output").Funcs(m).Parse(readRepeatedRepeatedText)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("rrr: %s", err)
+	}
+
+	readRepeatedOptionalTpl, err = template.New("output").Parse(readRepeatedOptionalText)
+	if err != nil {
+		log.Fatalf("rro: %s", err)
 	}
 }
 
-type readClause struct {
-	Clause    string
-	Else      string
-	LastRep   string
-	AppendVal string
-}
-
 var (
-	readRepeatedTpl  *template.Template
-	readRepeatedText = `{{.Clause}} {
-		{{.LastRep}}defs = append(defs, {{.Def}})
-		reps = append(reps, lastRep){{.AppendVal}}
-	}{{.Else}}`
+	readRepeatedRepeatedTpl  *template.Template
+	readRepeatedRepeatedText = `if len({{.Var}}.{{.Field}}) == 0 {
+         defs = append(defs, {{.Def}})
+ 		 reps = append(reps, lastRep)
+     } else {
+         for i{{.Rep}}, x{{.Rep}} := range {{.Var}}.{{.Field}} {
+             if i{{.Rep}} == 1 {
+				lastRep = {{inc .Rep}}
+			}
+            %s
+         }
+     }`
+
+	readRepeatedOptionalTpl  *template.Template
+	readRepeatedOptionalText = `if {{.Var}}.{{.Field}} == nil {
+		defs = append(defs, {{.Def}})
+		reps = append(reps, lastRep)
+	} else {
+        %s
+    }`
 )
+
+type readClause struct {
+	Var   string
+	Field string
+	Def   int
+	Rep   int
+}
 
 func readRepeated(f parse.Field) string {
 	return fmt.Sprintf(`func read%s(x %s) ([]%s, []uint8, []uint8) {
@@ -46,33 +73,46 @@ func readRepeated(f parse.Field) string {
 		f.Type,
 		strings.Replace(f.TypeName, "*", "", 1),
 		strings.Replace(f.TypeName, "*", "", 1),
-		doReadRepeated(f, 0),
+		doReadRepeated(f, 0, "x"),
 	)
 }
 
-func doReadRepeated(f parse.Field, i int) string {
-	if i > int(f.MaxDef()) {
-		return ""
+func doReadRepeated(f parse.Field, i int, varName string) string {
+	if i == int(f.MaxDef()) {
+		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
+			varName = fmt.Sprintf("*%s", varName)
+		}
+		if f.RepetitionTypes[len(f.RepetitionTypes)-1] != parse.Repeated {
+			varName = strings.Join(append([]string{varName}, f.FieldNames[len(f.FieldNames)-1]), ".")
+		}
+		return fmt.Sprintf(`defs = append(defs, %d)
+reps = append(reps, lastRep)
+vals = append(vals, %s)`, i, varName)
 	}
 
-	name, rt := f.NilField(i)
-	var ifStm string
-	if rt == parse.Optional {
-		ifStm = fmt.Sprintf("x.%s == nil", name)
-	} else {
-		ifStm = fmt.Sprintf("len(x.%s) == 0", name)
-	}
-
-	var lastRep string
-	if i > 0 && rt == parse.Repeated {
-		lastRep = fmt.Sprintf(`if i%d > 0 {
-	lastRep = %d
-}`, i, i)
-	}
-
+	fieldName, rt, n, reps := f.NilField(i)
+	var nextVar string
+	var buf bytes.Buffer
 	rc := readClause{
-		If:      ifStm,
-		LastRep: lastRep,
+		Var:   varName,
+		Field: fieldName,
+		Rep:   reps - 1,
+		Def:   i,
 	}
 
+	if rt == parse.Repeated {
+		if reps > 1 {
+			rc.Field = f.FieldNames[n]
+		}
+		nextVar = fmt.Sprintf("x%d", reps-1)
+		readRepeatedRepeatedTpl.Execute(&buf, rc)
+	} else {
+		nextVar = varName
+		if reps > 0 {
+			rc.Field = strings.Join(f.FieldNames[i:], ".")
+		}
+		readRepeatedOptionalTpl.Execute(&buf, rc)
+	}
+
+	return fmt.Sprintf(string(buf.Bytes()), doReadRepeated(f, i+1, nextVar))
 }
