@@ -100,10 +100,13 @@ func (f Field) MaxRep() uint {
 	return out
 }
 
-func (f Field) NilField(i int) string {
+func (f Field) NilField(i int) (string, RepetitionType) {
 	var fields []string
 	var count int
-	for j, o := range f.RepetitionTypes {
+	var j int
+	var o RepetitionType
+
+	for j, o = range f.RepetitionTypes {
 		fields = append(fields, f.FieldNames[j])
 		if o == Optional || o == Repeated {
 			count++
@@ -112,7 +115,7 @@ func (f Field) NilField(i int) string {
 			break
 		}
 	}
-	return strings.Join(fields, ".")
+	return strings.Join(fields, "."), o
 }
 
 func (f Field) RepetitionType() string {

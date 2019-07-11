@@ -133,9 +133,9 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 				if i0 > 0 {
 					lastRep = 1
 				}
-				vals = append(vals, x0)
 				defs = append(defs, 2)
 				reps = append(reps, lastRep)
+				vals = append(vals, x0)
 			}
 		}
 	}
