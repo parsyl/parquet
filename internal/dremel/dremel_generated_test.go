@@ -236,7 +236,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 	reps = reps[:l]
 
 	var v int
-	indices := make([]int, 2) // 2 should be written by parquetgen based on the number of repeated fields
+	indices := make([]int, 2) // 2 should be written by parquetgen based on the number of repeated fields that haven't been seen yet
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]

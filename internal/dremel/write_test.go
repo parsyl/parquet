@@ -13,6 +13,7 @@ import (
 func TestWrite(t *testing.T) {
 	testCases := []struct {
 		name   string
+		seen   []parse.Field
 		f      parse.Field
 		result string
 	}{

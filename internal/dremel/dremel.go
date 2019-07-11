@@ -5,21 +5,10 @@ package dremel
 // reading parquet files.
 
 import (
-	"fmt"
-
 	"github.com/parsyl/parquet/internal/parse"
 )
 
-func Write(fields []parse.Field) string {
-	var out string
-	for i, f := range fields {
-		out += fmt.Sprintf("\n%s", write(f, fields, i))
-	}
-
-	return out
-}
-
-func write(f parse.Field, fields []parse.Field, i int) string {
+func Write(i int, f parse.Field, fields []parse.Field) string {
 	if !isOptional(f) && !isRepeated(f) {
 		return writeRequired(f)
 	}
@@ -27,7 +16,7 @@ func write(f parse.Field, fields []parse.Field, i int) string {
 		return writeOptional(f)
 	}
 
-	return writeRepeated(f, fields, i)
+	return writeRepeated(i, f, fields)
 }
 
 func Read(f parse.Field) string {

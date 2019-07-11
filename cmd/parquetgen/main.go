@@ -119,7 +119,7 @@ var (
 			return out
 		},
 		"columnName":    func(f parse.Field) string { return strings.ToLower(strings.Join(f.FieldNames, ".")) },
-		"writeFuncs":    dremel.Write,
+		"writeFunc":     dremel.Write,
 		"readFunc":      dremel.Read,
 		"writeFuncName": func(f parse.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")) },
 		"readFuncName":  func(f parse.Field) string { return fmt.Sprintf("read%s", strings.Join(f.FieldNames, "")) },

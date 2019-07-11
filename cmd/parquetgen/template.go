@@ -52,10 +52,11 @@ func Fields(compression compression) []Field {
 }
 
 
-{{range .Fields}}{{readFunc .}}
+{{range $i, $field := Fields}}{{readFunc $field}}
+{{writeFunc $i, $field .Fields}}
 {{end}}
 
-{{writeFuncs .Fields}}
+
 
 func findLevel(levels []uint8, j uint8) int {
 	for i, l := range levels {
