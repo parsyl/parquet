@@ -85,37 +85,6 @@ func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
 	return vals, defs, reps
 }
 
-func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
-	l := findLevel(reps[1:], 0) + 1
-	ds := defs[:l]
-	rs := reps[:l]
-
-	var v int
-	for i := range ds {
-		def := ds[i]
-		rep := rs[i]
-		if i == 1 && rep == 0 {
-			break
-		}
-
-		switch def {
-		case 1:
-			x.Link = &Link{}
-		case 2:
-			if x.Link == nil {
-				x.Link = &Link{}
-			}
-			switch rep {
-			case 0, 1:
-				x.Link.Backward = append(x.Link.Backward, vals[v])
-				v++
-			}
-		}
-	}
-
-	return v, l
-}
-
 func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 	var vals []int64
 	var defs, reps []uint8
@@ -141,6 +110,37 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 	}
 
 	return vals, defs, reps
+}
+
+func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+	l := findLevel(reps[1:], 0) + 1
+	defs = defs[:l]
+	reps = reps[:l]
+
+	var v int
+	for i := range defs {
+		def := defs[i]
+		rep := defs[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		switch def {
+		case 1:
+			x.Link = &Link{}
+		case 2:
+			if x.Link == nil {
+				x.Link = &Link{}
+			}
+			switch rep {
+			case 0, 1:
+				x.Link.Backward = append(x.Link.Backward, vals[v])
+				v++
+			}
+		}
+	}
+
+	return v, l
 }
 
 func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {

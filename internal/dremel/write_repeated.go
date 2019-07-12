@@ -5,17 +5,12 @@ import (
 	"strings"
 
 	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/structs"
 )
 
 func writeRepeated(i int, f parse.Field, fields []parse.Field) string {
-	var seen []bool
-	for i, ff := range fields[:i] {
-		//if SOMETHING??? {
-		seen = getSeen(seen, f.FieldNames, ff.FieldNames)
-		//}
-	}
 
-	return fmt.Sprintf(`func write%s(x *%s, vals []string, defs, reps []uint8) (int, int) {
+	return fmt.Sprintf(`func write%s(x *%s, vals []%s, defs, reps []uint8) (int, int) {
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
 	reps = reps[:l]
@@ -37,46 +32,98 @@ func writeRepeated(i int, f parse.Field, fields []parse.Field) string {
 }`,
 		strings.Join(f.FieldNames, ""),
 		f.Type,
-		indices(f, nReps(f), len(seen)),
+		f.TypeName,
+		//indices(f, getUnseenRepeated(i, f, fields)),
+		"",
 		writeRepeatedIndices(f),
-		writeRepeatedCases(f),
+		writeRepeatedCases(f, getUnseenOptional(i, f, fields)),
 	)
-}
-
-func getSeen(seen []bool, names, newNames []string) []bool {
-	var out []bool
-	for i := range names {
-		if names[i] == newNames[i] {
-			out = append(out, true)
-		}
-	}
-
-	if len(out) > len(seen) {
-		return out
-	}
-	return seen
 }
 
 func writeRepeatedIndices(f parse.Field) string {
 	return ""
 }
 
-func writeRepeatedCases(f parse.Field) string {
-	return ""
+func writeRepeatedCases(f parse.Field, unseen int) string {
+	nd := nDefs(f)
+	var out string
+
+	for i := 1 + nd - unseen; i <= nd; i++ {
+		if f.RepetitionTypes[i-1] != parse.Optional {
+			continue
+		}
+
+		fmt.Printf("for %d: %+v, nd: %d\n", i, f, nd)
+		out += fmt.Sprintf(`case %d:
+	%s
+	`, i, structs.Init(i-1, f.Child(defIndex(i-1, f))))
+	}
+	return fmt.Sprintf(`switch def {
+	%s
+}`, out)
+
 }
 
-func indices(f parse.Field, seen int) string {
-	if seen == 0 {
+func indices(f parse.Field, unseen int) string {
+	if unseen == 0 {
 		return ""
 	}
 
 	return fmt.Sprintf("\nindices := make([]int, %d)\n", unseen)
 }
 
+func getUnseenOptional(i int, f parse.Field, fields []parse.Field) int {
+	return getUnseen(i, f, fields, parse.Optional)
+}
+
+func getUnseenRepeated(i int, f parse.Field, fields []parse.Field) int {
+	return getUnseen(i, f, fields, parse.Repeated)
+}
+
+func getUnseen(i int, f parse.Field, fields []parse.Field, rt parse.RepetitionType) int {
+	var seen []bool
+	names := f.FieldNames
+
+	for _, ff := range fields[:i] {
+		newNames := ff.FieldNames
+		var b []bool
+		for i := range names {
+			if f.RepetitionTypes[i] == rt && names[i] == newNames[i] {
+				b = append(b, true)
+			}
+		}
+		if len(b) > len(seen) {
+			seen = b
+		}
+	}
+
+	return nLevels(f, rt) - len(seen)
+}
+
 func nReps(f parse.Field) int {
 	var n int
 	for _, rt := range f.RepetitionTypes {
 		if rt == parse.Repeated {
+			n++
+		}
+	}
+	return n
+}
+
+func nDefs(f parse.Field) int {
+	var n int
+	for _, rt := range f.RepetitionTypes {
+		if rt == parse.Repeated || rt == parse.Optional {
+			n++
+		}
+	}
+	return n
+}
+
+func nLevels(f parse.Field, rt parse.RepetitionType) int {
+	var n int
+	for _, rt := range f.RepetitionTypes {
+		if rt == rt {
 			n++
 		}
 	}

@@ -150,7 +150,7 @@ func nilField(i int, f parse.Field) string {
 func defIndex(i int, f parse.Field) int {
 	var count int
 	for j, o := range f.RepetitionTypes {
-		if o == parse.Optional {
+		if o == parse.Optional || o == parse.Repeated {
 			count++
 		}
 		if count > i {

@@ -285,8 +285,45 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "readLinkFoward",
+			name: "writeLinkBackward",
+			f:    parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			result: `func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+	l := findLevel(reps[1:], 0) + 1
+	defs = defs[:l]
+	reps = reps[:l]
+
+	var v int
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		switch def {
+		case 1:
+			x.Link = &Link{}
+		case 2:
+			if x.Link == nil {
+				x.Link = &Link{}
+			}
+			switch rep {
+			case 0, 1:
+				x.Link.Backward = append(x.Link.Backward, vals[v])
+				v++
+			}
+		}
+	}
+
+	return v, l
+}`,
+		},
+		{
+			name: "writeLinkFoward",
 			f:    parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			seen: []parse.Field{
+				{FieldNames: []string{"Link", "Backward"}},
+			},
 			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
@@ -317,7 +354,7 @@ func TestWrite(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			s := dremel.Write(tc.f)
+			s := dremel.Write(0, tc.f, tc.seen)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))
