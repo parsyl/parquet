@@ -45,18 +45,13 @@ func writeRepeatedIndices(f parse.Field) string {
 }
 
 func writeRepeatedCases(f parse.Field, unseen int) string {
-	nd := nDefs(f)
 	var out string
-
-	for i := 1 + nd - unseen; i <= nd; i++ {
-		if f.RepetitionTypes[i-1] != parse.Optional {
-			continue
-		}
-
-		fmt.Printf("for %d: %+v, nd: %d\n", i, f, nd)
+	for _, def := range f.Defs() {
+		ch := f.Child(defIndex(def, f))
+		fmt.Printf("for ch: %+v\n", ch)
 		out += fmt.Sprintf(`case %d:
 	%s
-	`, i, structs.Init(i-1, f.Child(defIndex(i-1, f))))
+	`, def, structs.Init(def, f))
 	}
 	return fmt.Sprintf(`switch def {
 	%s

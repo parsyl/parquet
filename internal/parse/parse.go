@@ -90,6 +90,16 @@ func (f Field) MaxDef() uint {
 	return out
 }
 
+func (f Field) Defs() []int {
+	out := make([]int, 0, len(f.RepetitionTypes))
+	for i, t := range f.RepetitionTypes {
+		if t == Optional {
+			out = append(out, i+1)
+		}
+	}
+	return out
+}
+
 func (f Field) MaxRep() uint {
 	var out uint
 	for _, t := range f.RepetitionTypes {
