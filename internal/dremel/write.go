@@ -105,15 +105,21 @@ func ifelse(i, def int, f parse.Field) string {
 	}
 
 	var stmt, brace, val, field, cmp string
-	if i == 0 && defs(f) == 1 && (f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional) {
+	rt := f.RepetitionTypes[len(f.RepetitionTypes)-1]
+	if i == 0 && defs(f) == 1 && (rt == parse.Optional) {
 		return fmt.Sprintf(`x.%s = &v`, strings.Join(f.FieldNames, "."))
 	} else if i == 0 {
 		stmt = "if"
 		brace = "}"
 		field = fmt.Sprintf("x.%s", nilField(i, f))
-		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
 		ch := f.Child(defIndex(i, f))
-		val = structs.Init(def, ch)
+		if rt == parse.Optional {
+			cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
+			val = structs.Init(def, ch)
+		} else {
+			cmp = fmt.Sprintf(" len(x.%s) == 0", nilField(i, f))
+			val = structs.Init(def, ch)
+		}
 	} else if i > 0 && i < defs(f)-1 {
 		stmt = " else if"
 		brace = "}"

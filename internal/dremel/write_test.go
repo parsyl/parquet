@@ -361,6 +361,39 @@ func TestWrite(t *testing.T) {
 	return v, l
 }`,
 		},
+		{
+			name: "writeNamesLanguagesCode",
+			f:    parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			result: `func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	l := findLevel(reps[1:], 0) + 1
+	defs = defs[:l]
+	reps = reps[:l]
+
+	var v int
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0, 1:
+				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[v]}}})
+			case 2:
+				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[v]})
+			}
+			v++
+		case 1:
+			x.Names = append(x.Names, Name{})
+		}
+	}
+
+	return v, l
+}`,
+		},
 	}
 
 	for i, tc := range testCases {
