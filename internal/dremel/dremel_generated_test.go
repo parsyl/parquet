@@ -120,7 +120,7 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 	var v int
 	for i := range defs {
 		def := defs[i]
-		rep := defs[i]
+		rep := reps[i]
 		if i > 0 && rep == 0 {
 			break
 		}
