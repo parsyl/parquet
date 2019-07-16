@@ -43,11 +43,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// writeTpl, err = writeTpl.Parse(`{{define "initStructs"}}{{range .}}{{.}}{{end}}{{end}}`)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 }
 
 var (
