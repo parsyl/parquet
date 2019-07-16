@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/parse"
+	sch "github.com/parsyl/parquet/schema"
 )
 
 // Init initializes the nested structs according to the

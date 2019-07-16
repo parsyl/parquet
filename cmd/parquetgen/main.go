@@ -14,11 +14,11 @@ import (
 	"text/template"
 
 	"github.com/parsyl/parquet"
-	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/cases"
 	"github.com/parsyl/parquet/internal/dremel"
 	"github.com/parsyl/parquet/internal/parse"
 	"github.com/parsyl/parquet/internal/structs"
+	sch "github.com/parsyl/parquet/schema"
 )
 
 var (

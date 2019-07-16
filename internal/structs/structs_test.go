@@ -5,9 +5,9 @@ import (
 	"go/format"
 	"testing"
 
-	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/parse"
 	"github.com/parsyl/parquet/internal/structs"
+	sch "github.com/parsyl/parquet/schema"
 	"github.com/stretchr/testify/assert"
 )
 

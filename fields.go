@@ -12,9 +12,9 @@ import (
 	"io"
 
 	"github.com/golang/snappy"
-	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/parse"
 	"github.com/parsyl/parquet/internal/rle"
+	sch "github.com/parsyl/parquet/schema"
 )
 
 // RequiredField writes the raw data for required columns

@@ -6,8 +6,8 @@ import (
 	"log"
 	"testing"
 
-	sch "github.com/parsyl/parquet/generated"
 	"github.com/parsyl/parquet/internal/parse"
+	sch "github.com/parsyl/parquet/schema"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +44,7 @@ func TestField(t *testing.T) {
 			}
 
 			for i := 0; i < int(tc.f.MaxDef()); i++ {
-				s := tc.f.NilField(i)
+				s, _, _, _ := tc.f.NilField(i)
 				assert.Equal(t, tc.expected[i], s)
 			}
 		})
