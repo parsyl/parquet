@@ -16,22 +16,38 @@ func init() {
 		"removeStar": func(s string) string {
 			return strings.Replace(s, "*", "", 1)
 		},
+		"repeated": func(w writeInput) bool {
+			return false
+		},
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool {
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int) {
+	{{if repeated .}}l := findLevel(reps[1:], 0) + 1
+	defs = defs[:l]
+	reps = reps[:l]
+
+	var v int%s
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}{{range .Cases}}
+	{{.}}{{end}}
+	}{{else}}def := defs[0]
 	switch def { {{range .Cases}}
-	{{.}}{{end}} }
-	return false
+	{{.}}{{end}} }{{end}}
+	return 0, 1
 }`)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	writeTpl, err = writeTpl.Parse(`{{define "initStructs"}}{{range .}}{{.}}{{end}}{{end}}`)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// writeTpl, err = writeTpl.Parse(`{{define "initStructs"}}{{range .}}{{.}}{{end}}{{end}}`)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 }
 
 var (
@@ -68,12 +84,13 @@ func writeOptional(f parse.Field) string {
 func writeCases(f parse.Field) []string {
 	var out []string
 	for def := 1; def <= defs(f); def++ {
+		fmt.Println("for", def)
 		var v, ret string
 		if def == defs(f) {
 			v = `v := vals[0]
 		`
 			ret = `
-	return true
+	return 1, 1
 	`
 		}
 
@@ -87,6 +104,7 @@ func writeCases(f parse.Field) []string {
 
 // return an if else block for the definition level
 func ifelse(i, def int, f parse.Field) string {
+	fmt.Println("ifelse", i, def)
 	if i == recursions(def, f) {
 		return ""
 	}

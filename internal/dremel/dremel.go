@@ -12,11 +12,7 @@ func Write(i int, f parse.Field, fields []parse.Field) string {
 	if !isOptional(f) && !isRepeated(f) {
 		return writeRequired(f)
 	}
-	if isOptional(f) && !isRepeated(f) {
-		return writeOptional(f)
-	}
-
-	return writeRepeated(i, f, fields)
+	return writeOptional(f)
 }
 
 func Read(f parse.Field) string {
