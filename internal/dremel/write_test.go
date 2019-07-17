@@ -400,6 +400,7 @@ func TestWrite(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(0, tc.f, tc.seen)
 			gocode, err := format.Source([]byte(s))
+			fmt.Println(string(gocode))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))
 		})

@@ -16,26 +16,25 @@ func init() {
 		"removeStar": func(s string) string {
 			return strings.Replace(s, "*", "", 1)
 		},
-		"repeated": func(w writeInput) bool {
-			return false
-		},
 	}
 
 	var err error
 	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int) {
-	{{if repeated .}}l := findLevel(reps[1:], 0) + 1
+	{{if .Repeated}}l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
 	reps = reps[:l]
 
-	var v int%s
+	var v int
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
 		if i > 0 && rep == 0 {
 			break
-		}{{range .Cases}}
-	{{.}}{{end}}
-	}{{else}}def := defs[0]
+		}
+	switch def { {{range .Cases}}
+	{{.}} {{end}}
+		}
+	} {{else}}def := defs[0]
 	switch def { {{range .Cases}}
 	{{.}}{{end}} }{{end}}
 	return 0, 1
@@ -79,7 +78,6 @@ func writeOptional(f parse.Field) string {
 func writeCases(f parse.Field) []string {
 	var out []string
 	for def := 1; def <= defs(f); def++ {
-		fmt.Println("for", def)
 		var v, ret string
 		if def == defs(f) {
 			v = `v := vals[0]
@@ -99,27 +97,25 @@ func writeCases(f parse.Field) []string {
 
 // return an if else block for the definition level
 func ifelse(i, def int, f parse.Field) string {
-	fmt.Println("ifelse", i, def)
-	if i == recursions(def, f) {
+	fmt.Printf("if else i: %d, def: %d, optionals: %d, field: %+v\n", i, def, optionals(f), f)
+	if i == recursions(def, f) || def > optionals(f) {
 		return ""
 	}
 
 	var stmt, brace, val, field, cmp string
 	rt := f.RepetitionTypes[len(f.RepetitionTypes)-1]
-	if i == 0 && defs(f) == 1 && (rt == parse.Optional) {
+	if i == 0 && defs(f) == 1 && rt == parse.Optional {
 		return fmt.Sprintf(`x.%s = &v`, strings.Join(f.FieldNames, "."))
-	} else if i == 0 {
+	}
+
+	if i == 0 {
 		stmt = "if"
 		brace = "}"
 		field = fmt.Sprintf("x.%s", nilField(i, f))
 		ch := f.Child(defIndex(i, f))
-		if rt == parse.Optional {
-			cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
-			val = structs.Init(def, ch)
-		} else {
-			cmp = fmt.Sprintf(" len(x.%s) == 0", nilField(i, f))
-			val = structs.Init(def, ch)
-		}
+		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
+		val = structs.Init(def, ch)
+		fmt.Println("val", val)
 	} else if i > 0 && i < defs(f)-1 {
 		stmt = " else if"
 		brace = "}"
@@ -184,6 +180,16 @@ func defs(f parse.Field) int {
 	var out int
 	for _, o := range f.RepetitionTypes {
 		if o == parse.Optional || o == parse.Repeated {
+			out++
+		}
+	}
+	return out
+}
+
+func optionals(f parse.Field) int {
+	var out int
+	for _, o := range f.RepetitionTypes {
+		if o == parse.Optional {
 			out++
 		}
 	}
