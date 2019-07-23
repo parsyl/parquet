@@ -78,7 +78,7 @@ func readRepeated(f parse.Field) string {
 }
 
 func doReadRepeated(f parse.Field, i int, varName string) string {
-	if i == int(f.MaxDef()) {
+	if i == f.MaxDef() {
 		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
 			varName = fmt.Sprintf("*%s", varName)
 		}

@@ -1,4 +1,12 @@
-Links.Forward
+* a
+ for each def:
+   if def == max def:
+     write valud
+   else:
+     create or append sub-field
+    
+* dremel example
+  Links.Forward
 | value | r | d | what to do                                       |
 |-------+---+---+--------------------------------------------------|
 |    20 | 0 | 2 | doc.Links = &Link{Forward: []int64{20}}          |

@@ -214,6 +214,8 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 		}
 
 		switch def {
+		case 1:
+			x.Names = append(x.Names, Name{})
 		case 2:
 			switch rep {
 			case 0, 1:
@@ -222,12 +224,21 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[v]})
 			}
 			v++
-		case 1:
-			x.Names = append(x.Names, Name{})
 		}
 	}
 
 	return v, l
+}
+
+type indices []int
+
+func (i indices) rep(rep uint8) {
+	if rep > 0 {
+		i[rep-1] = i[rep-1] + 1
+		for j := 0; j < int(rep)-1; j++ {
+			i[j] = 0
+		}
+	}
 }
 
 func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
@@ -236,7 +247,9 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 	reps = reps[:l]
 
 	var v int
-	indices := make([]int, 2) // 2 should be written by parquetgen based on the number of repeated fields that haven't been seen yet
+
+	// if there are 2 or more repeated fields then use indices to keep track of where to append
+	in := indices(make([]int, 2)) // 2 should be written by parquetgen based on the number of repeated fields that haven't been seen yet
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -244,16 +257,10 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 			break
 		}
 
-		if rep > 0 {
-			indices[rep-1] = indices[rep-1] + 1
-			for i := 0; i < int(rep)-1; i++ {
-				indices[i] = 0
-			}
-		}
-
+		in.rep(rep)
 		if def == 3 { // 3 should be written by parquetgen based on the 'depth' field
 			s := vals[v]
-			x.Names[indices[0]].Languages[indices[1]].Country = &s
+			x.Names[in[0]].Languages[in[1]].Country = &s
 			v++
 		}
 	}

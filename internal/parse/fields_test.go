@@ -39,11 +39,11 @@ func TestField(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
-			if !assert.Equal(t, len(tc.expected), int(tc.f.MaxDef())) {
+			if !assert.Equal(t, len(tc.expected), tc.f.MaxDef()) {
 				return
 			}
 
-			for i := 0; i < int(tc.f.MaxDef()); i++ {
+			for i := 0; i < tc.f.MaxDef(); i++ {
 				s, _, _, _ := tc.f.NilField(i)
 				assert.Equal(t, tc.expected[i], s)
 			}

@@ -11,6 +11,51 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAppend(t *testing.T) {
+	testCases := []struct {
+		name     string
+		field    parse.Field
+		def      int
+		rep      int
+		expected string
+	}{
+		{
+			name:     "NamesLanguagesCode, def 1, rep 1",
+			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			def:      1,
+			rep:      1,
+			expected: "x.Names = append(x.Names, Name{})",
+		},
+		{
+			name:     "NamesLanguagesCode, def 2, rep 1",
+			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			def:      2,
+			rep:      1,
+			expected: "x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[v]}}})",
+		},
+		{
+			name:     "NamesLanguagesCode, def 2, rep 0",
+			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			def:      2,
+			rep:      0,
+			expected: "x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[v]}}})",
+		},
+		{
+			name:     "NamesLanguagesCode, def 2, rep 2",
+			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			def:      2,
+			rep:      2,
+			expected: "x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[v]})",
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
+			assert.Equal(t, tc.expected, structs.Append(tc.def, tc.rep, tc.field))
+		})
+	}
+}
+
 /*
 | names    | Friend | Hobby | Name   | definition levels      |                                 |
 | types    | Entity | Item  | string | 1/2                    | 2/2                             |
@@ -20,7 +65,7 @@ import (
 |          | true   | true  | false  | &Entity{}              | &Entity{Hobby: &Item{Name: *v}} |
 */
 
-func TestStructs(t *testing.T) {
+func TestInit(t *testing.T) {
 	testCases := []struct {
 		name     string
 		field    parse.Field

@@ -8,6 +8,13 @@ import (
 	sch "github.com/parsyl/parquet/schema"
 )
 
+// Append generates the statement to append a value based
+// on the definition and repetition level
+func Append(def, rep int, f parse.Field) string {
+
+	return ""
+}
+
 // Init initializes the nested structs according to the
 // current definition level.
 func Init(def int, f parse.Field) string {
@@ -15,14 +22,8 @@ func Init(def int, f parse.Field) string {
 }
 
 func doInit(def, i int, f parse.Field) string {
-	var j int
-	for _, o := range f.RepetitionTypes[:i+1] {
-		if o == parse.Optional {
-			j++
-		}
-	}
-
-	if def == nDefs(f) && i == len(f.RepetitionTypes)-1 {
+	maxDef := f.MaxDef()
+	if def == maxDef && i == len(f.RepetitionTypes)-1 {
 		var ptr string
 		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
 			ptr = "&"
@@ -30,7 +31,7 @@ func doInit(def, i int, f parse.Field) string {
 		return fmt.Sprintf("%s: %sv", f.FieldNames[i], ptr)
 	}
 
-	if i == def && def < nDefs(f) {
+	if i == def && def < maxDef {
 		return ""
 	}
 
