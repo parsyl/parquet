@@ -49,6 +49,15 @@ func (f Field) Optional() bool {
 	return false
 }
 
+func (f Field) Required() bool {
+	for _, t := range f.RepetitionTypes {
+		if t != Required {
+			return false
+		}
+	}
+	return true
+}
+
 func (f Field) Repeated() bool {
 	for _, t := range f.RepetitionTypes {
 		if t == Repeated {

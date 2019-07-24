@@ -20,6 +20,13 @@ func TestAppend(t *testing.T) {
 		expected string
 	}{
 		{
+			name:     "nested required",
+			field:    parse.Field{FieldNames: []string{"Name", "Language", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
+			def:      0,
+			rep:      0,
+			expected: "x.Name = Name{Language: Language{Code: v}}",
+		},
+		{
 			name:     "NamesLanguagesCode, def 1, rep 1",
 			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
 			def:      1,
@@ -46,6 +53,13 @@ func TestAppend(t *testing.T) {
 			def:      2,
 			rep:      2,
 			expected: "x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[v]})",
+		},
+		{
+			name:     "LinkBackward, def 2, rep 2",
+			field:    parse.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			def:      2,
+			rep:      0,
+			expected: "x.Link.Backward = append(x.Link.Backward, vals[v])",
 		},
 	}
 

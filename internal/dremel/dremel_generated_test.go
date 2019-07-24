@@ -230,6 +230,8 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 	return v, l
 }
 
+// keeps track of the indices of repeated fields
+// that have already been handled by a previous field
 type indices []int
 
 func (i indices) rep(rep uint8) {
@@ -249,7 +251,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 	var v int
 
 	// if there are 2 or more repeated fields then use indices to keep track of where to append
-	in := indices(make([]int, 2)) // 2 should be written by parquetgen based on the number of repeated fields that haven't been seen yet
+	ind := indices(make([]int, 2)) // 2 should be written by parquetgen based on the number of repeated fields that haven't been seen yet
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -260,7 +262,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 		in.rep(rep)
 		if def == 3 { // 3 should be written by parquetgen based on the 'depth' field
 			s := vals[v]
-			x.Names[in[0]].Languages[in[1]].Country = &s
+			x.Names[ind[0]].Languages[ind[1]].Country = &s
 			v++
 		}
 	}
