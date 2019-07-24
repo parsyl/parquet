@@ -32,14 +32,12 @@ func Append(def, rep int, f parse.Field) string {
 		}
 		names = append(names, n)
 		repeats = append(repeats, r)
-		if r && count > 1 {
-			names = addIndex(names, repeats)
-		}
-
 		if count == rep {
 			break
 		}
 	}
+
+	names = addIndex(names, repeats)
 
 	s := strings.Join(names, ".")
 
@@ -47,8 +45,9 @@ func Append(def, rep int, f parse.Field) string {
 	if rep == nReps(f) && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
 		val = "vals[v]"
 	} else {
-		f = f.Child(count - 1)
-		def -= count - 1
+		i := len(names) - 1
+		def -= nDefs(f.RepetitionTypes[:i])
+		f = f.Child(i)
 		val = doInit(def, rep, 0, f, "vals[v]")
 	}
 	return fmt.Sprintf("x.%s = append(x.%s, %s)", s, s, val)
@@ -64,8 +63,12 @@ func addIndex(names []string, repeats []bool) []string {
 		}
 
 		if r && seen < c {
-			f := strings.Join(names[:i+1], ".")
-			names[i] = fmt.Sprintf("%s[len(x.%s)-1]", f, f)
+			end := i + 1
+			if end >= len(names) {
+				end = len(names) - 1
+			}
+			f := strings.Join(names[:end], ".")
+			names = append([]string{fmt.Sprintf("%s[len(x.%s)-1]", f, f)}, names[end:]...)
 		}
 	}
 
@@ -95,6 +98,9 @@ func doInit(def, rep, i int, f parse.Field, val string) string {
 		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
 			ptr = "&"
 		}
+		if f.RepetitionTypes[i] == parse.Repeated {
+			val = fmt.Sprintf("[]%s{%s}", f.FieldTypes[len(f.FieldTypes)-1], val)
+		}
 		return fmt.Sprintf("%s: %s%s", f.FieldNames[i], ptr, val)
 	}
 
@@ -111,7 +117,7 @@ func doInit(def, rep, i int, f parse.Field, val string) string {
 	var ptr string
 	leftBrace := "{"
 	rightBrace := "}"
-	if i < nDefs(f) || def == 0 {
+	if i < nDefs(f.RepetitionTypes) || def == 0 {
 		typ = f.FieldTypes[i]
 		if f.RepetitionTypes[i] == parse.Optional {
 			ptr = "&"
@@ -135,9 +141,9 @@ func isBeingRepeated(f parse.Field, rep, i int) bool {
 	return reps < rep
 }
 
-func nDefs(f parse.Field) int {
+func nDefs(rt []parse.RepetitionType) int {
 	var out int
-	for _, o := range f.RepetitionTypes {
+	for _, o := range rt {
 		if o == parse.Optional || o == parse.Repeated {
 			out++
 		}
