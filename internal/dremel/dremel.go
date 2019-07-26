@@ -8,11 +8,12 @@ import (
 	"github.com/parsyl/parquet/internal/parse"
 )
 
-func Write(i int, f parse.Field, fields []parse.Field) string {
+func Write(i int, fields []parse.Field) string {
+	f := fields[i]
 	if !isOptional(f) && !isRepeated(f) {
 		return writeRequired(f)
 	}
-	return writeOptional(f)
+	return writeOptional(i, fields)
 }
 
 func Read(f parse.Field) string {

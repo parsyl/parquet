@@ -16,28 +16,30 @@ func init() {
 		"removeStar": func(s string) string {
 			return strings.Replace(s, "*", "", 1)
 		},
+		"plusOne": func(i int) int { return i + 1 },
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int) {
-	{{if .Repeated}}l := findLevel(reps[1:], 0) + 1
-	defs = defs[:l]
-	reps = reps[:l]
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Type}}, vals []{{.TypeName}}, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	defs, reps, nLevels = getDocLevels(defs, reps)
 
-	var v int
+	{{if gt .Seen 0}}ind := indices(make([]int, {{.Seen}})){{end}}
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
 		if i > 0 && rep == 0 {
 			break
 		}
-	switch def { {{range .Cases}}
-	{{.}} {{end}}
+
+		{{if gt .Seen 0}}ind.rep(rep){{end}}
+		switch def { {{range $i, $case := .Defs}}
+			case $case:
+				{{index .Cases $i}}{{end}}
 		}
-	} {{else}}def := defs[0]
-	switch def { {{range .Cases}}
-	{{.}}{{end}} }{{end}}
-	return 0, 1
+	}
+
+	return nVals, nLevels
 }`)
 	if err != nil {
 		log.Fatal(err)
@@ -50,8 +52,10 @@ var (
 
 type writeInput struct {
 	parse.Field
-	Cases    []string
-	FuncName string
+	Cases []string
+	Defs  []int
+	Seen  int
+	Func  string
 }
 
 func writeRequired(f parse.Field) string {
@@ -60,40 +64,43 @@ func writeRequired(f parse.Field) string {
 }`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func writeOptional(f parse.Field) string {
-	i := writeInput{
-		Field:    f,
-		FuncName: strings.Join(f.FieldNames, ""),
-		Cases:    writeCases(f),
+func writeOptional(i int, fields []parse.Field) string {
+	f := fields[i]
+	s := seen(i, fields)
+	cs, defs := writeCases(f, s)
+	wi := writeInput{
+		Field: f,
+		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")),
+		Cases: cs,
+		Defs:  defs,
+		Seen:  s,
 	}
 
 	var buf bytes.Buffer
-	err := writeTpl.Execute(&buf, i)
+	err := writeTpl.Execute(&buf, wi)
 	if err != nil {
 		log.Fatal(err) //TODO: return error
 	}
 	return string(buf.Bytes())
 }
 
-func writeCases(f parse.Field) []string {
-	var out []string
-	for def := 1; def <= defs(f); def++ {
-		var v, ret string
+func writeCases(f parse.Field, seen int) ([]string, []int) {
+	var cases []string
+	var dfs []int
+	for def := seen + 1; def <= defs(f); def++ {
+		dfs = append(dfs, def)
+		var val, inc string
 		if def == defs(f) {
-			v = `v := vals[0]
+			val = `v := vals[0]
 		`
-			ret = `
-	return 1, 1
+			inc = `
+	nVals++
 	`
 		}
 
-		cs := fmt.Sprintf(`case %d:
-	`, def)
-
-		out = append(out, fmt.Sprintf(`%s%s%s%s`, cs, v, ifelse(0, def, f), ret))
+		cases = append(cases, fmt.Sprintf(`%s%s%s`, val, ifelse(0, def, f), inc))
 	}
-	return out
-
+	return cases, dfs
 }
 
 // return an if else block for the definition level
@@ -201,4 +208,32 @@ func pointer(i, n int, p string, levels []bool) string {
 		return p
 	}
 	return ""
+}
+
+// seen counts how many sub-fields have been previously processed
+// so that some of the cases and if statements can be skipped when
+// re-assembling records
+func seen(i int, fields []parse.Field) int {
+	m := map[string]int{}
+	for _, ft := range fields[i].FieldTypes {
+		m[ft] = 1
+	}
+
+	for _, f := range fields[:i] {
+		for _, ft := range f.FieldTypes {
+			_, ok := m[ft]
+			if ok {
+				m[ft]++
+			}
+		}
+	}
+
+	var out int
+	for _, i := range m {
+		if i > 1 {
+			out++
+		}
+	}
+
+	return out
 }

@@ -13,20 +13,20 @@ import (
 func TestWrite(t *testing.T) {
 	testCases := []struct {
 		name   string
-		seen   []parse.Field
-		f      parse.Field
+		i      int
+		fields []parse.Field
 		result string
 	}{
 		{
-			name: "required and not nested",
-			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			name:   "required and not nested",
+			fields: []parse.Field{{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, RepetitionTypes: []parse.RepetitionType{parse.Required}}},
 			result: `func writeID(x *Person, vals []int32) {
 	x.ID = vals[0]
 }`,
 		},
 		{
-			name: "optional and not nested",
-			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			name:   "optional and not nested",
+			fields: []parse.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, RepetitionTypes: []parse.RepetitionType{parse.Optional}}},
 			result: `func writeID(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -39,15 +39,15 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "required and nested",
-			f:    parse.Field{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
+			name:   "required and nested",
+			fields: []parse.Field{{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}}},
 			result: `func writeOtherHobbyDifficulty(x *Person, vals []int32) {
 	x.Other.Hobby.Difficulty = vals[0]
 }`,
 		},
 		{
-			name: "optional and nested",
-			f:    parse.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
+			name:   "optional and nested",
+			fields: []parse.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}}},
 			result: `func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -68,8 +68,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "mix of optional and required and nested",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
+			name:   "mix of optional and required and nested",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}}},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -86,8 +86,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "mix of optional and required and nested v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+			name:   "mix of optional and required and nested v2",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}}},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -100,8 +100,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "mix of optional and require and nested 3 deep",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Optional}},
+			name:   "mix of optional and require and nested 3 deep",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -122,8 +122,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "mix of optional and require and nested 3 deep v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
+			name:   "mix of optional and require and nested 3 deep v2",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -144,8 +144,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "mix of optional and require and nested 3 deep v3",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}},
+			name:   "mix of optional and require and nested 3 deep v3",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -166,8 +166,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "nested 3 deep all optional",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
+			name:   "nested 3 deep all optional",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -196,8 +196,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "four deep",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Optional}},
+			name:   "four deep",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Optional}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -236,8 +236,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "four deep mixed",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional, parse.Optional}},
+			name:   "four deep mixed",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional, parse.Optional}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -266,8 +266,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "four deep mixed v2",
-			f:    parse.Field{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Required}},
+			name:   "four deep mixed v2",
+			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Required}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -296,8 +296,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "writeLinkBackward",
-			f:    parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			name:   "writeLinkBackward",
+			fields: []parse.Field{{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}}},
 			result: `func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
@@ -331,10 +331,11 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "writeLinkFoward",
-			f:    parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
-			seen: []parse.Field{
+			fields: []parse.Field{
 				{FieldNames: []string{"Link", "Backward"}},
+				{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
 			},
+			i: 1,
 			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
@@ -362,8 +363,8 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "writeNamesLanguagesCode",
-			f:    parse.Field{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			name:   "writeNamesLanguagesCode",
+			fields: []parse.Field{{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}}},
 			result: `func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]
@@ -398,7 +399,7 @@ func TestWrite(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			s := dremel.Write(0, tc.f, tc.seen)
+			s := dremel.Write(tc.i, tc.fields)
 			gocode, err := format.Source([]byte(s))
 			fmt.Println(string(gocode))
 			assert.NoError(t, err)
