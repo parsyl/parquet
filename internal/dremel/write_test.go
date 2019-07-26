@@ -363,7 +363,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "writeNamesLanguagesCode",
-			f:    parse.Field{Type: "Document", TypeName: "int64", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			f:    parse.Field{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
 			result: `func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	l := findLevel(reps[1:], 0) + 1
 	defs = defs[:l]

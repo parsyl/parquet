@@ -18,6 +18,28 @@ const (
 	Repeated RepetitionType = 2
 )
 
+type RepetitionTypes []RepetitionType
+
+func (r RepetitionTypes) MaxDef() uint8 {
+	var out uint8
+	for _, rt := range r {
+		if rt == Optional || rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
+func (r RepetitionTypes) MaxRep() uint8 {
+	var out uint8
+	for _, rt := range r {
+		if rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
 const letters = "abcdefghijklmnopqrstuvwxyz"
 
 type Field struct {

@@ -93,6 +93,7 @@ func writeCases(f parse.Field) []string {
 		out = append(out, fmt.Sprintf(`%s%s%s%s`, cs, v, ifelse(0, def, f), ret))
 	}
 	return out
+
 }
 
 // return an if else block for the definition level
@@ -114,14 +115,13 @@ func ifelse(i, def int, f parse.Field) string {
 		field = fmt.Sprintf("x.%s", nilField(i, f))
 		ch := f.Child(defIndex(i, f))
 		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
-		val = structs.Init(def, ch)
-		fmt.Println("val", val)
+		val = structs.Init(def, 0, ch)
 	} else if i > 0 && i < defs(f)-1 {
 		stmt = " else if"
 		brace = "}"
 		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
 		ch := f.Child(defIndex(i, f))
-		val = structs.Init(def-i, ch)
+		val = structs.Init(def-i, 0, ch)
 		field = fmt.Sprintf("x.%s", nilField(i, f))
 	} else {
 		stmt = " else"

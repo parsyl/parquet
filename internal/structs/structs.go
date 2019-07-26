@@ -8,9 +8,9 @@ import (
 	sch "github.com/parsyl/parquet/schema"
 )
 
-// Append generates the statement to append a value based
+// Init generates the statement to append a value based
 // on the definition and repetition level
-func Append(def, rep int, f parse.Field) string {
+func Init(def, rep int, f parse.Field) string {
 	if !f.Repeated() {
 		return fmt.Sprintf("x.%s = %s", f.FieldNames[0], doInit(def, rep, 0, f, "v"))
 	}
@@ -85,9 +85,7 @@ func nRepeats(repeats []bool) int {
 	return out
 }
 
-// Init initializes the nested structs according to the
-// current definition level.
-func Init(def int, f parse.Field) string {
+func initOptional(def int, f parse.Field) string {
 	return doInit(def, 0, 0, f, "v")
 }
 

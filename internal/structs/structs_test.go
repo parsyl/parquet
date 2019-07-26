@@ -135,7 +135,7 @@ func TestAppend(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			assert.Equal(t, tc.expected, structs.Append(tc.def, tc.rep, tc.field))
+			assert.Equal(t, tc.expected, structs.Init(tc.def, tc.rep, tc.field))
 		})
 	}
 }
@@ -214,7 +214,7 @@ func TestInit(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			assert.Equal(t, tc.expected, structs.Init(tc.def, tc.field))
+			assert.Equal(t, tc.expected, structs.Init(tc.def, 0, tc.field))
 		})
 	}
 }
