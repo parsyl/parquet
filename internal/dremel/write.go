@@ -33,9 +33,9 @@ func init() {
 		}
 
 		{{if gt .Seen 0}}ind.rep(rep){{end}}
-		switch def { {{range $i, $case := .Defs}}
-			case $case:
-				{{index .Cases $i}}{{end}}
+		switch def { {{range $i, $def := .Defs}}
+			case {{$def}}:
+				{{index $.Cases $i}}{{end}}
 		}
 	}
 

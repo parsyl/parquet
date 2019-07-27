@@ -1,4 +1,4 @@
-package main
+package gen
 
 var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField struct {
 	parquet.OptionalField

@@ -366,11 +366,9 @@ func TestWrite(t *testing.T) {
 			name:   "writeNamesLanguagesCode",
 			fields: []parse.Field{{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}}},
 			result: `func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
-	l := findLevel(reps[1:], 0) + 1
-	defs = defs[:l]
-	reps = reps[:l]
+	var nVals, nLevels int
+	defs, reps, nLevels = getDocLevels(defs, reps)
 
-	var v int
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -379,6 +377,8 @@ func TestWrite(t *testing.T) {
 		}
 
 		switch def {
+		case 1:
+			x.Names = append(x.Names, Name{})
 		case 2:
 			switch rep {
 			case 0, 1:
@@ -387,8 +387,6 @@ func TestWrite(t *testing.T) {
 				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[v]})
 			}
 			v++
-		case 1:
-			x.Names = append(x.Names, Name{})
 		}
 	}
 
@@ -400,6 +398,7 @@ func TestWrite(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(tc.i, tc.fields)
+			fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			fmt.Println(string(gocode))
 			assert.NoError(t, err)

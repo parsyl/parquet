@@ -1,4 +1,4 @@
-package main
+package gen
 
 var readTpl = `{{define "readFunc"}}
 {{end}}`

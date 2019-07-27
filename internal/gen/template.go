@@ -1,4 +1,4 @@
-package main
+package gen
 
 var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }, {{compressionFunc .}}(compression){{if .Optional}}, parquet.OptionalFieldDepth({{.Depth}}), parquet.OptionalFieldRepetitionType({{.RepetitionType}}){{end}}),{{end}}`
 
@@ -392,4 +392,13 @@ func (p *ParquetReader) Scan(x *{{.Type}}) {
 {{ template "boolOptionalStats" .}}
 {{end}}
 {{end}}
+
+func pint32(i int32) *int32       { return &i }
+func puint32(i uint32) *uint32    { return &i }
+func pint64(i int64) *int64       { return &i }
+func puint64(i uint64) *uint64    { return &i }
+func pbool(b bool) *bool          { return &b }
+func pstring(s string) *string    { return &s }
+func pfloat32(f float32) *float32 { return &f }
+func pfloat64(f float64) *float64 { return &f }
 `

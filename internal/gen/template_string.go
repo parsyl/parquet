@@ -1,4 +1,4 @@
-package main
+package gen
 
 var stringTpl = `{{define "stringField"}}
 type StringField struct {

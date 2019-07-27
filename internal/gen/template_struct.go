@@ -1,4 +1,4 @@
-package main
+package gen
 
 var structTpl = `package {{.Package}}
 

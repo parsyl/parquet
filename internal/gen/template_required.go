@@ -1,4 +1,4 @@
-package main
+package gen
 
 var requiredNumericTpl = `{{define "numericField"}}
 type {{.FieldType}} struct {

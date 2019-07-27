@@ -1,4 +1,4 @@
-package main
+package gen
 
 var stringOptionalTpl = `{{define "stringOptionalField"}}
 type StringOptionalField struct {

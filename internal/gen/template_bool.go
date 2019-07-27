@@ -1,4 +1,4 @@
-package main
+package gen
 
 var boolTpl = `{{define "boolField"}}type BoolField struct {
 	{{parquetType .}}
