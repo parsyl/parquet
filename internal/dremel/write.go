@@ -13,6 +13,7 @@ import (
 
 type defCase struct {
 	Def   int
+	Seen  int
 	Field parse.Field
 }
 
@@ -22,7 +23,7 @@ func init() {
 			return strings.Replace(s, "*", "", 1)
 		},
 		"plusOne":    func(i int) int { return i + 1 },
-		"newDefCase": func(def int, f parse.Field) defCase { return defCase{Def: def, Field: f} },
+		"newDefCase": func(def, seen int, f parse.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
 		"init":       func(def, rep int, f parse.Field) string { return structs.Init(def, rep, f) },
 		"repeat":     func(def int, f parse.Field) bool { return f.Repeated() && def == f.MaxDef() },
 	}
@@ -32,7 +33,7 @@ func init() {
 	var nVals, nLevels int
 	defs, reps, nLevels = getDocLevels(defs, reps)
 
-	{{if gt .Seen 0}}ind := indices(make([]int, {{.Seen}})){{end}}
+	{{if gt .Seen 1}}ind := indices(make([]int, {{.Seen}})){{end}}
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -40,10 +41,10 @@ func init() {
 			break
 		}
 
-		{{if gt .Seen 0}}ind.rep(rep){{end}}
+		{{if gt .Seen 1}}ind.rep(rep){{end}}
 		switch def { {{range $i, $def := .Defs}}
 			case {{$def}}:
-				{{ template "defCase" newDefCase $def $.Field}}{{end}}
+				{{ template "defCase" newDefCase $def $.Seen $.Field}}{{end}}
 		}
 	}
 
@@ -81,6 +82,7 @@ func writeRequired(f parse.Field) string {
 func writeOptional(i int, fields []parse.Field) string {
 	f := fields[i]
 	s := seen(i, fields)
+	fmt.Println("seen", s)
 	_, defs := writeCases(f, s)
 	wi := writeInput{
 		Field: f,
@@ -100,7 +102,7 @@ func writeOptional(i int, fields []parse.Field) string {
 func writeCases(f parse.Field, seen int) ([]string, []int) {
 	var cases []string
 	var dfs []int
-	for def := seen + 1; def <= defs(f); def++ {
+	for def := 1 + seen; def <= f.MaxDef(); def++ {
 		dfs = append(dfs, def)
 		var val, inc string
 		if def == defs(f) {
@@ -228,12 +230,12 @@ func pointer(i, n int, p string, levels []bool) string {
 // re-assembling records
 func seen(i int, fields []parse.Field) int {
 	m := map[string]int{}
-	for _, ft := range fields[i].FieldTypes {
+	for _, ft := range fields[i].FieldNames {
 		m[ft] = 1
 	}
 
 	for _, f := range fields[:i] {
-		for _, ft := range f.FieldTypes {
+		for _, ft := range f.FieldNames {
 			_, ok := m[ft]
 			if ok {
 				m[ft]++
