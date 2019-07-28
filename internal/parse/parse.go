@@ -119,6 +119,23 @@ func (f Field) MaxRep() uint {
 	return out
 }
 
+type RepCase struct {
+	Case string
+	Rep  int
+}
+
+func (f Field) RepCases() []RepCase {
+	var out []RepCase
+	for i := 1; i <= int(f.MaxRep()); i++ {
+		var s string
+		if i == 1 {
+			s = "0, "
+		}
+		out = append(out, RepCase{Case: fmt.Sprintf("case %s%d:", s, i), Rep: i})
+	}
+	return out
+}
+
 func (f Field) NilField(i int) (string, RepetitionType, int, int) {
 	var fields []string
 	var count int

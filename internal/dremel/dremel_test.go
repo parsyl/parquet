@@ -156,7 +156,3 @@ type Document struct {
 	Link  *Link
 	Names []Name
 }
-
-func pstring(s string) *string {
-	return &s
-}

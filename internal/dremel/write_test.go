@@ -382,15 +382,15 @@ func TestWrite(t *testing.T) {
 		case 2:
 			switch rep {
 			case 0, 1:
-				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[v]}}})
+				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
-				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[v]})
+				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[nVals]})
 			}
-			v++
+			nVals++
 		}
 	}
 
-	return v, l
+	return nVals, nLevels
 }`,
 		},
 	}
@@ -398,7 +398,7 @@ func TestWrite(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(tc.i, tc.fields)
-			fmt.Println(s)
+			//fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			fmt.Println(string(gocode))
 			assert.NoError(t, err)

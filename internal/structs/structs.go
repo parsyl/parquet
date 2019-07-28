@@ -43,12 +43,12 @@ func Init(def, rep int, f parse.Field) string {
 
 	var val string
 	if rep == nReps(f) && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
-		val = "vals[v]"
+		val = "vals[nVals]"
 	} else {
 		i := len(names) - 1
 		def -= nDefs(f.RepetitionTypes[:i])
 		f = f.Child(i)
-		val = doInit(def, rep, 0, f, "vals[v]")
+		val = doInit(def, rep, 0, f, "vals[nVals]")
 	}
 	return fmt.Sprintf("x.%s = append(x.%s, %s)", s, s, val)
 }

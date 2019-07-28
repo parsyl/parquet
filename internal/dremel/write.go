@@ -11,16 +11,24 @@ import (
 	"github.com/parsyl/parquet/internal/structs"
 )
 
+type defCase struct {
+	Def   int
+	Field parse.Field
+}
+
 func init() {
 	funcs := template.FuncMap{
 		"removeStar": func(s string) string {
 			return strings.Replace(s, "*", "", 1)
 		},
-		"plusOne": func(i int) int { return i + 1 },
+		"plusOne":    func(i int) int { return i + 1 },
+		"newDefCase": func(def int, f parse.Field) defCase { return defCase{Def: def, Field: f} },
+		"init":       func(def, rep int, f parse.Field) string { return structs.Init(def, rep, f) },
+		"repeat":     func(def int, f parse.Field) bool { return f.Repeated() && def == f.MaxDef() },
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Type}}, vals []{{.TypeName}}, defs, reps []uint8) (int, int) {
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.Type}}, vals []{{.Field.TypeName}}, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	defs, reps, nLevels = getDocLevels(defs, reps)
 
@@ -35,7 +43,7 @@ func init() {
 		{{if gt .Seen 0}}ind.rep(rep){{end}}
 		switch def { {{range $i, $def := .Defs}}
 			case {{$def}}:
-				{{index $.Cases $i}}{{end}}
+				{{ template "defCase" newDefCase $def $.Field}}{{end}}
 		}
 	}
 
@@ -44,6 +52,13 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	writeTpl, err = writeTpl.Parse(`{{define "defCase"}}{{if repeat .Def .Field}}{{ template "repSwitch" .}}{{else}}{{init .Def 0 .Field}}{{end}}{{end}}`)
+	writeTpl, err = writeTpl.Parse(`{{define "repSwitch"}}switch rep {
+{{range $case := .Field.RepCases}}{{$case.Case}}
+{{init $.Def $case.Rep $.Field}}
+{{end}} }
+nVals++ {{end}}`)
 }
 
 var (
@@ -51,8 +66,7 @@ var (
 )
 
 type writeInput struct {
-	parse.Field
-	Cases []string
+	Field parse.Field
 	Defs  []int
 	Seen  int
 	Func  string
@@ -67,11 +81,10 @@ func writeRequired(f parse.Field) string {
 func writeOptional(i int, fields []parse.Field) string {
 	f := fields[i]
 	s := seen(i, fields)
-	cs, defs := writeCases(f, s)
+	_, defs := writeCases(f, s)
 	wi := writeInput{
 		Field: f,
 		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")),
-		Cases: cs,
 		Defs:  defs,
 		Seen:  s,
 	}
