@@ -11,6 +11,7 @@ import (
 // Init generates the statement to append a value based
 // on the definition and repetition level
 func Init(def, rep int, f parse.Field) string {
+	fmt.Println("init", def, rep, f)
 	if !f.Repeated() {
 		return fmt.Sprintf("x.%s = %s", f.FieldNames[0], doInit(def, rep, 0, f, "v"))
 	}
@@ -42,7 +43,7 @@ func Init(def, rep int, f parse.Field) string {
 	s := strings.Join(names, ".")
 
 	var val string
-	if rep == nReps(f) && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
+	if def == f.MaxDef() && rep == nReps(f) && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
 		val = "vals[nVals]"
 	} else {
 		i := len(names) - 1

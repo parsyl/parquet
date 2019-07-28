@@ -55,6 +55,13 @@ func TestAppend(t *testing.T) {
 			expected: "x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[nVals]})",
 		},
 		{
+			name:     "LinkBackward, def 1, rep 0",
+			field:    parse.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			def:      1,
+			rep:      0,
+			expected: "x.Link = &Link{}",
+		},
+		{
 			name:     "LinkBackward, def 2, rep 0",
 			field:    parse.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
 			def:      2,
