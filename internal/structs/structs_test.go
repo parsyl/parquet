@@ -217,6 +217,12 @@ func TestInit(t *testing.T) {
 			def:      3,
 			expected: "x.Friend = &Entity{Hobby: &Item{Name: pstring(vals[nVals])}}",
 		},
+		{
+			name:     "first field required 3 deep def 1 of 2",
+			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
+			def:      1,
+			expected: "x.Friend.Hobby = &Item{}",
+		},
 	}
 
 	for i, tc := range testCases {

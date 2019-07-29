@@ -140,12 +140,14 @@ type RepCase struct {
 	Rep  int
 }
 
-func (f Field) RepCases() []RepCase {
+func (f Field) RepCases(seen int) []RepCase {
 	var out []RepCase
 	for i := 1; i <= int(f.MaxRep()); i++ {
 		var s string
-		if i == 1 {
+		if i == 1 && seen > 0 {
 			s = "0, "
+		} else {
+			out = append(out, RepCase{Case: "case 0:", Rep: 0})
 		}
 		out = append(out, RepCase{Case: fmt.Sprintf("case %s%d:", s, i), Rep: i})
 	}

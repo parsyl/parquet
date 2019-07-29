@@ -29,8 +29,20 @@ func init() {
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.Type}}, vals []{{.Field.TypeName}}, defs, reps []uint8) (int, int) {
-	var nVals, nLevels int
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.Type}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
+	{{if .Field.Repeated}}{{template "repeated" .}}{{else}}{{template "notRepeated" .}}{{end}}	
+}`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	notRepeatedTpl := `{{define "notRepeated"}}var nVals int
+	def := defs[0]
+	{{template "defSwitch" .}}
+
+	return nVals, 1{{end}}`
+
+	repeatedTpl := `{{define "repeated"}}var nVals, nLevels int
 	defs, reps, nLevels = getDocLevels(defs, reps)
 
 	{{if gt .Seen 1}}ind := indices(make([]int, {{.Seen}})){{end}}
@@ -42,24 +54,30 @@ func init() {
 		}
 
 		{{if gt .Seen 1}}ind.rep(rep){{end}}
-		switch def { {{range $i, $def := .Defs}}
+		{{template "defSwitch" .}}
+	}
+
+	return nVals, nLevels{{end}}`
+
+	defSwitchTpl := `{{define "defSwitch"}}switch def { {{range $i, $def := .Defs}}
 			case {{$def}}:
-				{{ template "defCase" newDefCase $def $.Seen $.Field}}{{end}}
+				{{ template "defCase" newDefCase $def $.Seen $.Field}}{{if eq $def $.Field.MaxDef}}
+				nVals++{{end}}{{end}}			
+		}{{end}}`
+
+	defCaseTpl := `{{define "defCase"}}{{if repeat .Def .Field}}{{ template "repSwitch" .}}{{else}}{{init .Def 0 .Field}}{{end}}{{end}}`
+
+	repSwitchTpl := `{{define "repSwitch"}}switch rep {
+{{range $case := .Field.RepCases $.Seen}}{{$case.Case}}
+{{init $.Def $case.Rep $.Field}}
+{{end}} } {{end}}`
+
+	for _, t := range []string{notRepeatedTpl, repeatedTpl, defSwitchTpl, defCaseTpl, repSwitchTpl} {
+		writeTpl, err = writeTpl.Parse(t)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	return nVals, nLevels
-}`)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	writeTpl, err = writeTpl.Parse(`{{define "defCase"}}{{if repeat .Def .Field}}{{ template "repSwitch" .}}{{else}}{{init .Def 0 .Field}}{{end}}{{end}}`)
-	writeTpl, err = writeTpl.Parse(`{{define "repSwitch"}}switch rep {
-{{range $case := .Field.RepCases}}{{$case.Case}}
-{{init $.Def $case.Rep $.Field}}
-{{end}} }
-nVals++ {{end}}`)
 }
 
 var (

@@ -97,8 +97,26 @@ func initOptional(def int, f parse.Field) string {
 	return doInit(def, 0, 0, f)
 }
 
+func defIndex(i int, f parse.Field) int {
+	var count int
+	for j, o := range f.RepetitionTypes {
+		if o == parse.Optional || o == parse.Repeated {
+			count++
+		}
+		if count > i {
+			return j
+		}
+	}
+	return -1
+}
+
 func doInit(def, rep, i int, f parse.Field) string {
 	maxDef := f.MaxDef()
+
+	i = defIndex(i, f)
+	f = f.Child(i)
+
+	fmt.Println("doInit", def, rep, i, maxDef)
 	val := "vals[nVals]"
 	if def == maxDef && i == len(f.RepetitionTypes)-1 {
 		if f.RepetitionTypes[i] == parse.Optional {
