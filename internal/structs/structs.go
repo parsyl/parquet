@@ -11,14 +11,8 @@ import (
 // Init generates the statement to append a value based
 // on the definition and repetition level
 func Init(def, rep int, f parse.Field) string {
-	fmt.Println("init", def, rep, f)
 	if !f.Repeated() {
 		return fmt.Sprintf("x.%s = %s", f.FieldNames[0], doInit(def, rep, 0, f, "v"))
-	}
-
-	// zero means start of a record, so that means the first field is really the one being repeated
-	if rep == 0 {
-		rep++
 	}
 
 	var names []string
@@ -43,15 +37,33 @@ func Init(def, rep int, f parse.Field) string {
 	s := strings.Join(names, ".")
 
 	var val string
+	tpl := "x.%s = append(x.%s, %s)"
+	s2 := s
+
+	i, rt := f.NthDef(def)
+
 	if def == f.MaxDef() && rep == nReps(f) && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
 		val = "vals[nVals]"
+	} else if def == f.MaxDef() && rep == 0 && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
+		tpl = "x.%s%s = %s"
+		s2 = ""
+		s = strings.Join(names, ".")
+		val = doInit(def, rep, 0, f, "vals[nVals]")
+	} else if rt != parse.Repeated {
+		tpl = "x.%s%s = %s"
+		s2 = ""
+		//def -= nDefs(f.RepetitionTypes[:i])
+		names = names[:i]
+		s = strings.Join(names, ".")
+		f = f.Child(i - 1)
+		val = doInit(def, rep, 0, f, "")
 	} else {
 		i := len(names) - 1
 		def -= nDefs(f.RepetitionTypes[:i])
 		f = f.Child(i)
 		val = doInit(def, rep, 0, f, "vals[nVals]")
 	}
-	return fmt.Sprintf("x.%s = append(x.%s, %s)", s, s, val)
+	return fmt.Sprintf(tpl, s, s2, val)
 }
 
 func addIndex(names []string, repeats []bool) []string {

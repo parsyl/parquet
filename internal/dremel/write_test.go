@@ -269,30 +269,27 @@ func TestWrite(t *testing.T) {
 			name:   "four deep mixed v2",
 			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Required}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	def := defs[0]
-	switch def {
-	case 1:
-		if x.Friend == nil {
+	var nVals, nLevels int
+	defs, _, nLevels = getDocLevels(defs, reps)
+
+	for i := range defs {
+		def := defs[0]
+
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		switch def {
+		case 1:
 			x.Friend = &Entity{}
-		}
-	case 2:
-		if x.Friend == nil {
+		case 2:
 			x.Friend = &Entity{Hobby: &Item{}}
-		} else if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{}
-		}
-	case 3:
-		v := vals[0]
-		if x.Friend == nil {
-			x.Friend = &Entity{Hobby: &Item{Name: &Name{First: v}}}
-		} else if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{Name: &Name{First: v}}
-		} else {
-			x.Friend.Hobby.Name.First = v
-		}
-		return 1, 1
+		case 3:
+			x.Friend = &Entity{Hobby: &Item{Name: &Name{First: vals[nVals]}}}
+			nVals++
 	}
-	return 0, 1
+
+	return nVals, nLevels
 }`,
 		},
 		{
@@ -313,18 +310,18 @@ func TestWrite(t *testing.T) {
 		case 1:
 			x.Link = &Link{}
 		case 2:
-			if x.Link == nil {
-				x.Link = &Link{}
-			}
 			switch rep {
-			case 0, 1:
+			case 0:
+				x.Link = &Link{Backward: vals[nVals]}
+				nVals++
+			case 1:
 				x.Link.Backward = append(x.Link.Backward, vals[nVals])
 				nVals++
 			}
 		}
 	}
 
-	return v, l
+	return nVals, nLevels
 }`,
 		},
 		{

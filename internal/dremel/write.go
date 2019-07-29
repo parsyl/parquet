@@ -82,8 +82,7 @@ func writeRequired(f parse.Field) string {
 func writeOptional(i int, fields []parse.Field) string {
 	f := fields[i]
 	s := seen(i, fields)
-	fmt.Println("seen", s)
-	_, defs := writeCases(f, s)
+	defs := writeCases(f, s)
 	wi := writeInput{
 		Field: f,
 		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")),
@@ -99,74 +98,12 @@ func writeOptional(i int, fields []parse.Field) string {
 	return string(buf.Bytes())
 }
 
-func writeCases(f parse.Field, seen int) ([]string, []int) {
-	var cases []string
+func writeCases(f parse.Field, seen int) []int {
 	var dfs []int
 	for def := 1 + seen; def <= f.MaxDef(); def++ {
 		dfs = append(dfs, def)
-		var val, inc string
-		if def == defs(f) {
-			val = `v := vals[0]
-		`
-			inc = `
-	nVals++
-	`
-		}
-
-		cases = append(cases, fmt.Sprintf(`%s%s%s`, val, ifelse(0, def, f), inc))
 	}
-	return cases, dfs
-}
-
-// return an if else block for the definition level
-func ifelse(i, def int, f parse.Field) string {
-	fmt.Printf("if else i: %d, def: %d, optionals: %d, field: %+v\n", i, def, optionals(f), f)
-	if i == recursions(def, f) || def > optionals(f) {
-		return ""
-	}
-
-	var stmt, brace, val, field, cmp string
-	rt := f.RepetitionTypes[len(f.RepetitionTypes)-1]
-	if i == 0 && defs(f) == 1 && rt == parse.Optional {
-		return fmt.Sprintf(`x.%s = &v`, strings.Join(f.FieldNames, "."))
-	}
-
-	if i == 0 {
-		stmt = "if"
-		brace = "}"
-		field = fmt.Sprintf("x.%s", nilField(i, f))
-		ch := f.Child(defIndex(i, f))
-		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
-		val = structs.Init(def, 0, ch)
-	} else if i > 0 && i < defs(f)-1 {
-		stmt = " else if"
-		brace = "}"
-		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
-		ch := f.Child(defIndex(i, f))
-		val = structs.Init(def-i, 0, ch)
-		field = fmt.Sprintf("x.%s", nilField(i, f))
-	} else {
-		stmt = " else"
-		val = "v"
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
-			val = "&v"
-		}
-		brace = "}"
-		field = fmt.Sprintf("x.%s", strings.Join(f.FieldNames, "."))
-	}
-
-	return fmt.Sprintf(`%s%s {
-	%s = %s
-	%s%s`, stmt, cmp, field, val, brace, ifelse(i+1, def, f))
-}
-
-// recursions calculates the number of times ifelse should execute
-func recursions(def int, f parse.Field) int {
-	n := def
-	if defs(f) == 1 {
-		n++
-	}
-	return n
+	return dfs
 }
 
 func nilField(i int, f parse.Field) string {

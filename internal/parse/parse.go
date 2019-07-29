@@ -99,6 +99,22 @@ func (f Field) MaxDef() int {
 	return out
 }
 
+func (f Field) NthDef(i int) (int, RepetitionType) {
+	var count int
+	var out RepetitionType
+	var x int
+	for _, t := range f.RepetitionTypes {
+		if t == Optional || t == Repeated {
+			count++
+			if count == i {
+				out = t
+				x = count
+			}
+		}
+	}
+	return x, out
+}
+
 func (f Field) Defs() []int {
 	out := make([]int, 0, len(f.RepetitionTypes))
 	for i, t := range f.RepetitionTypes {
