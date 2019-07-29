@@ -11,8 +11,8 @@ import (
 // Init generates the statement to append a value based
 // on the definition and repetition level
 func Init(def, rep int, f parse.Field) string {
-	if !f.Repeated() {
-		return fmt.Sprintf("x.%s = %s", f.FieldNames[0], doInit(def, rep, 0, f, "v"))
+	if rep == 0 || !f.Repeated() {
+		return fmt.Sprintf("x.%s = %s", f.FieldNames[0], doInit(def, rep, 0, f))
 	}
 
 	var names []string
@@ -44,11 +44,6 @@ func Init(def, rep int, f parse.Field) string {
 
 	if def == f.MaxDef() && rep == nReps(f) && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
 		val = "vals[nVals]"
-	} else if def == f.MaxDef() && rep == 0 && f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Repeated {
-		tpl = "x.%s%s = %s"
-		s2 = ""
-		s = strings.Join(names, ".")
-		val = doInit(def, rep, 0, f, "vals[nVals]")
 	} else if rt != parse.Repeated {
 		tpl = "x.%s%s = %s"
 		s2 = ""
@@ -56,12 +51,12 @@ func Init(def, rep int, f parse.Field) string {
 		names = names[:i]
 		s = strings.Join(names, ".")
 		f = f.Child(i - 1)
-		val = doInit(def, rep, 0, f, "")
+		val = doInit(def, rep, 0, f)
 	} else {
 		i := len(names) - 1
 		def -= nDefs(f.RepetitionTypes[:i])
 		f = f.Child(i)
-		val = doInit(def, rep, 0, f, "vals[nVals]")
+		val = doInit(def, rep, 0, f)
 	}
 	return fmt.Sprintf(tpl, s, s2, val)
 }
@@ -99,20 +94,25 @@ func nRepeats(repeats []bool) int {
 }
 
 func initOptional(def int, f parse.Field) string {
-	return doInit(def, 0, 0, f, "v")
+	return doInit(def, 0, 0, f)
 }
 
-func doInit(def, rep, i int, f parse.Field, val string) string {
+func doInit(def, rep, i int, f parse.Field) string {
 	maxDef := f.MaxDef()
+	val := "vals[nVals]"
 	if def == maxDef && i == len(f.RepetitionTypes)-1 {
-		var ptr string
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
-			ptr = "&"
+		if f.RepetitionTypes[i] == parse.Optional {
+			val = fmt.Sprintf("p%s(vals[nVals])", f.FieldTypes[i])
 		}
 		if f.RepetitionTypes[i] == parse.Repeated {
-			val = fmt.Sprintf("[]%s{%s}", f.FieldTypes[len(f.FieldTypes)-1], val)
+			var lb, rb string
+			if i < len(f.RepetitionTypes)-1 {
+				lb = "{"
+				rb = "}"
+			}
+			val = fmt.Sprintf("[]%s{%s%s%s}", f.FieldTypes[len(f.FieldTypes)-1], lb, val, rb)
 		}
-		return fmt.Sprintf("%s: %s%s", f.FieldNames[i], ptr, val)
+		return fmt.Sprintf("%s: %s", f.FieldNames[i], val)
 	}
 
 	if i == def && def < maxDef {
@@ -139,7 +139,7 @@ func doInit(def, rep, i int, f parse.Field, val string) string {
 		}
 	}
 
-	return fmt.Sprintf("%s%s%s%s%s%s", field, ptr, typ, leftBrace, doInit(def, rep, i+1, f, val), rightBrace)
+	return fmt.Sprintf("%s%s%s%s%s%s", field, ptr, typ, leftBrace, doInit(def, rep, i+1, f), rightBrace)
 }
 
 func isBeingRepeated(f parse.Field, rep, i int) bool {
