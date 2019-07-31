@@ -179,6 +179,7 @@ func (p *ParquetWriter) Close() error {
 }
 
 func (p *ParquetWriter) Add(rec {{.Type}}) {
+	p.meta.NextDoc()
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
@@ -227,6 +228,7 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 
 	schema := make([]parquet.Field, len(ff))
 	for i, f := range ff {
+		pr.fieldNames = append(pr.fieldNames, f.Name())
 		schema[i] = f.Schema()
 	}
 
@@ -357,7 +359,8 @@ func (p *ParquetReader) Scan(x *{{.Type}}) {
 		return
 	}
 
-	for _, f := range p.fields {
+	for _, name := range p.fieldNames {
+		f := p.fields[name]
 		f.Scan(x)
 	}
 }

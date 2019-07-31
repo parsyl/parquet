@@ -64,7 +64,7 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	}
 
 	for j := 0; j < pg.N; j++ {
-		if f.Defs[start+j] == 0 {
+		if f.Defs[start+j] < f.MaxLevels.Def {
 			continue
 		}
 

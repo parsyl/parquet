@@ -54,6 +54,7 @@ func init() {
 			break
 		}
 
+		nLevels++
 		{{if gt .Seen 1}}ind.rep(rep){{end}}
 		{{template "defSwitch" .}}
 	}

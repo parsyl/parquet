@@ -84,10 +84,8 @@ func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
-
 func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
-	//defs, reps, nLevels = getDocLevels(defs, reps)
 
 	for i := range defs {
 		def := defs[i]
@@ -97,6 +95,7 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 		}
 
 		nLevels++
+
 		switch def {
 		case 1:
 			x.Link = &Link{}
@@ -141,7 +140,6 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 }
 func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
-	//defs, reps, nLevels = getDocLevels(defs, reps)
 
 	for i := range defs {
 		def := defs[i]
@@ -151,6 +149,7 @@ func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) 
 		}
 
 		nLevels++
+
 		switch def {
 		case 2:
 			switch rep {
@@ -194,19 +193,16 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 }
 func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
-	//defs, reps, nLevels = getDocLevels(defs, reps)
-	fmt.Println("writenameslangcode", defs, reps)
 
 	for i := range defs {
-
 		def := defs[i]
 		rep := reps[i]
-		fmt.Println("def and rep", def, rep, x.Names)
 		if i > 0 && rep == 0 {
 			break
 		}
 
 		nLevels++
+
 		switch def {
 		case 1:
 			x.Names = append(x.Names, Name{})
@@ -214,11 +210,9 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 			switch rep {
 			case 0:
 				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
-				fmt.Println("case 0", x.Names)
 			case 1:
 				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
-				fmt.Printf("rep 2: %+v\n", x)
 				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[nVals]})
 			}
 			nVals++
@@ -314,7 +308,6 @@ func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 }
 func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
-	//defs, reps, nLevels = getDocLevels(defs, reps)
 
 	for i := range defs {
 		def := defs[i]
@@ -324,6 +317,7 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 		}
 
 		nLevels++
+
 		switch def {
 		case 2:
 			switch rep {
@@ -827,7 +821,7 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		buf.Write([]byte(s))
 	}
 
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
