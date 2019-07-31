@@ -70,6 +70,10 @@ func (f *StringField) Add(r {{.Type}}) {
 	f.stats.add(v)
 	f.vals = append(f.vals, v)
 }
+
+func (f *StringField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
 {{end}}`
 
 var stringStatsTpl = `{{define "stringStats"}}

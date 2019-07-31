@@ -24,7 +24,7 @@ func TestAppend(t *testing.T) {
 			field:    parse.Field{FieldNames: []string{"Name", "Language", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
 			def:      0,
 			rep:      0,
-			expected: "x.Name = Name{Language: Language{Code: vals[nVals]}}",
+			expected: "x.Name.Language.Code = vals[nVals]",
 		},
 		{
 			name:     "NamesLanguagesCode, def 1, rep 1",
@@ -87,7 +87,7 @@ func TestAppend(t *testing.T) {
 			field:    parse.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Name = Name{Languages: []Language{{Codes: []string{vals[nVals]}}}}",
+			expected: "x.Name.Languages = []Language{{Codes: []string{vals[nVals]}}}",
 		},
 		{
 			name:     "repeated required repeated rep 1",
@@ -115,7 +115,7 @@ func TestAppend(t *testing.T) {
 			field:    parse.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Name = Name{Languages: []Language{{Codes: []string{vals[nVals]}}}}",
+			expected: "x.Name.Languages = []Language{{Codes: []string{vals[nVals]}}}",
 		},
 		{
 			name:     "repeated required repeated rep 2",

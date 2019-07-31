@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/parsyl/parquet"
-	"github.com/parsyl/parquet/internal/parse"
 
 	"math"
 	"sort"
@@ -45,60 +44,34 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt64Field(readDocID, writeDocID, []string{"docid"}, fieldCompression(compression)),
-		NewInt64OptionalField(readLinkBackward, writeLinkBackward, []string{"link", "backward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
-		NewInt64OptionalField(readLinkForward, writeLinkForward, []string{"link", "forward"}, []parse.RepetitionType{parse.Optional, parse.Repeated}, optionalFieldCompression(compression)),
-		NewStringOptionalField(readNamesLanguagesCode, writeNamesLanguagesCode, []string{"names", "languages", "code"}, []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}, optionalFieldCompression(compression)),
-		NewStringOptionalField(readNamesLanguagesCountry, writeNamesLanguagesCountry, []string{"names", "languages", "country"}, []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Optional}, optionalFieldCompression(compression)),
-		NewStringOptionalField(readNamesURL, writeNamesURL, []string{"names", "url"}, []parse.RepetitionType{parse.Repeated, parse.Optional}, optionalFieldCompression(compression)),
+		NewInt64OptionalField(readLinkBackward, writeLinkBackward, []string{"link", "backward"}, []int{1, 2}, optionalFieldCompression(compression)),
+		NewInt64OptionalField(readLinkForward, writeLinkForward, []string{"link", "forward"}, []int{1, 2}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readNamesLanguagesCode, writeNamesLanguagesCode, []string{"names", "languages", "code"}, []int{2, 2, 0}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readNamesLanguagesCountry, writeNamesLanguagesCountry, []string{"names", "languages", "country"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readNamesURL, writeNamesURL, []string{"names", "url"}, []int{2, 1}, optionalFieldCompression(compression)),
 	}
 }
 
 func readDocID(x Document) int64 {
 	return x.DocID
 }
-
 func writeDocID(x *Document, vals []int64) {
 	x.DocID = vals[0]
 }
-
 func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
-	var vals []int64
-	var defs, reps []uint8
-	var lastRep uint8
-	if x.Link == nil {
-		return vals, []uint8{0}, []uint8{0}
-	}
-
-	if len(x.Link.Backward) == 0 {
-		return vals, []uint8{1}, []uint8{0}
-	}
-
-	for i0, x0 := range x.Link.Backward {
-		if i0 == 1 {
-			lastRep = 1
-		}
-		vals = append(vals, x0)
-		defs = append(defs, 2)
-		reps = append(reps, lastRep)
-	}
-
-	return vals, defs, reps
-}
-
-func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 	var vals []int64
 	var defs, reps []uint8
 	var lastRep uint8
 
 	if x.Link == nil {
 		defs = append(defs, 0)
-		reps = append(reps, 0)
+		reps = append(reps, lastRep)
 	} else {
-		if len(x.Link.Forward) == 0 {
+		if len(x.Link.Backward) == 0 {
 			defs = append(defs, 1)
-			reps = append(reps, 0)
+			reps = append(reps, lastRep)
 		} else {
-			for i0, x0 := range x.Link.Forward {
+			for i0, x0 := range x.Link.Backward {
 				if i0 == 1 {
 					lastRep = 1
 				}
@@ -113,11 +86,9 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 }
 
 func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
-	l := findLevel(reps[1:], 0) + 1
-	defs = defs[:l]
-	reps = reps[:l]
+	var nVals, nLevels int
+	//defs, reps, nLevels = getDocLevels(defs, reps)
 
-	var v int
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -125,30 +96,53 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 			break
 		}
 
+		nLevels++
 		switch def {
 		case 1:
 			x.Link = &Link{}
 		case 2:
-			if x.Link == nil {
-				x.Link = &Link{}
-			}
 			switch rep {
-			case 0, 1:
-				x.Link.Backward = append(x.Link.Backward, vals[v])
-				v++
+			case 0:
+				x.Link = &Link{Backward: []int64{vals[nVals]}}
+			case 1:
+				x.Link.Backward = append(x.Link.Backward, vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
+	var vals []int64
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Link == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Link.Forward) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Link.Forward {
+				if i0 == 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0)
 			}
 		}
 	}
 
-	return v, l
+	return vals, defs, reps
 }
-
 func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
-	l := findLevel(reps[1:], 0) + 1
-	defs = defs[:l]
-	reps = reps[:l]
+	var nVals, nLevels int
+	//defs, reps, nLevels = getDocLevels(defs, reps)
 
-	var v int
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -156,19 +150,17 @@ func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) 
 			break
 		}
 
+		nLevels++
 		switch def {
 		case 2:
 			switch rep {
-			case 0, 1:
-				x.Link.Forward = append(x.Link.Forward, vals[v])
-				v++
 			}
+			nVals++
 		}
 	}
 
-	return v, l
+	return nVals, nLevels
 }
-
 func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
@@ -186,86 +178,55 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 				defs = append(defs, 1)
 				reps = append(reps, lastRep)
 			} else {
-				for i1, l := range x0.Languages {
+				for i1, x1 := range x0.Languages {
 					if i1 == 1 {
 						lastRep = 2
 					}
-					vals = append(vals, l.Code)
 					defs = append(defs, 2)
 					reps = append(reps, lastRep)
+					vals = append(vals, x1.Code)
 				}
 			}
 		}
 	}
+
 	return vals, defs, reps
 }
-
 func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
-	l := findLevel(reps[1:], 0) + 1
-	defs = defs[:l]
-	reps = reps[:l]
+	var nVals, nLevels int
+	//defs, reps, nLevels = getDocLevels(defs, reps)
+	fmt.Println("writenameslangcode", defs, reps)
 
-	var v int
 	for i := range defs {
+
 		def := defs[i]
 		rep := reps[i]
+		fmt.Println("def and rep", def, rep, x.Names)
 		if i > 0 && rep == 0 {
 			break
 		}
 
+		nLevels++
 		switch def {
 		case 1:
 			x.Names = append(x.Names, Name{})
 		case 2:
 			switch rep {
-			case 0, 1:
-				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[v]}}})
+			case 0:
+				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
+				fmt.Println("case 0", x.Names)
+			case 1:
+				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
-				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[v]})
+				fmt.Printf("rep 2: %+v\n", x)
+				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[nVals]})
 			}
-			v++
-		}
-	}
-
-	return v, l
-}
-
-func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
-	var nVals, nLevels int
-	defs, reps, nLevels = getDocLevels(defs, reps)
-
-	ind := indices(make([]int, 2)) // 2 should be written by parquetgen based on the number of repeated fields that have already been seen
-	for i := range defs {
-		def := defs[i]
-		rep := reps[i]
-		if i > 0 && rep == 0 {
-			break
-		}
-
-		ind.rep(rep)
-		if def == 3 { // 3 should be written by parquetgen based on the 'depth' field
-			s := vals[nVals]
-			x.Names[ind[0]].Languages[ind[1]].Country = &s
 			nVals++
 		}
 	}
 
 	return nVals, nLevels
 }
-
-// keeps track of the indices of repeated fields
-// that have already been handled by a previous field
-type indices []int
-
-func (i indices) rep(rep uint8) {
-	if rep > 0 {
-		i[rep-1] = i[rep-1] + 1
-		for j := 0; j < int(rep)-1; j++ {
-			i[j] = 0
-		}
-	}
-}
-
 func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
@@ -302,7 +263,29 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
+func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
 
+	ind := indices(make([]int, 2))
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+		switch def {
+		case 3:
+			switch rep {
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
 func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
@@ -320,23 +303,19 @@ func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 				defs = append(defs, 1)
 				reps = append(reps, lastRep)
 			} else {
-				vals = append(vals, *x0.URL)
 				defs = append(defs, 2)
 				reps = append(reps, lastRep)
+				vals = append(vals, *x0.URL)
 			}
 		}
 	}
 
 	return vals, defs, reps
 }
-
 func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
-	l := findLevel(reps[1:], 0) + 1
-	defs = defs[:l]
-	reps = reps[:l]
+	var nVals, nLevels int
+	//defs, reps, nLevels = getDocLevels(defs, reps)
 
-	var v int
-	indices := make([]int, 1) // 1 should be written by parquetgen based on the number of repeated fields
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -344,42 +323,16 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 			break
 		}
 
-		switch rep {
-		case 1:
-			indices[0] = indices[0] + 1
-		}
-
-		if def == 2 { // 2 should be written by parquetgen based on the max definition level
-			s := vals[v]
-			x.Names[indices[0]].URL = &s
-			v++
+		nLevels++
+		switch def {
+		case 2:
+			switch rep {
+			}
+			nVals++
 		}
 	}
 
-	return v, l
-}
-
-func getDocLevels(defs, reps []uint8) ([]uint8, []uint8, int) {
-	if len(reps) == 0 {
-		// this is not a repeated field
-		return []uint8{defs[0]}, nil, 1
-	}
-
-	i := findLevel(reps, 0)
-	if len(defs) > i {
-		i++
-	}
-
-	return defs[:i], reps[:i], i
-}
-
-func findLevel(levels []uint8, j uint8) int {
-	for i, l := range levels {
-		if l == j {
-			return i
-		}
-	}
-	return len(levels)
+	return nVals, nLevels
 }
 
 func fieldCompression(c compression) func(*parquet.RequiredField) {
@@ -709,10 +662,6 @@ func NewInt64Field(read func(r Document) int64, write func(r *Document, vals []i
 	}
 }
 
-func (f *Int64Field) Levels() ([]uint8, []uint8) {
-	return nil, nil
-}
-
 func (f *Int64Field) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired}
 }
@@ -754,25 +703,25 @@ func (f *Int64Field) Add(r Document) {
 	f.vals = append(f.vals, v)
 }
 
+func (f *Int64Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
 type Int64OptionalField struct {
 	parquet.OptionalField
 	vals  []int64
 	read  func(r Document) ([]int64, []uint8, []uint8)
-	write func(r *Document, vals []int64, defs, reps []uint8) (int, int)
-	stats *int64optionalStats
+	write func(r *Document, vals []int64, def, rep []uint8) (int, int)
+	stats []int64optionalStats
 }
 
-func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), write func(r *Document, vals []int64, defs, reps []uint8) (int, int), path []string, types []parse.RepetitionType, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), write func(r *Document, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
 	return &Int64OptionalField{
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		stats:         newint64optionalStats(),
+		//stats:         newint64optionalStats(),
 	}
-}
-
-func (f *Int64OptionalField) Levels() ([]uint8, []uint8) {
-	return f.Defs, f.Reps
 }
 
 func (f *Int64OptionalField) Schema() parquet.Field {
@@ -786,7 +735,7 @@ func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
 }
 
 func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -814,38 +763,45 @@ func (f *Int64OptionalField) Scan(r *Document) {
 		return
 	}
 
-	nv, nl := f.write(r, f.vals, f.Defs, f.Reps)
-	if nv >= 0 {
-		f.vals = f.vals[nv:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
+}
 
-	f.Defs = f.Defs[nl:]
-	f.Reps = f.Reps[nl:]
+func (f *Int64OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
 	read  func(r Document) ([]string, []uint8, []uint8)
-	write func(r *Document, vals []string, defs, reps []uint8) (int, int)
+	write func(r *Document, vals []string, def, rep []uint8) (int, int)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, types []parse.RepetitionType, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		stats:         newStringOptionalStats(),
+		//stats:         newStringOptionalStats(),
 	}
-}
-
-func (f *StringOptionalField) Levels() ([]uint8, []uint8) {
-	return f.Defs, f.Reps
 }
 
 func (f *StringOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType}
+}
+
+func (f *StringOptionalField) Add(r Document) {
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *StringOptionalField) Scan(r *Document) {
@@ -853,21 +809,12 @@ func (f *StringOptionalField) Scan(r *Document) {
 		return
 	}
 
-	nv, nl := f.write(r, f.vals, f.Defs, f.Reps)
-	f.vals = f.vals[nv:]
-	f.Defs = f.Defs[nl:]
-	f.Reps = f.Reps[nl:]
-}
-
-func (f *StringOptionalField) Add(r Document) {
-	v, defs, reps := f.read(r)
-	//f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, v...)
-
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -880,13 +827,12 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		buf.Write([]byte(s))
 	}
 
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
 }
 
 func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	start := len(f.Defs)
 	rr, _, err := f.DoRead(r, pg)
-
 	if err != nil {
 		return err
 	}
@@ -908,6 +854,10 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 		f.vals = append(f.vals, string(s))
 	}
 	return nil
+}
+
+func (f *StringOptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type int64stats struct {
@@ -1069,3 +1019,16 @@ func pbool(b bool) *bool          { return &b }
 func pstring(s string) *string    { return &s }
 func pfloat32(f float32) *float32 { return &f }
 func pfloat64(f float64) *float64 { return &f }
+
+// keeps track of the indices of repeated fields
+// that have already been handled by a previous field
+type indices []int
+
+func (i indices) rep(rep uint8) {
+	if rep > 0 {
+		i[rep-1] = i[rep-1] + 1
+		for j := 0; j < int(rep)-1; j++ {
+			i[j] = 0
+		}
+	}
+}

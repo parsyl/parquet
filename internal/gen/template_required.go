@@ -58,6 +58,10 @@ func (f *{{.FieldType}}) Add(r {{.Type}}) {
 	f.stats.add(v)
 	f.vals = append(f.vals, v)
 }
+
+func (f *{{.FieldType}}) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
 {{end}}`
 
 var requiredStatsTpl = `{{define "requiredStats"}}

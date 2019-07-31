@@ -12,7 +12,18 @@ import (
 // on the definition and repetition level
 func Init(def, rep int, f parse.Field) string {
 	if rep == 0 || !f.Repeated() {
-		return fmt.Sprintf("x.%s = %s", f.FieldNames[0], doInit(def, rep, 0, f))
+		if f.Required() {
+			return fmt.Sprintf("x.%s = %s", strings.Join(f.FieldNames, "."), "vals[nVals]")
+		}
+
+		i := f.DefIndex(1)
+		ch := f.Child(i)
+		append := ch.RepetitionTypes[0] == parse.Repeated && def < f.MaxDef()
+		n := strings.Join(f.FieldNames[:i+1], ".")
+		if append {
+			return fmt.Sprintf("x.%s = append(x.%s, %s)", n, n, doInit(def, rep, 0, ch, true))
+		}
+		return fmt.Sprintf("x.%s = %s", n, doInit(def, rep, 0, ch, false))
 	}
 
 	var names []string
@@ -51,12 +62,12 @@ func Init(def, rep int, f parse.Field) string {
 		names = names[:i]
 		s = strings.Join(names, ".")
 		f = f.Child(i - 1)
-		val = doInit(def, rep, 0, f)
+		val = doInit(def, rep, 0, f, false)
 	} else {
 		i := len(names) - 1
 		def -= nDefs(f.RepetitionTypes[:i])
 		f = f.Child(i)
-		val = doInit(def, rep, 0, f)
+		val = doInit(def, rep, 0, f, true)
 	}
 	return fmt.Sprintf(tpl, s, s2, val)
 }
@@ -94,7 +105,7 @@ func nRepeats(repeats []bool) int {
 }
 
 func initOptional(def int, f parse.Field) string {
-	return doInit(def, 0, 0, f)
+	return doInit(def, 0, 0, f, false)
 }
 
 func defIndex(i int, f parse.Field) int {
@@ -107,62 +118,72 @@ func defIndex(i int, f parse.Field) int {
 			return j
 		}
 	}
-	return -1
+	return i
 }
 
-func doInit(def, rep, i int, f parse.Field) string {
-	maxDef := f.MaxDef()
+func primitive(typ string) bool {
+	return primitiveTypes[typ]
+}
 
-	i = defIndex(i, f)
-	f = f.Child(i)
-
-	fmt.Println("doInit", def, rep, i, maxDef)
-	val := "vals[nVals]"
-	if def == maxDef && i == len(f.RepetitionTypes)-1 {
-		if f.RepetitionTypes[i] == parse.Optional {
-			val = fmt.Sprintf("p%s(vals[nVals])", f.FieldTypes[i])
-		}
-		if f.RepetitionTypes[i] == parse.Repeated {
-			var lb, rb string
-			if i < len(f.RepetitionTypes)-1 {
-				lb = "{"
-				rb = "}"
-			}
-			val = fmt.Sprintf("[]%s{%s%s%s}", f.FieldTypes[len(f.FieldTypes)-1], lb, val, rb)
-		}
-		return fmt.Sprintf("%s: %s", f.FieldNames[i], val)
-	}
-
-	if i == def && def < maxDef {
+func doInit(def, rep, i int, f parse.Field, append bool) string {
+	if len(f.FieldNames) == 0 {
 		return ""
 	}
 
+	val := "vals[nVals]"
+	if i >= def && f.MaxDef() > 0 {
+		return ""
+	}
+
+	if len(f.FieldNames) == 1 {
+		if f.RepetitionTypes[0] == parse.Optional && !primitive(f.FieldTypes[0]) {
+			val = fmt.Sprintf("&%s{}", f.FieldTypes[0])
+		} else if f.RepetitionTypes[0] == parse.Required && !primitive(f.FieldTypes[0]) {
+			val = fmt.Sprintf("%s{}", f.FieldTypes[0])
+		} else if f.RepetitionTypes[0] == parse.Optional && primitive(f.FieldTypes[0]) {
+			val = fmt.Sprintf("p%s(%s)", f.FieldTypes[0], val)
+		} else if f.RepetitionTypes[0] == parse.Repeated && !primitive(f.FieldTypes[0]) {
+			val = fmt.Sprintf("[]%s{{%s}}", f.FieldTypes[0], val)
+		} else if f.RepetitionTypes[0] == parse.Repeated && primitive(f.FieldTypes[0]) {
+			val = fmt.Sprintf("[]%s{%s}", f.FieldTypes[0], val)
+		}
+
+		var fieldName string
+		if i > 0 {
+			fieldName = fmt.Sprintf("%s: ", f.FieldNames[0])
+		}
+		s := fmt.Sprintf("%s%s", fieldName, val)
+		return s
+	}
+
 	var field string
-	if i > 0 && i < len(f.RepetitionTypes) {
-		field = fmt.Sprintf("%s: ", f.FieldNames[i])
+	if i > 0 {
+		field = fmt.Sprintf("%s: ", f.FieldNames[0])
 	}
 
 	var typ string
 	var ptr string
 	leftBrace := "{"
 	rightBrace := "}"
-	if i < nDefs(f.RepetitionTypes) || def == 0 {
-		typ = f.FieldTypes[i]
-		if f.RepetitionTypes[i] == parse.Optional {
-			ptr = "&"
-		} else if f.RepetitionTypes[i] == parse.Repeated && !isBeingRepeated(f, rep, i) {
-			ptr = "[]"
-			leftBrace = "{{"
-			rightBrace = "}}"
-		}
+	typ = f.FieldTypes[0]
+	if f.RepetitionTypes[0] == parse.Optional {
+		ptr = "&"
+	} else if f.RepetitionTypes[0] == parse.Repeated && !append {
+		ptr = "[]"
+		leftBrace = "{{"
+		rightBrace = "}}"
 	}
 
-	return fmt.Sprintf("%s%s%s%s%s%s", field, ptr, typ, leftBrace, doInit(def, rep, i+1, f), rightBrace)
+	if f.RepetitionTypes[0] != parse.Required {
+		i++
+	}
+
+	return fmt.Sprintf("%s%s%s%s%s%s", field, ptr, typ, leftBrace, doInit(def, rep, i, f.Child(1), false), rightBrace)
 }
 
-func isBeingRepeated(f parse.Field, rep, i int) bool {
+func isBeingAppended(f parse.Field, rep int, i int) bool {
 	var reps int
-	for _, rt := range f.RepetitionTypes[:i] {
+	for _, rt := range f.RepetitionTypes {
 		if rt == parse.Repeated {
 			reps++
 		}
@@ -250,4 +271,13 @@ var parquetTypes = map[string]string{
 	"FLOAT":      "float32",
 	"DOUBLE":     "float64",
 	"BYTE_ARRAY": "string",
+}
+
+var primitiveTypes = map[string]bool{
+	"bool":    true,
+	"int32":   true,
+	"int64":   true,
+	"float32": true,
+	"float64": true,
+	"string":  true,
 }

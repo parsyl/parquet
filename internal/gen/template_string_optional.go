@@ -4,17 +4,17 @@ var stringOptionalTpl = `{{define "stringOptionalField"}}
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals []string
-	read   func(r {{.Type}}) ({{.TypeName}}, uint8, uint8)
-	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool
+	read   func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r {{.Type}}) ({{.TypeName}}, uint8, uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
-		stats:         newStringOptionalStats(),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		//stats:         newStringOptionalStats(),
 	}
 }
 
@@ -22,25 +22,25 @@ func (f *StringOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType}
 }
 
+func (f *StringOptionalField) Add(r {{.Type}}) {
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
 func (f *StringOptionalField) Scan(r *{{.Type}}) {
 	if len(f.Defs) == 0 {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
-}
-
-func (f *StringOptionalField) Add(r {{.Type}}) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
 }
 
 func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -80,6 +80,10 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 		f.vals = append(f.vals, string(s))
 	}
 	return nil
+}
+
+func (f *StringOptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 {{end}}`
 

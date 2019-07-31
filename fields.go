@@ -151,8 +151,16 @@ type OptionalField struct {
 	repeated       bool
 }
 
-func NewOptionalField(pth []string, types []parse.RepetitionType, opts ...func(*OptionalField)) OptionalField {
-	rts := parse.RepetitionTypes(types)
+func getRepetitionTypes(in []int) parse.RepetitionTypes {
+	out := make([]parse.RepetitionType, len(in))
+	for i, x := range in {
+		out[i] = parse.RepetitionType(x)
+	}
+	return parse.RepetitionTypes(out)
+}
+
+func NewOptionalField(pth []string, types []int, opts ...func(*OptionalField)) OptionalField {
+	rts := getRepetitionTypes(types)
 	ff := RepetitionOptional
 	if rts.MaxRep() > 0 {
 		ff = RepetitionRepeated
@@ -264,6 +272,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
 		if f.repeated {
 			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(uint(f.MaxLevels.Rep))))
+
 			if err != nil {
 				return nil, nil, err
 			}

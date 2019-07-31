@@ -1,6 +1,6 @@
 package gen
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }, {{compressionFunc .}}(compression){{if .Optional}}, parquet.OptionalFieldDepth({{.Depth}}), parquet.OptionalFieldRepetitionType({{.RepetitionType}}){{end}}),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }{{if .Repeated}}, []int{ {{joinTypes .RepetitionTypes}} }{{end}}, {{compressionFunc .}}(compression)),{{end}}`
 
 var tpl = `package {{.Package}}
 
@@ -51,21 +51,9 @@ func Fields(compression compression) []Field {
 	}
 }
 
-
-{{range $i, $field := Fields}}{{readFunc $field}}
-{{writeFunc $i, $field .Fields}}
+{{range $i, $field := .Fields}}{{readFunc $field}}
+{{writeFunc $i $.Fields}}
 {{end}}
-
-
-
-func findLevel(levels []uint8, j uint8) int {
-	for i, l := range levels {
-		if l == j {
-			return i
-		}
-	}
-	return len(levels)
-}
 
 func fieldCompression(c compression) func(*parquet.RequiredField) {
 	switch c {
@@ -216,6 +204,7 @@ type Field interface {
 	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
 	Key() string
+	Levels() ([]uint8, []uint8)
 }
 
 func getFields(ff []Field) map[string]Field {
@@ -271,6 +260,7 @@ func readerIndex(i int) func(*ParquetReader) {
 // ParquetReader reads one page from a row group.
 type ParquetReader struct {
 	fields         map[string]Field
+	fieldNames     []string
 	index          int
 	cursor         int64
 	rows           int64
@@ -282,6 +272,27 @@ type ParquetReader struct {
 
 	r         io.ReadSeeker
 	rowGroups []parquet.RowGroup
+}
+
+type Levels struct {
+	Name string
+	Defs []uint8
+	Reps []uint8
+}
+
+func (p *ParquetReader) Levels() []Levels {
+	var out []Levels
+	//for {
+	for _, name := range p.fieldNames {
+		f := p.fields[name]
+		d, r := f.Levels()
+		out = append(out, Levels{Name: f.Name(), Defs: d, Reps: r})
+	}
+	//	if err := p.readRowGroup(); err != nil {
+	//		break
+	//	}
+	//}
+	return out
 }
 
 func (p *ParquetReader) Error() error {
@@ -401,4 +412,17 @@ func pbool(b bool) *bool          { return &b }
 func pstring(s string) *string    { return &s }
 func pfloat32(f float32) *float32 { return &f }
 func pfloat64(f float64) *float64 { return &f }
+
+// keeps track of the indices of repeated fields
+// that have already been handled by a previous field
+type indices []int
+
+func (i indices) rep(rep uint8) {
+	if rep > 0 {
+		i[rep-1] = i[rep-1] + 1
+		for j := 0; j < int(rep)-1; j++ {
+			i[j] = 0
+		}
+	}
+ }
 `

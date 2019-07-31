@@ -2,8 +2,8 @@ package gen
 
 import (
 	"fmt"
-	"html/template"
 	"strings"
+	"text/template"
 
 	"github.com/parsyl/parquet/internal/cases"
 	"github.com/parsyl/parquet/internal/dremel"
@@ -33,6 +33,13 @@ var (
 		},
 		"join": func(names []string) string {
 			return strings.Join(names, ".")
+		},
+		"joinTypes": func(t []parse.RepetitionType) string {
+			names := make([]string, len(t))
+			for i, ty := range t {
+				names[i] = fmt.Sprintf("%d", ty)
+			}
+			return strings.Join(names, ", ")
 		},
 		"imports": func(fields []parse.Field) []string {
 			var out []string

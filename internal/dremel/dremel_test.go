@@ -45,7 +45,7 @@ func TestLevels(t *testing.T) {
 	var buf bytes.Buffer
 	pw, err := NewParquetWriter(&buf)
 	if err != nil {
-		log.Fatal(err)
+		assert.NoError(t, err)
 	}
 
 	for _, doc := range docs {
@@ -53,14 +53,14 @@ func TestLevels(t *testing.T) {
 	}
 
 	if err := pw.Write(); err != nil {
-		log.Fatal(err)
+		assert.NoError(t, err)
 	}
 
 	pw.Close()
 
 	pr, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
 	if err != nil {
-		log.Fatal(err)
+		assert.NoError(t, err)
 	}
 
 	expected := []Levels{

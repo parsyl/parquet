@@ -27,7 +27,7 @@ func readOptional(f parse.Field) string {
 		ptr = "*"
 	}
 	out += fmt.Sprintf(`	default:
-		return []%s{%sx.%s}, []uint8{%d}, nil`, strings.Replace(f.TypeName, "*", "", 1), ptr, nilField(n, f), n)
+		return []%s{%sx.%s}, []uint8{%d}, nil`, cleanTypeName(f.TypeName), ptr, nilField(n, f), n)
 
 	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Required {
 		ptr = "*"
@@ -37,5 +37,9 @@ func readOptional(f parse.Field) string {
 	switch {
 	%s
 	}
-}`, strings.Join(f.FieldNames, ""), f.Type, strings.Replace(f.TypeName, "*", "", 1), out)
+}`, strings.Join(f.FieldNames, ""), f.Type, cleanTypeName(f.TypeName), out)
+}
+
+func cleanTypeName(s string) string {
+	return strings.Replace(strings.Replace(s, "*", "", 1), "[]", "", 1)
 }

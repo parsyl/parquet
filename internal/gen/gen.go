@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"html/template"
 	"log"
 	"os"
+	"text/template"
 
 	"github.com/parsyl/parquet"
 	"github.com/parsyl/parquet/internal/parse"
@@ -80,18 +80,17 @@ func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
 		log.Fatal(err)
 	}
 
-	// gocode, err := format.Source(buf.Bytes())
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	gocode, err := format.Source(buf.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	f, err := os.Create(outPth)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//_, err = f.Write(gocode)
-	_, err = f.Write(buf.Bytes())
+	_, err = f.Write(gocode)
 	if err != nil {
 		log.Fatal(err)
 	}

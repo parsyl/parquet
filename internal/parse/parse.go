@@ -62,6 +62,22 @@ func (f Field) Child(i int) Field {
 	}
 }
 
+func (f Field) DefChild(def int) Field {
+	i := f.DefIndex(def)
+	if i >= len(f.FieldNames) {
+		return Field{
+			FieldNames:      nil,
+			FieldTypes:      nil,
+			RepetitionTypes: nil,
+		}
+	}
+	return Field{
+		FieldNames:      f.FieldNames[i:],
+		FieldTypes:      f.FieldTypes[i:],
+		RepetitionTypes: f.RepetitionTypes[i:],
+	}
+}
+
 func (f Field) Optional() bool {
 	for _, t := range f.RepetitionTypes {
 		if t == Optional {
@@ -97,6 +113,19 @@ func (f Field) MaxDef() int {
 		}
 	}
 	return out
+}
+
+func (f Field) DefIndex(def int) int {
+	var count int
+	for j, o := range f.RepetitionTypes {
+		if o == Optional || o == Repeated {
+			count++
+		}
+		if count == def {
+			return j
+		}
+	}
+	return def
 }
 
 func (f Field) NthDef(i int) (int, RepetitionType) {
@@ -142,14 +171,17 @@ type RepCase struct {
 
 func (f Field) RepCases(seen int) []RepCase {
 	var out []RepCase
-	for i := 1; i <= int(f.MaxRep()); i++ {
-		var s string
-		if i == 1 && seen > 0 {
-			s = "0, "
-		} else {
-			out = append(out, RepCase{Case: "case 0:", Rep: 0})
+	mr := int(f.MaxRep())
+	for i := 0; i <= mr-seen; i++ {
+		if i < mr && seen > 0 {
+			continue
 		}
-		out = append(out, RepCase{Case: fmt.Sprintf("case %s%d:", s, i), Rep: i})
+
+		if i == mr && seen > 0 {
+			out = append(out, RepCase{Case: fmt.Sprintf("case 0, %d:", i), Rep: i})
+		} else {
+			out = append(out, RepCase{Case: fmt.Sprintf("case %d:", i), Rep: i})
+		}
 	}
 	return out
 }

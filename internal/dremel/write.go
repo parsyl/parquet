@@ -20,12 +20,14 @@ type defCase struct {
 func init() {
 	funcs := template.FuncMap{
 		"removeStar": func(s string) string {
-			return strings.Replace(s, "*", "", 1)
+			return strings.Replace(strings.Replace(s, "*", "", 1), "[]", "", 1)
 		},
 		"plusOne":    func(i int) int { return i + 1 },
 		"newDefCase": func(def, seen int, f parse.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
-		"init":       func(def, rep int, f parse.Field) string { return structs.Init(def, rep, f) },
-		"repeat":     func(def int, f parse.Field) bool { return f.Repeated() && def == f.MaxDef() },
+		"init": func(def, rep int, f parse.Field) string {
+			return structs.Init(def, rep, f)
+		},
+		"repeat": func(def int, f parse.Field) bool { return f.Repeated() && def == f.MaxDef() },
 	}
 
 	var err error
@@ -43,7 +45,6 @@ func init() {
 	return nVals, 1{{end}}`
 
 	repeatedTpl := `{{define "repeated"}}var nVals, nLevels int
-	defs, reps, nLevels = getDocLevels(defs, reps)
 
 	{{if gt .Seen 1}}ind := indices(make([]int, {{.Seen}})){{end}}
 	for i := range defs {

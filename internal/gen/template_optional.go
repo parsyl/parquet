@@ -7,17 +7,17 @@ var optionalNumericTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
 	vals  []{{removeStar .TypeName}}
-	read   func(r {{.Type}}) ({{.TypeName}}, uint8, uint8)
-	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool
+	read   func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
+	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
 	stats {{.TypeName}}optionalStats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) ({{.TypeName}}, uint8, uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
-		stats:         new{{removeStar .TypeName}}optionalStats(),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		//stats:         new{{removeStar .TypeName}}optionalStats(),
 	}
 }
 
@@ -32,7 +32,7 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -48,13 +48,11 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *{{.FieldType}}) Add(r {{.Type}}) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
@@ -62,10 +60,16 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
+}
+
+func (f *{{.FieldType}}) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 {{end}}`
 
@@ -77,7 +81,7 @@ type {{removeStar .TypeName}}optionalStats struct {
 	nonNils int64
 }
 
-func new{{removeStar .TypeName}}optionalStats() {{.TypeName}}optionalStats {
+func new{{removeStar .TypeName}}optionalStats() *{{removeStar .TypeName}}optionalStats {
 	return &{{removeStar .TypeName}}optionalStats{
 		min: {{removeStar .TypeName}}(math.Max{{camelCaseRemoveStar .TypeName}}),
 	}

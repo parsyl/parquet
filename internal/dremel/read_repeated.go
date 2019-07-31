@@ -71,8 +71,8 @@ func readRepeated(f parse.Field) string {
 }`,
 		strings.Join(f.FieldNames, ""),
 		f.Type,
-		strings.Replace(f.TypeName, "*", "", 1),
-		strings.Replace(f.TypeName, "*", "", 1),
+		cleanTypeName(f.TypeName),
+		cleanTypeName(f.TypeName),
 		doReadRepeated(f, 0, "x"),
 	)
 }

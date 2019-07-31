@@ -305,3 +305,95 @@ func prt(rt sch.FieldRepetitionType) *sch.FieldRepetitionType {
 func pt(t sch.Type) *sch.Type {
 	return &t
 }
+
+func TestDefIndex(t *testing.T) {
+	testCases := []struct {
+		def      int
+		field    parse.Field
+		expected int
+	}{
+		{
+			def:      1,
+			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
+			expected: 1,
+		},
+		{
+			def:      2,
+			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
+			expected: 2,
+		},
+		{
+			def:      1,
+			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+			expected: 0,
+		},
+		{
+			def:      2,
+			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+			expected: 2,
+		},
+		{
+			def:      2,
+			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+			expected: 1,
+		},
+		{
+			def:      1,
+			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+			expected: 0,
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.field.DefIndex(tc.def))
+		})
+	}
+
+}
+
+func TestDefChild(t *testing.T) {
+	testCases := []struct {
+		def      int
+		field    parse.Field
+		expected parse.Field
+	}{
+		{
+			def:      1,
+			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
+			expected: parse.Field{FieldNames: []string{"b", "c"}, FieldTypes: []string{"b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+		},
+		{
+			def:      2,
+			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
+			expected: parse.Field{FieldNames: []string{"c"}, FieldTypes: []string{"string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+		},
+		{
+			def:      1,
+			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+			expected: parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+		},
+		{
+			def:      2,
+			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+			expected: parse.Field{FieldNames: []string{"c"}, FieldTypes: []string{"string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+		},
+		{
+			def:      2,
+			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+			expected: parse.Field{FieldNames: []string{"b", "c"}, FieldTypes: []string{"b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
+		},
+		{
+			def:      1,
+			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+			expected: parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.field.DefChild(tc.def))
+		})
+	}
+
+}
