@@ -45,8 +45,8 @@ func init() {
 	return nVals, 1{{end}}`
 
 	repeatedTpl := `{{define "repeated"}}var nVals, nLevels int
+	ind := make(indices, {{.Field.MaxRep}})
 
-	{{if gt .Seen 1}}ind := indices(make([]int, {{.Seen}})){{end}}
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -55,7 +55,8 @@ func init() {
 		}
 
 		nLevels++
-		{{if gt .Seen 1}}ind.rep(rep){{end}}
+		ind.rep(rep)
+
 		{{template "defSwitch" .}}
 	}
 

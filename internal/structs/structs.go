@@ -87,7 +87,7 @@ func addIndex(names []string, repeats []bool) []string {
 				end = len(names) - 1
 			}
 			f := strings.Join(names[:end], ".")
-			names = append([]string{fmt.Sprintf("%s[len(x.%s)-1]", f, f)}, names[end:]...)
+			names = append([]string{fmt.Sprintf("%s[ind[%d]]", f, seen-1)}, names[end:]...)
 		}
 	}
 

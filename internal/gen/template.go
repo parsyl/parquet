@@ -422,10 +422,11 @@ type indices []int
 
 func (i indices) rep(rep uint8) {
 	if rep > 0 {
-		i[rep-1] = i[rep-1] + 1
-		for j := 0; j < int(rep)-1; j++ {
+		r := int(rep) - 1
+		i[r] = i[r] + 1
+		for j := int(rep); j < len(i); j++ {
 			i[j] = 0
 		}
 	}
- }
+}
 `

@@ -13,7 +13,6 @@ import (
 func TestWrite(t *testing.T) {
 	testCases := []struct {
 		name   string
-		i      int
 		fields []parse.Field
 		result string
 	}{
@@ -259,10 +258,8 @@ func TestWrite(t *testing.T) {
 				{FieldNames: []string{"Link", "Backward"}},
 				{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
 			},
-			i: 1,
 			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
-	defs, reps, nLevels = getDocLevels(defs, reps)
 
 	for i := range defs {
 		def := defs[i]
@@ -289,7 +286,7 @@ func TestWrite(t *testing.T) {
 			fields: []parse.Field{{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}}},
 			result: `func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
-	defs, reps, nLevels = getDocLevels(defs, reps)
+	ind := make(indices, 2)
 
 	for i := range defs {
 		def := defs[i]
@@ -297,6 +294,9 @@ func TestWrite(t *testing.T) {
 		if i > 0 && rep == 0 {
 			break
 		}
+
+		nLevels++
+		ind.rep(rep)
 
 		switch def {
 		case 1:
@@ -308,7 +308,40 @@ func TestWrite(t *testing.T) {
 			case 1:
 				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
-				x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[nVals]})
+				x.Names[ind[0]].Languages = append(x.Names[ind[0]].Languages, Language{Code: vals[nVals]})
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}`,
+		},
+		{
+			name: "writeNamesLanguagesCountry",
+			fields: []parse.Field{
+				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}},
+				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Optional}},
+			},
+			result: `func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 2)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 3:
+			switch rep {
+			default:
+				x.Names[ind[0]].Languages[ind[1]].Country =  pstring(vals[nVals])
 			}
 			nVals++
 		}
@@ -321,8 +354,9 @@ func TestWrite(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			s := dremel.Write(tc.i, tc.fields)
+			s := dremel.Write(len(tc.fields)-1, tc.fields)
 			gocode, err := format.Source([]byte(s))
+			fmt.Println(string(gocode))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))
 		})

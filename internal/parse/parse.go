@@ -172,16 +172,13 @@ type RepCase struct {
 func (f Field) RepCases(seen int) []RepCase {
 	var out []RepCase
 	mr := int(f.MaxRep())
-	for i := 0; i <= mr-seen; i++ {
-		if i < mr && seen > 0 {
-			continue
-		}
+	if mr == seen {
+		out = append(out, RepCase{Case: "default:"})
+		return out
+	}
 
-		if i == mr && seen > 0 {
-			out = append(out, RepCase{Case: fmt.Sprintf("case 0, %d:", i), Rep: i})
-		} else {
-			out = append(out, RepCase{Case: fmt.Sprintf("case %d:", i), Rep: i})
-		}
+	for i := 0; i <= mr; i++ {
+		out = append(out, RepCase{Case: fmt.Sprintf("case %d:", i), Rep: i})
 	}
 	return out
 }

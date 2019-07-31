@@ -52,7 +52,7 @@ func TestAppend(t *testing.T) {
 			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
 			def:      2,
 			rep:      2,
-			expected: "x.Names[len(x.Names)-1].Languages = append(x.Names[len(x.Names)-1].Languages, Language{Code: vals[nVals]})",
+			expected: "x.Names[ind[0]].Languages = append(x.Names[ind[0]].Languages, Language{Code: vals[nVals]})",
 		},
 		{
 			name:     "LinkBackward, def 1, rep 0",
@@ -122,21 +122,21 @@ func TestAppend(t *testing.T) {
 			field:    parse.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Repeated}},
 			def:      2,
 			rep:      2,
-			expected: "x.Names[len(x.Names)-1].Language.Codes = append(x.Names[len(x.Names)-1].Language.Codes, vals[nVals])",
+			expected: "x.Names[ind[0]].Language.Codes = append(x.Names[ind[0]].Language.Codes, vals[nVals])",
 		},
 		{
 			name:     "required repeated repeated rep 2",
 			field:    parse.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated}},
 			def:      2,
 			rep:      2,
-			expected: "x.Name.Languages[len(x.Name.Languages)-1].Codes = append(x.Name.Languages[len(x.Name.Languages)-1].Codes, vals[nVals])",
+			expected: "x.Name.Languages[ind[0]].Codes = append(x.Name.Languages[ind[0]].Codes, vals[nVals])",
 		},
 		{
 			name:     "required repeated repeated repeated rep 3",
 			field:    parse.Field{FieldNames: []string{"Thing", "Names", "Languages", "Codes"}, FieldTypes: []string{"Thing", "Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated, parse.Repeated}},
 			def:      3,
 			rep:      3,
-			expected: "x.Thing.Names[len(x.Thing.Names)-1].Languages[len(x.Thing.Names[len(x.Thing.Names)-1].Languages)-1].Codes = append(x.Thing.Names[len(x.Thing.Names)-1].Languages[len(x.Thing.Names[len(x.Thing.Names)-1].Languages)-1].Codes, vals[nVals])",
+			expected: "x.Thing.Names[ind[0]].Languages[ind[1]].Codes = append(x.Thing.Names[ind[0]].Languages[ind[1]].Codes, vals[nVals])",
 		},
 	}
 
