@@ -7,7 +7,7 @@ import (
 
 	"github.com/parsyl/parquet/internal/cases"
 	"github.com/parsyl/parquet/internal/dremel"
-	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/fields"
 )
 
 var (
@@ -22,26 +22,26 @@ var (
 			return cases.Camel(strings.Replace(strings.Replace(s, "*", "", 1), "[]", "", 1))
 		},
 		"dedupe": dedupe,
-		"compressionFunc": func(f parse.Field) string {
+		"compressionFunc": func(f fields.Field) string {
 			if strings.Contains(f.FieldType, "Optional") {
 				return "optionalFieldCompression"
 			}
 			return "fieldCompression"
 		},
-		"funcName": func(f parse.Field) string {
+		"funcName": func(f fields.Field) string {
 			return strings.Join(f.FieldNames, "")
 		},
 		"join": func(names []string) string {
 			return strings.Join(names, ".")
 		},
-		"joinTypes": func(t []parse.RepetitionType) string {
+		"joinTypes": func(t []fields.RepetitionType) string {
 			names := make([]string, len(t))
 			for i, ty := range t {
 				names[i] = fmt.Sprintf("%d", ty)
 			}
 			return strings.Join(names, ", ")
 		},
-		"imports": func(fields []parse.Field) []string {
+		"imports": func(fields []fields.Field) []string {
 			var out []string
 			var intFound, stringFound bool
 			for _, f := range fields {
@@ -56,7 +56,7 @@ var (
 			}
 			return out
 		},
-		"maxType": func(f parse.Field) string {
+		"maxType": func(f fields.Field) string {
 			var out string
 			switch f.TypeName {
 			case "int32", "*int32":
@@ -74,12 +74,12 @@ var (
 			}
 			return out
 		},
-		"columnName":    func(f parse.Field) string { return strings.ToLower(strings.Join(f.FieldNames, ".")) },
+		"columnName":    func(f fields.Field) string { return strings.ToLower(strings.Join(f.FieldNames, ".")) },
 		"writeFunc":     dremel.Write,
 		"readFunc":      dremel.Read,
-		"writeFuncName": func(f parse.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")) },
-		"readFuncName":  func(f parse.Field) string { return fmt.Sprintf("read%s", strings.Join(f.FieldNames, "")) },
-		"parquetType": func(f parse.Field) string {
+		"writeFuncName": func(f fields.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")) },
+		"readFuncName":  func(f fields.Field) string { return fmt.Sprintf("read%s", strings.Join(f.FieldNames, "")) },
+		"parquetType": func(f fields.Field) string {
 			if f.Optional() {
 				return "parquet.OptionalField"
 			}

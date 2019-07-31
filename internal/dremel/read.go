@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/fields"
 )
 
-func readRequired(f parse.Field) string {
+func readRequired(f fields.Field) string {
 	return fmt.Sprintf(`func read%s(x %s) %s {
 	return x.%s
 }`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func readOptional(f parse.Field) string {
+func readOptional(f fields.Field) string {
 	var out string
 	n := defs(f)
 	for def := 0; def < n; def++ {
@@ -23,13 +23,13 @@ func readOptional(f parse.Field) string {
 	}
 
 	var ptr string
-	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
+	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Optional {
 		ptr = "*"
 	}
 	out += fmt.Sprintf(`	default:
 		return []%s{%sx.%s}, []uint8{%d}, nil`, cleanTypeName(f.TypeName), ptr, nilField(n, f), n)
 
-	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Required {
+	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Required {
 		ptr = "*"
 	}
 

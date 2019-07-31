@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/fields"
 )
 
 func init() {
@@ -59,7 +59,7 @@ type readClause struct {
 	Rep   int
 }
 
-func readRepeated(f parse.Field) string {
+func readRepeated(f fields.Field) string {
 	return fmt.Sprintf(`func read%s(x %s) ([]%s, []uint8, []uint8) {
 	var vals []%s
 	var defs, reps []uint8
@@ -77,12 +77,12 @@ func readRepeated(f parse.Field) string {
 	)
 }
 
-func doReadRepeated(f parse.Field, i int, varName string) string {
+func doReadRepeated(f fields.Field, i int, varName string) string {
 	if i == f.MaxDef() {
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == parse.Optional {
+		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Optional {
 			varName = fmt.Sprintf("*%s", varName)
 		}
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] != parse.Repeated {
+		if f.RepetitionTypes[len(f.RepetitionTypes)-1] != fields.Repeated {
 			n := lastRepeated(f.RepetitionTypes)
 			varName = strings.Join(append([]string{varName}, f.FieldNames[n+1:]...), ".")
 		}
@@ -101,7 +101,7 @@ vals = append(vals, %s)`, i, varName)
 		Def:   i,
 	}
 
-	if rt == parse.Repeated {
+	if rt == fields.Repeated {
 		if reps > 1 {
 			rc.Field = f.FieldNames[n]
 		}
@@ -118,10 +118,10 @@ vals = append(vals, %s)`, i, varName)
 	return fmt.Sprintf(string(buf.Bytes()), doReadRepeated(f, i+1, nextVar))
 }
 
-func lastRepeated(rts []parse.RepetitionType) int {
+func lastRepeated(rts []fields.RepetitionType) int {
 	var l int
 	for i, rt := range rts {
-		if rt == parse.Repeated {
+		if rt == fields.Repeated {
 			l = i
 		}
 	}

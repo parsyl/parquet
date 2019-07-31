@@ -1,14 +1,12 @@
 package dremel
 
+import "github.com/parsyl/parquet/internal/fields"
+
 // Package dremel generates code that parquetgen
 // uses to encode/decode a struct for writing and
 // reading parquet files.
 
-import (
-	"github.com/parsyl/parquet/internal/parse"
-)
-
-func Write(i int, fields []parse.Field) string {
+func Write(i int, fields []fields.Field) string {
 	f := fields[i]
 	if !isOptional(f) && !isRepeated(f) {
 		return writeRequired(f)
@@ -16,7 +14,7 @@ func Write(i int, fields []parse.Field) string {
 	return writeOptional(i, fields)
 }
 
-func Read(f parse.Field) string {
+func Read(f fields.Field) string {
 	if isOptional(f) && !isRepeated(f) {
 		return readOptional(f)
 	}
@@ -28,18 +26,18 @@ func Read(f parse.Field) string {
 	return readRequired(f)
 }
 
-func isRepeated(f parse.Field) bool {
+func isRepeated(f fields.Field) bool {
 	for _, o := range f.RepetitionTypes {
-		if o == parse.Repeated {
+		if o == fields.Repeated {
 			return true
 		}
 	}
 	return false
 }
 
-func isOptional(f parse.Field) bool {
+func isOptional(f fields.Field) bool {
 	for _, o := range f.RepetitionTypes {
-		if o == parse.Optional {
+		if o == fields.Optional {
 			return true
 		}
 	}

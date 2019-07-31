@@ -6,6 +6,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/parsyl/parquet/internal/fields"
 	"github.com/parsyl/parquet/internal/parse"
 	sch "github.com/parsyl/parquet/schema"
 	"github.com/stretchr/testify/assert"
@@ -17,20 +18,20 @@ func init() {
 
 func TestField(t *testing.T) {
 	type testInput struct {
-		f        parse.Field
+		f        fields.Field
 		expected []string
 	}
 
 	testCases := []testInput{
 		{
-			f: parse.Field{FieldNames: []string{"Friends", "Name", "First"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Optional}},
+			f: fields.Field{FieldNames: []string{"Friends", "Name", "First"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Optional}},
 			expected: []string{
 				"Friends",
 				"Friends.Name.First",
 			},
 		},
 		{
-			f: parse.Field{FieldNames: []string{"Friend", "Name", "First"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Optional}},
+			f: fields.Field{FieldNames: []string{"Friend", "Name", "First"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Required, fields.Optional}},
 			expected: []string{
 				"Friend.Name.First",
 			},
@@ -56,7 +57,7 @@ func TestFields(t *testing.T) {
 	type testInput struct {
 		name     string
 		typ      string
-		expected []parse.Field
+		expected []fields.Field
 		errors   []error
 	}
 
@@ -64,75 +65,75 @@ func TestFields(t *testing.T) {
 		{
 			name: "flat",
 			typ:  "Being",
-			expected: []parse.Field{
-				{Type: "Being", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Being", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "Being", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Being", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 		},
 		{
 			name: "private fields",
 			typ:  "Private",
-			expected: []parse.Field{
-				{Type: "Private", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Private", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "Private", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Private", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 		},
 		{
 			name: "nested struct",
 			typ:  "Nested",
-			expected: []parse.Field{
-				{Type: "Nested", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Being", "ID"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required}},
-				{Type: "Nested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Being", "Age"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
-				{Type: "Nested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "Nested", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Being", "ID"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Required}},
+				{Type: "Nested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Being", "Age"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+				{Type: "Nested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 			errors: []error{},
 		},
 		{
 			name: "nested struct with name that doesn't match the struct type",
 			typ:  "Nested2",
-			expected: []parse.Field{
-				{Type: "Nested2", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Info", "ID"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Info.ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required}},
-				{Type: "Nested2", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Info", "Age"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Info.Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
-				{Type: "Nested2", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "Nested2", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Info", "ID"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Info.ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Required}},
+				{Type: "Nested2", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Info", "Age"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Info.Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+				{Type: "Nested2", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 			errors: []error{},
 		},
 		{
 			name: "2 deep nested struct",
 			typ:  "DoubleNested",
-			expected: []parse.Field{
-				{Type: "DoubleNested", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Nested", "Being", "ID"}, FieldTypes: []string{"Nested", "Being", "int32"}, ColumnName: "Nested.Being.ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
-				{Type: "DoubleNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Nested", "Being", "Age"}, FieldTypes: []string{"Nested", "Being", "int32"}, ColumnName: "Nested.Being.Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Optional}},
-				{Type: "DoubleNested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Nested", "Anniversary"}, FieldTypes: []string{"Nested", "uint64"}, ColumnName: "Nested.Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+			expected: []fields.Field{
+				{Type: "DoubleNested", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Nested", "Being", "ID"}, FieldTypes: []string{"Nested", "Being", "int32"}, ColumnName: "Nested.Being.ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Required, fields.Required}},
+				{Type: "DoubleNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Nested", "Being", "Age"}, FieldTypes: []string{"Nested", "Being", "int32"}, ColumnName: "Nested.Being.Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Required, fields.Optional}},
+				{Type: "DoubleNested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Nested", "Anniversary"}, FieldTypes: []string{"Nested", "uint64"}, ColumnName: "Nested.Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
 			},
 			errors: []error{},
 		},
 		{
 			name: "2 deep optional nested struct",
 			typ:  "OptionalDoubleNested",
-			expected: []parse.Field{
-				{Type: "OptionalDoubleNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"OptionalNested", "Being", "ID"}, FieldTypes: []string{"OptionalNested", "Being", "int32"}, ColumnName: "OptionalNested.Being.ID", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Required}},
-				{Type: "OptionalDoubleNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"OptionalNested", "Being", "Age"}, FieldTypes: []string{"OptionalNested", "Being", "int32"}, ColumnName: "OptionalNested.Being.Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
-				{Type: "OptionalDoubleNested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"OptionalNested", "Anniversary"}, FieldTypes: []string{"OptionalNested", "uint64"}, ColumnName: "OptionalNested.Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}},
+			expected: []fields.Field{
+				{Type: "OptionalDoubleNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"OptionalNested", "Being", "ID"}, FieldTypes: []string{"OptionalNested", "Being", "int32"}, ColumnName: "OptionalNested.Being.ID", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Required}},
+				{Type: "OptionalDoubleNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"OptionalNested", "Being", "Age"}, FieldTypes: []string{"OptionalNested", "Being", "int32"}, ColumnName: "OptionalNested.Being.Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional}},
+				{Type: "OptionalDoubleNested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"OptionalNested", "Anniversary"}, FieldTypes: []string{"OptionalNested", "uint64"}, ColumnName: "OptionalNested.Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
 			},
 			errors: []error{},
 		},
 		{
 			name: "optional nested struct",
 			typ:  "OptionalNested",
-			expected: []parse.Field{
-				{Type: "OptionalNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Being", "ID"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.ID", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
-				{Type: "OptionalNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Being", "Age"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
-				{Type: "OptionalNested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "OptionalNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Being", "ID"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.ID", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}},
+				{Type: "OptionalNested", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Being", "Age"}, FieldTypes: []string{"Being", "int32"}, ColumnName: "Being.Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}},
+				{Type: "OptionalNested", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 			errors: []error{},
 		},
 		{
 			name: "optional nested struct v2",
 			typ:  "OptionalNested2",
-			expected: []parse.Field{
-				{Type: "OptionalNested2", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Being", "Name"}, FieldTypes: []string{"Thing", "string"}, ColumnName: "Being.Name", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
-				{Type: "OptionalNested2", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "OptionalNested2", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Being", "Name"}, FieldTypes: []string{"Thing", "string"}, ColumnName: "Being.Name", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}},
+				{Type: "OptionalNested2", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 			errors: []error{},
 		},
@@ -140,19 +141,19 @@ func TestFields(t *testing.T) {
 			name:   "unsupported fields",
 			typ:    "Unsupported",
 			errors: []error{fmt.Errorf("unsupported type: Time")},
-			expected: []parse.Field{
-				{Type: "Unsupported", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Unsupported", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "Unsupported", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Unsupported", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 		},
 		{
 			name: "unsupported fields mixed in with supported and embedded",
 			typ:  "SupportedAndUnsupported",
-			expected: []parse.Field{
-				{Type: "SupportedAndUnsupported", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldNames: []string{"Happiness"}, FieldTypes: []string{"int64"}, ColumnName: "Happiness", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "SupportedAndUnsupported", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "SupportedAndUnsupported", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "SupportedAndUnsupported", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "SupportedAndUnsupported", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldNames: []string{"Happiness"}, FieldTypes: []string{"int64"}, ColumnName: "Happiness", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "SupportedAndUnsupported", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "SupportedAndUnsupported", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "SupportedAndUnsupported", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 			errors: []error{
 				fmt.Errorf("unsupported type: T1"),
@@ -162,116 +163,116 @@ func TestFields(t *testing.T) {
 		{
 			name: "embedded",
 			typ:  "Person",
-			expected: []parse.Field{
-				{Type: "Person", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Person", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "Person", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldNames: []string{"Happiness"}, FieldTypes: []string{"int64"}, ColumnName: "Happiness", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Person", FieldType: "Int64OptionalField", ParquetType: "Int64Type", TypeName: "*int64", FieldNames: []string{"Sadness"}, FieldTypes: []string{"int64"}, ColumnName: "Sadness", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "Person", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Code"}, FieldTypes: []string{"string"}, ColumnName: "Code", Category: "string", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Person", FieldType: "Float32Field", ParquetType: "Float32Type", TypeName: "float32", FieldNames: []string{"Funkiness"}, FieldTypes: []string{"float32"}, ColumnName: "Funkiness", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Person", FieldType: "Float32OptionalField", ParquetType: "Float32Type", TypeName: "*float32", FieldNames: []string{"Lameness"}, FieldTypes: []string{"float32"}, ColumnName: "Lameness", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "Person", FieldType: "BoolOptionalField", ParquetType: "BoolType", TypeName: "*bool", FieldNames: []string{"Keen"}, FieldTypes: []string{"bool"}, ColumnName: "Keen", Category: "boolOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "Person", FieldType: "Uint32Field", ParquetType: "Uint32Type", TypeName: "uint32", FieldNames: []string{"Birthday"}, FieldTypes: []string{"uint32"}, ColumnName: "Birthday", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Person", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "Person", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Person", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "Person", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldNames: []string{"Happiness"}, FieldTypes: []string{"int64"}, ColumnName: "Happiness", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Person", FieldType: "Int64OptionalField", ParquetType: "Int64Type", TypeName: "*int64", FieldNames: []string{"Sadness"}, FieldTypes: []string{"int64"}, ColumnName: "Sadness", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "Person", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Code"}, FieldTypes: []string{"string"}, ColumnName: "Code", Category: "string", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Person", FieldType: "Float32Field", ParquetType: "Float32Type", TypeName: "float32", FieldNames: []string{"Funkiness"}, FieldTypes: []string{"float32"}, ColumnName: "Funkiness", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Person", FieldType: "Float32OptionalField", ParquetType: "Float32Type", TypeName: "*float32", FieldNames: []string{"Lameness"}, FieldTypes: []string{"float32"}, ColumnName: "Lameness", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "Person", FieldType: "BoolOptionalField", ParquetType: "BoolType", TypeName: "*bool", FieldNames: []string{"Keen"}, FieldTypes: []string{"bool"}, ColumnName: "Keen", Category: "boolOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "Person", FieldType: "Uint32Field", ParquetType: "Uint32Type", TypeName: "uint32", FieldNames: []string{"Birthday"}, FieldTypes: []string{"uint32"}, ColumnName: "Birthday", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Person", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 		},
 		{
 			name: "embedded preserve order",
 			typ:  "NewOrderPerson",
-			expected: []parse.Field{
-				{Type: "NewOrderPerson", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldNames: []string{"Happiness"}, FieldTypes: []string{"int64"}, ColumnName: "Happiness", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "NewOrderPerson", FieldType: "Int64OptionalField", ParquetType: "Int64Type", TypeName: "*int64", FieldNames: []string{"Sadness"}, FieldTypes: []string{"int64"}, ColumnName: "Sadness", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "NewOrderPerson", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Code"}, FieldTypes: []string{"string"}, ColumnName: "Code", Category: "string", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "NewOrderPerson", FieldType: "Float32Field", ParquetType: "Float32Type", TypeName: "float32", FieldNames: []string{"Funkiness"}, FieldTypes: []string{"float32"}, ColumnName: "Funkiness", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "NewOrderPerson", FieldType: "Float32OptionalField", ParquetType: "Float32Type", TypeName: "*float32", FieldNames: []string{"Lameness"}, FieldTypes: []string{"float32"}, ColumnName: "Lameness", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "NewOrderPerson", FieldType: "BoolOptionalField", ParquetType: "BoolType", TypeName: "*bool", FieldNames: []string{"Keen"}, FieldTypes: []string{"bool"}, ColumnName: "Keen", Category: "boolOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "NewOrderPerson", FieldType: "Uint32Field", ParquetType: "Uint32Type", TypeName: "uint32", FieldNames: []string{"Birthday"}, FieldTypes: []string{"uint32"}, ColumnName: "Birthday", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "NewOrderPerson", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "NewOrderPerson", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
-				{Type: "NewOrderPerson", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "NewOrderPerson", FieldType: "Int64Field", ParquetType: "Int64Type", TypeName: "int64", FieldNames: []string{"Happiness"}, FieldTypes: []string{"int64"}, ColumnName: "Happiness", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "NewOrderPerson", FieldType: "Int64OptionalField", ParquetType: "Int64Type", TypeName: "*int64", FieldNames: []string{"Sadness"}, FieldTypes: []string{"int64"}, ColumnName: "Sadness", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "NewOrderPerson", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Code"}, FieldTypes: []string{"string"}, ColumnName: "Code", Category: "string", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "NewOrderPerson", FieldType: "Float32Field", ParquetType: "Float32Type", TypeName: "float32", FieldNames: []string{"Funkiness"}, FieldTypes: []string{"float32"}, ColumnName: "Funkiness", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "NewOrderPerson", FieldType: "Float32OptionalField", ParquetType: "Float32Type", TypeName: "*float32", FieldNames: []string{"Lameness"}, FieldTypes: []string{"float32"}, ColumnName: "Lameness", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "NewOrderPerson", FieldType: "BoolOptionalField", ParquetType: "BoolType", TypeName: "*bool", FieldNames: []string{"Keen"}, FieldTypes: []string{"bool"}, ColumnName: "Keen", Category: "boolOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "NewOrderPerson", FieldType: "Uint32Field", ParquetType: "Uint32Type", TypeName: "uint32", FieldNames: []string{"Birthday"}, FieldTypes: []string{"uint32"}, ColumnName: "Birthday", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "NewOrderPerson", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "NewOrderPerson", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "NewOrderPerson", FieldType: "Uint64OptionalField", ParquetType: "Uint64Type", TypeName: "*uint64", FieldNames: []string{"Anniversary"}, FieldTypes: []string{"uint64"}, ColumnName: "Anniversary", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 		},
 		{
 			name: "tags",
 			typ:  "Tagged",
-			expected: []parse.Field{
-				{Type: "Tagged", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Tagged", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Name"}, FieldTypes: []string{"string"}, ColumnName: "name", Category: "string", RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			expected: []fields.Field{
+				{Type: "Tagged", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Tagged", FieldType: "StringField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Name"}, FieldTypes: []string{"string"}, ColumnName: "name", Category: "string", RepetitionTypes: []fields.RepetitionType{fields.Required}},
 			},
 		},
 		{
 			name: "omit tag",
 			typ:  "IgnoreMe",
-			expected: []parse.Field{
-				{Type: "IgnoreMe", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
+			expected: []fields.Field{
+				{Type: "IgnoreMe", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
 			},
 		},
 		{
 			name: "repeated",
 			typ:  "Slice",
-			expected: []parse.Field{
-				{Type: "Slice", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+			expected: []fields.Field{
+				{Type: "Slice", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Repeated}},
 			},
 		},
 		{
 			name: "repeated v2",
 			typ:  "Slice2",
-			expected: []parse.Field{
-				{Type: "Slice2", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice2", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+			expected: []fields.Field{
+				{Type: "Slice2", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Slice2", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Repeated}},
 			},
 		},
 		{
 			name: "repeated v2",
 			typ:  "Slice3",
-			expected: []parse.Field{
-				{Type: "Slice3", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice3", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
-				{Type: "Slice3", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional}},
+			expected: []fields.Field{
+				{Type: "Slice3", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Slice3", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "[]int32", FieldNames: []string{"IDs"}, FieldTypes: []string{"int32"}, ColumnName: "ids", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Repeated}},
+				{Type: "Slice3", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "*int32", FieldNames: []string{"Age"}, FieldTypes: []string{"int32"}, ColumnName: "Age", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			},
 		},
 		{
 			name: "nested and repeated",
 			typ:  "Slice4",
-			expected: []parse.Field{
-				{Type: "Slice4", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice4", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Hobbies", "Name"}, FieldTypes: []string{"Hobby", "string"}, ColumnName: "Hobbies.Name", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required}},
+			expected: []fields.Field{
+				{Type: "Slice4", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Slice4", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "string", FieldNames: []string{"Hobbies", "Name"}, FieldTypes: []string{"Hobby", "string"}, ColumnName: "Hobbies.Name", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required}},
 			},
 		},
 		{
 			name: "nested and repeated v2",
 			typ:  "Slice5",
-			expected: []parse.Field{
-				{Type: "Slice5", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice5", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Hobby", "Names"}, FieldTypes: []string{"Hobby2", "string"}, ColumnName: "Hobby.Names", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated}},
+			expected: []fields.Field{
+				{Type: "Slice5", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "id", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Slice5", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Hobby", "Names"}, FieldTypes: []string{"Hobby2", "string"}, ColumnName: "Hobby.Names", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated}},
 			},
 		},
 		{
 			name: "repeated and repeated",
 			typ:  "Slice6",
-			expected: []parse.Field{
-				{Type: "Slice6", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{parse.Required}},
-				{Type: "Slice6", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Hobbies", "Names"}, FieldTypes: []string{"Hobby2", "string"}, ColumnName: "Hobbies.Names", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated}},
+			expected: []fields.Field{
+				{Type: "Slice6", FieldType: "Int32Field", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, ColumnName: "ID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{fields.Required}},
+				{Type: "Slice6", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Hobbies", "Names"}, FieldTypes: []string{"Hobby2", "string"}, ColumnName: "Hobbies.Names", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated}},
 			},
 		},
 		{
 			name: "nested repeated and repeated",
 			typ:  "Slice7",
-			expected: []parse.Field{
-				{Type: "Slice7", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Thing", "ID"}, FieldTypes: []string{"Slice6", "int32"}, ColumnName: "Thing.ID", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
-				{Type: "Slice7", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Thing", "Hobbies", "Names"}, FieldTypes: []string{"Slice6", "Hobby2", "string"}, ColumnName: "Thing.Hobbies.Names", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated, parse.Repeated}},
+			expected: []fields.Field{
+				{Type: "Slice7", FieldType: "Int32OptionalField", ParquetType: "Int32Type", TypeName: "int32", FieldNames: []string{"Thing", "ID"}, FieldTypes: []string{"Slice6", "int32"}, ColumnName: "Thing.ID", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}},
+				{Type: "Slice7", FieldType: "StringOptionalField", ParquetType: "StringType", TypeName: "[]string", FieldNames: []string{"Thing", "Hobbies", "Names"}, FieldTypes: []string{"Slice6", "Hobby2", "string"}, ColumnName: "Thing.Hobbies.Names", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated, fields.Repeated}},
 			},
 		},
 		{
 			name: "dremel paper example",
 			typ:  "Document",
-			expected: []parse.Field{
-				{Type: "Document", FieldNames: []string{"DocID"}, FieldTypes: []string{"int64"}, TypeName: "int64", FieldType: "Int64Field", ParquetType: "Int64Type", ColumnName: "DocID", Category: "numeric", RepetitionTypes: []parse.RepetitionType{0}},
-				{Type: "Document", FieldNames: []string{"Links", "Backward"}, FieldTypes: []string{"Link", "int64"}, TypeName: "[]int64", FieldType: "Int64OptionalField", ParquetType: "Int64Type", ColumnName: "Links.Backward", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{2, 2}},
-				{Type: "Document", FieldNames: []string{"Links", "Forward"}, FieldTypes: []string{"Link", "int64"}, TypeName: "[]int64", FieldType: "Int64OptionalField", ParquetType: "Int64Type", ColumnName: "Links.Forward", Category: "numericOptional", RepetitionTypes: []parse.RepetitionType{2, 2}},
-				{Type: "Document", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, TypeName: "string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.Languages.Code", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{2, 2, 0}},
-				{Type: "Document", FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, TypeName: "*string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.Languages.Country", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{2, 2, 1}},
-				{Type: "Document", FieldNames: []string{"Names", "URL"}, FieldTypes: []string{"Name", "string"}, TypeName: "*string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.URL", Category: "stringOptional", RepetitionTypes: []parse.RepetitionType{2, 1}},
+			expected: []fields.Field{
+				{Type: "Document", FieldNames: []string{"DocID"}, FieldTypes: []string{"int64"}, TypeName: "int64", FieldType: "Int64Field", ParquetType: "Int64Type", ColumnName: "DocID", Category: "numeric", RepetitionTypes: []fields.RepetitionType{0}},
+				{Type: "Document", FieldNames: []string{"Links", "Backward"}, FieldTypes: []string{"Link", "int64"}, TypeName: "[]int64", FieldType: "Int64OptionalField", ParquetType: "Int64Type", ColumnName: "Links.Backward", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{2, 2}},
+				{Type: "Document", FieldNames: []string{"Links", "Forward"}, FieldTypes: []string{"Link", "int64"}, TypeName: "[]int64", FieldType: "Int64OptionalField", ParquetType: "Int64Type", ColumnName: "Links.Forward", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{2, 2}},
+				{Type: "Document", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, TypeName: "string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.Languages.Code", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{2, 2, 0}},
+				{Type: "Document", FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, TypeName: "*string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.Languages.Country", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{2, 2, 1}},
+				{Type: "Document", FieldNames: []string{"Names", "URL"}, FieldTypes: []string{"Name", "string"}, TypeName: "*string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.URL", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{2, 1}},
 			},
 		},
 	}
@@ -309,37 +310,37 @@ func pt(t sch.Type) *sch.Type {
 func TestDefIndex(t *testing.T) {
 	testCases := []struct {
 		def      int
-		field    parse.Field
+		field    fields.Field
 		expected int
 	}{
 		{
 			def:      1,
-			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
+			field:    fields.Field{RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Repeated}},
 			expected: 1,
 		},
 		{
 			def:      2,
-			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
+			field:    fields.Field{RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Repeated}},
 			expected: 2,
 		},
 		{
 			def:      1,
-			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+			field:    fields.Field{RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Repeated}},
 			expected: 0,
 		},
 		{
 			def:      2,
-			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+			field:    fields.Field{RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Repeated}},
 			expected: 2,
 		},
 		{
 			def:      2,
-			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+			field:    fields.Field{RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Optional, fields.Required}},
 			expected: 1,
 		},
 		{
 			def:      1,
-			field:    parse.Field{RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+			field:    fields.Field{RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Optional, fields.Required}},
 			expected: 0,
 		},
 	}
@@ -355,38 +356,38 @@ func TestDefIndex(t *testing.T) {
 func TestDefChild(t *testing.T) {
 	testCases := []struct {
 		def      int
-		field    parse.Field
-		expected parse.Field
+		field    fields.Field
+		expected fields.Field
 	}{
 		{
 			def:      1,
-			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
-			expected: parse.Field{FieldNames: []string{"b", "c"}, FieldTypes: []string{"b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Repeated}},
+			expected: fields.Field{FieldNames: []string{"b", "c"}, FieldTypes: []string{"b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 		},
 		{
 			def:      2,
-			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Repeated}},
-			expected: parse.Field{FieldNames: []string{"c"}, FieldTypes: []string{"string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Repeated}},
+			expected: fields.Field{FieldNames: []string{"c"}, FieldTypes: []string{"string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated}},
 		},
 		{
 			def:      1,
-			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
-			expected: parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Repeated}},
+			expected: fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Repeated}},
 		},
 		{
 			def:      2,
-			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Repeated}},
-			expected: parse.Field{FieldNames: []string{"c"}, FieldTypes: []string{"string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Repeated}},
+			expected: fields.Field{FieldNames: []string{"c"}, FieldTypes: []string{"string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated}},
 		},
 		{
 			def:      2,
-			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
-			expected: parse.Field{FieldNames: []string{"b", "c"}, FieldTypes: []string{"b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Optional, fields.Required}},
+			expected: fields.Field{FieldNames: []string{"b", "c"}, FieldTypes: []string{"b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}},
 		},
 		{
 			def:      1,
-			field:    parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
-			expected: parse.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Optional, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Optional, fields.Required}},
+			expected: fields.Field{FieldNames: []string{"a", "b", "c"}, FieldTypes: []string{"a", "b", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Optional, fields.Required}},
 		},
 	}
 

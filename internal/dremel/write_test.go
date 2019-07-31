@@ -6,26 +6,26 @@ import (
 	"testing"
 
 	"github.com/parsyl/parquet/internal/dremel"
-	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/fields"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWrite(t *testing.T) {
 	testCases := []struct {
 		name   string
-		fields []parse.Field
+		fields []fields.Field
 		result string
 	}{
 		{
 			name:   "required and not nested",
-			fields: []parse.Field{{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, RepetitionTypes: []parse.RepetitionType{parse.Required}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "int32", FieldNames: []string{"ID"}, RepetitionTypes: []fields.RepetitionType{fields.Required}}},
 			result: `func writeID(x *Person, vals []int32) {
 	x.ID = vals[0]
 }`,
 		},
 		{
 			name:   "optional and not nested",
-			fields: []parse.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, RepetitionTypes: []fields.RepetitionType{fields.Optional}}},
 			result: `func writeID(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -40,14 +40,14 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "required and nested",
-			fields: []parse.Field{{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "int32", FieldNames: []string{"Other", "Hobby", "Difficulty"}, FieldTypes: []string{"Other", "Hobby", "int32"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Required, fields.Required}}},
 			result: `func writeOtherHobbyDifficulty(x *Person, vals []int32) {
 	x.Other.Hobby.Difficulty = vals[0]
 }`,
 		},
 		{
 			name:   "optional and nested",
-			fields: []parse.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}}},
 			result: `func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -64,7 +64,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "mix of optional and required and nested",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}}},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -79,7 +79,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "mix of optional and required and nested v2",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}}},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -94,7 +94,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "mix of optional and require and nested 3 deep",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -111,7 +111,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "mix of optional and require and nested 3 deep v2",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -128,7 +128,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "mix of optional and require and nested 3 deep v3",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Required}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -145,7 +145,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "nested 3 deep all optional",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -164,7 +164,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "four deep",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -185,7 +185,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "four deep mixed",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional, parse.Optional}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -204,7 +204,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "four deep mixed v2",
-			fields: []parse.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional, parse.Required}}},
+			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Required}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals int
 	def := defs[0]
@@ -223,7 +223,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "writeLinkBackward",
-			fields: []parse.Field{{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}}},
+			fields: []fields.Field{{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}}},
 			result: `func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	defs, reps, nLevels = getDocLevels(defs, reps)
@@ -254,9 +254,9 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "writeLinkFoward",
-			fields: []parse.Field{
+			fields: []fields.Field{
 				{FieldNames: []string{"Link", "Backward"}},
-				{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+				{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			},
 			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
@@ -283,7 +283,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:   "writeNamesLanguagesCode",
-			fields: []parse.Field{{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}}},
+			fields: []fields.Field{{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}}},
 			result: `func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 2)
@@ -319,9 +319,9 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name: "writeNamesLanguagesCountry",
-			fields: []parse.Field{
+			fields: []fields.Field{
 				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}},
-				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Optional}},
+				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
 			},
 			result: `func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int

@@ -5,7 +5,7 @@ import (
 	"go/format"
 	"testing"
 
-	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/fields"
 	"github.com/parsyl/parquet/internal/structs"
 	sch "github.com/parsyl/parquet/schema"
 	"github.com/stretchr/testify/assert"
@@ -14,126 +14,126 @@ import (
 func TestAppend(t *testing.T) {
 	testCases := []struct {
 		name     string
-		field    parse.Field
+		field    fields.Field
 		def      int
 		rep      int
 		expected string
 	}{
 		{
 			name:     "nested required",
-			field:    parse.Field{FieldNames: []string{"Name", "Language", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Required, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"Name", "Language", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Required, fields.Required}},
 			def:      0,
 			rep:      0,
 			expected: "x.Name.Language.Code = vals[nVals]",
 		},
 		{
 			name:     "NamesLanguagesCode, def 1, rep 1",
-			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
 			def:      1,
 			rep:      1,
 			expected: "x.Names = append(x.Names, Name{})",
 		},
 		{
 			name:     "NamesLanguagesCode, def 2, rep 1",
-			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
 			def:      2,
 			rep:      1,
 			expected: "x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})",
 		},
 		{
 			name:     "NamesLanguagesCode, def 2, rep 0",
-			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
 			def:      2,
 			rep:      0,
 			expected: "x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}",
 		},
 		{
 			name:     "NamesLanguagesCode, def 2, rep 2",
-			field:    parse.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Repeated, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
 			def:      2,
 			rep:      2,
 			expected: "x.Names[ind[0]].Languages = append(x.Names[ind[0]].Languages, Language{Code: vals[nVals]})",
 		},
 		{
 			name:     "LinkBackward, def 1, rep 0",
-			field:    parse.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			def:      1,
 			rep:      0,
 			expected: "x.Link = &Link{}",
 		},
 		{
 			name:     "LinkBackward, def 2, rep 0",
-			field:    parse.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			def:      2,
 			rep:      0,
 			expected: "x.Link = &Link{Backward: []string{vals[nVals]}}",
 		},
 		{
 			name:     "LinkBackward, def 2, rep 1",
-			field:    parse.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			def:      2,
 			rep:      1,
 			expected: "x.Link.Backward = append(x.Link.Backward, vals[nVals])",
 		},
 		{
 			name:     "repeated required repeated",
-			field:    parse.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      0,
 			expected: "x.Names = []Name{{Language: Language{Codes: []string{vals[nVals]}}}}",
 		},
 		{
 			name:     "required repeated repeated",
-			field:    parse.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      0,
 			expected: "x.Name.Languages = []Language{{Codes: []string{vals[nVals]}}}",
 		},
 		{
 			name:     "repeated required repeated rep 1",
-			field:    parse.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      1,
 			expected: "x.Names = append(x.Names, Name{Language: Language{Codes: []string{vals[nVals]}}})",
 		},
 		{
 			name:     "required repeated repeated rep 1",
-			field:    parse.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      1,
 			expected: "x.Name.Languages = append(x.Name.Languages, Language{Codes: []string{vals[nVals]}})",
 		},
 		{
 			name:     "repeated required repeated rep 0",
-			field:    parse.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      0,
 			expected: "x.Names = []Name{{Language: Language{Codes: []string{vals[nVals]}}}}",
 		},
 		{
 			name:     "required repeated repeated rep 0",
-			field:    parse.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      0,
 			expected: "x.Name.Languages = []Language{{Codes: []string{vals[nVals]}}}",
 		},
 		{
 			name:     "repeated required repeated rep 2",
-			field:    parse.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Repeated, parse.Required, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      2,
 			expected: "x.Names[ind[0]].Language.Codes = append(x.Names[ind[0]].Language.Codes, vals[nVals])",
 		},
 		{
 			name:     "required repeated repeated rep 2",
-			field:    parse.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      2,
 			expected: "x.Name.Languages[ind[0]].Codes = append(x.Name.Languages[ind[0]].Codes, vals[nVals])",
 		},
 		{
 			name:     "required repeated repeated repeated rep 3",
-			field:    parse.Field{FieldNames: []string{"Thing", "Names", "Languages", "Codes"}, FieldTypes: []string{"Thing", "Name", "Language", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Repeated, parse.Repeated, parse.Repeated}},
+			field:    fields.Field{FieldNames: []string{"Thing", "Names", "Languages", "Codes"}, FieldTypes: []string{"Thing", "Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated, fields.Repeated}},
 			def:      3,
 			rep:      3,
 			expected: "x.Thing.Names[ind[0]].Languages[ind[1]].Codes = append(x.Thing.Names[ind[0]].Languages[ind[1]].Codes, vals[nVals])",
@@ -159,67 +159,67 @@ func TestAppend(t *testing.T) {
 func TestInit(t *testing.T) {
 	testCases := []struct {
 		name     string
-		field    parse.Field
+		field    fields.Field
 		def      int
 		expected string
 	}{
 		{
 			name:     "2 deep def 1 of 2",
-			field:    parse.Field{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}},
 			def:      1,
 			expected: "x.Hobby = &Item{}",
 		},
 		{
 			name:     "2 deep def 2 of 2",
-			field:    parse.Field{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}},
 			def:      2,
 			expected: "x.Hobby = &Item{Name: pstring(vals[nVals])}",
 		},
 		{
 			name:     "3 deep def 1 of 2",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Optional}},
 			def:      1,
 			expected: "x.Friend = &Entity{}",
 		},
 		{
 			name:     "3 deep def 2 of 2",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Required, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Optional}},
 			def:      2,
 			expected: "x.Friend = &Entity{Hobby: Item{Name: pstring(vals[nVals])}}",
 		},
 		{
 			name:     "3 deep def 1 of 2 v2",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Required}},
 			def:      1,
 			expected: "x.Friend = &Entity{}",
 		},
 		{
 			name:     "3 deep def 2 of 2 v2",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Required}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Required}},
 			def:      2,
 			expected: "x.Friend = &Entity{Hobby: &Item{Name: vals[nVals]}}",
 		},
 		{
 			name:     "3 deep def 1 of 3",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}},
 			def:      1,
 			expected: "x.Friend = &Entity{}",
 		},
 		{
 			name:     "3 deep def 2 of 3",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}},
 			def:      2,
 			expected: "x.Friend = &Entity{Hobby: &Item{}}",
 		},
 		{
 			name:     "3 deep def 3 of 3",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Optional, parse.Optional, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}},
 			def:      3,
 			expected: "x.Friend = &Entity{Hobby: &Item{Name: pstring(vals[nVals])}}",
 		},
 		{
 			name:     "first field required 3 deep def 1 of 2",
-			field:    parse.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []parse.RepetitionType{parse.Required, parse.Optional, parse.Optional}},
+			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional}},
 			def:      1,
 			expected: "x.Friend.Hobby = &Item{}",
 		},

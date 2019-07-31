@@ -106,3 +106,15 @@ Names.URL (Names has been handled by Names.Languages.Code)
 		},
 	}
 #+END_SRC
+
+
+init:
+  if def == max:
+    initmax()
+  else:
+    initnode()
+
+
+initmax:
+  if seen:
+    x.something.something = vals[nVals]

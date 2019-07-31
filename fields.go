@@ -12,7 +12,7 @@ import (
 	"io"
 
 	"github.com/golang/snappy"
-	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/fields"
 	"github.com/parsyl/parquet/internal/rle"
 	sch "github.com/parsyl/parquet/schema"
 )
@@ -151,12 +151,12 @@ type OptionalField struct {
 	repeated       bool
 }
 
-func getRepetitionTypes(in []int) parse.RepetitionTypes {
-	out := make([]parse.RepetitionType, len(in))
+func getRepetitionTypes(in []int) fields.RepetitionTypes {
+	out := make([]fields.RepetitionType, len(in))
 	for i, x := range in {
-		out[i] = parse.RepetitionType(x)
+		out[i] = fields.RepetitionType(x)
 	}
-	return parse.RepetitionTypes(out)
+	return fields.RepetitionTypes(out)
 }
 
 func NewOptionalField(pth []string, types []int, opts ...func(*OptionalField)) OptionalField {

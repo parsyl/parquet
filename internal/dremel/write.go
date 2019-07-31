@@ -7,14 +7,14 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/parsyl/parquet/internal/parse"
+	"github.com/parsyl/parquet/internal/fields"
 	"github.com/parsyl/parquet/internal/structs"
 )
 
 type defCase struct {
 	Def   int
 	Seen  int
-	Field parse.Field
+	Field fields.Field
 }
 
 func init() {
@@ -23,11 +23,11 @@ func init() {
 			return strings.Replace(strings.Replace(s, "*", "", 1), "[]", "", 1)
 		},
 		"plusOne":    func(i int) int { return i + 1 },
-		"newDefCase": func(def, seen int, f parse.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
-		"init": func(def, rep int, f parse.Field) string {
+		"newDefCase": func(def, seen int, f fields.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
+		"init": func(def, rep int, f fields.Field) string {
 			return structs.Init(def, rep, f)
 		},
-		"repeat": func(def int, f parse.Field) bool { return f.Repeated() && def == f.MaxDef() },
+		"repeat": func(def int, f fields.Field) bool { return f.Repeated() && def == f.MaxDef() },
 	}
 
 	var err error
@@ -88,19 +88,19 @@ var (
 )
 
 type writeInput struct {
-	Field parse.Field
+	Field fields.Field
 	Defs  []int
 	Seen  int
 	Func  string
 }
 
-func writeRequired(f parse.Field) string {
+func writeRequired(f fields.Field) string {
 	return fmt.Sprintf(`func %s(x *%s, vals []%s) {
 	x.%s = vals[0]
 }`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func writeOptional(i int, fields []parse.Field) string {
+func writeOptional(i int, fields []fields.Field) string {
 	f := fields[i]
 	s := seen(i, fields)
 	defs := writeCases(f, s)
@@ -119,7 +119,7 @@ func writeOptional(i int, fields []parse.Field) string {
 	return string(buf.Bytes())
 }
 
-func writeCases(f parse.Field, seen int) []int {
+func writeCases(f fields.Field, seen int) []int {
 	var dfs []int
 	for def := 1 + seen; def <= f.MaxDef(); def++ {
 		dfs = append(dfs, def)
@@ -127,25 +127,25 @@ func writeCases(f parse.Field, seen int) []int {
 	return dfs
 }
 
-func nilField(i int, f parse.Field) string {
-	var fields []string
+func nilField(i int, f fields.Field) string {
+	var flds []string
 	var count int
 	for j, o := range f.RepetitionTypes {
-		fields = append(fields, f.FieldNames[j])
-		if o == parse.Optional {
+		flds = append(flds, f.FieldNames[j])
+		if o == fields.Optional {
 			count++
 		}
 		if count > i {
 			break
 		}
 	}
-	return strings.Join(fields, ".")
+	return strings.Join(flds, ".")
 }
 
-func defIndex(i int, f parse.Field) int {
+func defIndex(i int, f fields.Field) int {
 	var count int
 	for j, o := range f.RepetitionTypes {
-		if o == parse.Optional || o == parse.Repeated {
+		if o == fields.Optional || o == fields.Repeated {
 			count++
 		}
 		if count > i {
@@ -156,20 +156,20 @@ func defIndex(i int, f parse.Field) int {
 }
 
 // count the number of fields in the path that can be optional
-func defs(f parse.Field) int {
+func defs(f fields.Field) int {
 	var out int
 	for _, o := range f.RepetitionTypes {
-		if o == parse.Optional || o == parse.Repeated {
+		if o == fields.Optional || o == fields.Repeated {
 			out++
 		}
 	}
 	return out
 }
 
-func optionals(f parse.Field) int {
+func optionals(f fields.Field) int {
 	var out int
 	for _, o := range f.RepetitionTypes {
-		if o == parse.Optional {
+		if o == fields.Optional {
 			out++
 		}
 	}
@@ -186,7 +186,7 @@ func pointer(i, n int, p string, levels []bool) string {
 // seen counts how many sub-fields have been previously processed
 // so that some of the cases and if statements can be skipped when
 // re-assembling records
-func seen(i int, fields []parse.Field) int {
+func seen(i int, fields []fields.Field) int {
 	m := map[string]int{}
 	for _, ft := range fields[i].FieldNames {
 		m[ft] = 1

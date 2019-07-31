@@ -8,219 +8,15 @@ import (
 	"strings"
 
 	"go/ast"
+
+	"github.com/parsyl/parquet/internal/fields"
+	flds "github.com/parsyl/parquet/internal/fields"
 )
-
-type RepetitionType int
-
-const (
-	Required RepetitionType = 0
-	Optional RepetitionType = 1
-	Repeated RepetitionType = 2
-)
-
-type RepetitionTypes []RepetitionType
-
-func (r RepetitionTypes) MaxDef() uint8 {
-	var out uint8
-	for _, rt := range r {
-		if rt == Optional || rt == Repeated {
-			out++
-		}
-	}
-	return out
-}
-
-func (r RepetitionTypes) MaxRep() uint8 {
-	var out uint8
-	for _, rt := range r {
-		if rt == Repeated {
-			out++
-		}
-	}
-	return out
-}
 
 const letters = "abcdefghijklmnopqrstuvwxyz"
 
-type Field struct {
-	Type            string
-	FieldNames      []string
-	FieldTypes      []string
-	TypeName        string
-	FieldType       string
-	ParquetType     string
-	ColumnName      string
-	Category        string
-	RepetitionTypes []RepetitionType
-}
-
-func (f Field) Child(i int) Field {
-	return Field{
-		FieldNames:      f.FieldNames[i:],
-		FieldTypes:      f.FieldTypes[i:],
-		RepetitionTypes: f.RepetitionTypes[i:],
-	}
-}
-
-func (f Field) DefChild(def int) Field {
-	i := f.DefIndex(def)
-	if i >= len(f.FieldNames) {
-		return Field{
-			FieldNames:      nil,
-			FieldTypes:      nil,
-			RepetitionTypes: nil,
-		}
-	}
-	return Field{
-		FieldNames:      f.FieldNames[i:],
-		FieldTypes:      f.FieldTypes[i:],
-		RepetitionTypes: f.RepetitionTypes[i:],
-	}
-}
-
-func (f Field) Optional() bool {
-	for _, t := range f.RepetitionTypes {
-		if t == Optional {
-			return true
-		}
-	}
-	return false
-}
-
-func (f Field) Required() bool {
-	for _, t := range f.RepetitionTypes {
-		if t != Required {
-			return false
-		}
-	}
-	return true
-}
-
-func (f Field) Repeated() bool {
-	for _, t := range f.RepetitionTypes {
-		if t == Repeated {
-			return true
-		}
-	}
-	return false
-}
-
-func (f Field) MaxDef() int {
-	var out int
-	for _, t := range f.RepetitionTypes {
-		if t == Optional || t == Repeated {
-			out++
-		}
-	}
-	return out
-}
-
-func (f Field) DefIndex(def int) int {
-	var count int
-	for j, o := range f.RepetitionTypes {
-		if o == Optional || o == Repeated {
-			count++
-		}
-		if count == def {
-			return j
-		}
-	}
-	return def
-}
-
-func (f Field) NthDef(i int) (int, RepetitionType) {
-	var count int
-	var out RepetitionType
-	var x int
-	for _, t := range f.RepetitionTypes {
-		if t == Optional || t == Repeated {
-			count++
-			if count == i {
-				out = t
-				x = count
-			}
-		}
-	}
-	return x, out
-}
-
-func (f Field) Defs() []int {
-	out := make([]int, 0, len(f.RepetitionTypes))
-	for i, t := range f.RepetitionTypes {
-		if t == Optional {
-			out = append(out, i+1)
-		}
-	}
-	return out
-}
-
-func (f Field) MaxRep() uint {
-	var out uint
-	for _, t := range f.RepetitionTypes {
-		if t == Repeated {
-			out++
-		}
-	}
-	return out
-}
-
-type RepCase struct {
-	Case string
-	Rep  int
-}
-
-func (f Field) RepCases(seen int) []RepCase {
-	var out []RepCase
-	mr := int(f.MaxRep())
-	if mr == seen {
-		out = append(out, RepCase{Case: "default:"})
-		return out
-	}
-
-	for i := 0; i <= mr; i++ {
-		out = append(out, RepCase{Case: fmt.Sprintf("case %d:", i), Rep: i})
-	}
-	return out
-}
-
-func (f Field) NilField(i int) (string, RepetitionType, int, int) {
-	var fields []string
-	var count int
-	var j, reps int
-	var o RepetitionType
-
-	for j, o = range f.RepetitionTypes {
-		fields = append(fields, f.FieldNames[j])
-		if o == Optional {
-			count++
-		} else if o == Repeated {
-			count++
-			reps++
-		}
-		if count > i {
-			break
-		}
-	}
-	return strings.Join(fields, "."), o, j, reps
-}
-
-func (f Field) RepetitionType() string {
-	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == Optional {
-		return "parquet.RepetitionOptional"
-	}
-	return "parquet.RepetitionRequired"
-}
-
-func (f Field) Path() string {
-	out := make([]string, len(f.FieldNames))
-	for i, n := range f.FieldNames {
-		out[i] = fmt.Sprintf(`"%s"`, strings.ToLower(n))
-	}
-	return strings.Join(out, ", ")
-}
-
 type field struct {
-	Field     Field
+	Field     fields.Field
 	tagName   string
 	fieldName string
 	fieldType string
@@ -232,7 +28,7 @@ type field struct {
 }
 
 type Result struct {
-	Fields []Field
+	Fields []flds.Field
 	Errors []error
 }
 
@@ -277,16 +73,16 @@ func Fields(typ, pth string) (*Result, error) {
 }
 
 func getOut(i int, f field, fields map[string][]field, errs []error, out []field) (int, []field, []error) {
-	flds, ok := fields[f.fieldType]
-	var o RepetitionType = Required
+	ff, ok := fields[f.fieldType]
+	var o flds.RepetitionType = flds.Required
 	if strings.Contains(f.Field.TypeName, "*") {
-		o = Optional
+		o = flds.Optional
 	} else if f.repeated || strings.Contains(f.Field.TypeName, "[]") {
-		o = Repeated
+		o = flds.Repeated
 	}
 	if ok {
-		for _, fld := range flds {
-			if (!fld.optional && (o == Optional || f.optional)) || (!fld.repeated && (o == Repeated || f.repeated)) {
+		for _, fld := range ff {
+			if (!fld.optional && (o == flds.Optional || f.optional)) || (!fld.repeated && (o == flds.Repeated || f.repeated)) {
 				fld = makeOptional(fld)
 			}
 			fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
@@ -298,9 +94,9 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	} else if f.err == nil && f.embedded {
 		embeddedFields := fields[f.Field.TypeName]
 		for i, f := range embeddedFields {
-			var rt RepetitionType = Required
+			var rt flds.RepetitionType = flds.Required
 			if strings.Contains(f.Field.TypeName, "*") {
-				rt = Optional
+				rt = flds.Optional
 			}
 			f.Field.RepetitionTypes = append(f.Field.RepetitionTypes, rt)
 			embeddedFields[i] = f
@@ -334,8 +130,8 @@ func getType(typ string) string {
 	return parts[len(parts)-1]
 }
 
-func getFields(typ string, fields []field, m map[string][]field) []Field {
-	out := make([]Field, 0, len(fields))
+func getFields(typ string, fields []field, m map[string][]field) []flds.Field {
+	out := make([]flds.Field, 0, len(fields))
 	for _, f := range fields {
 		_, ok := m[typ]
 		if f.omit || !ok {
@@ -377,7 +173,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 					f := getField(x.Names[0].Name, x)
 					fields[k] = append(fields[k], f)
 				} else if len(x.Names) == 0 && !isPrivate(x) {
-					fields[k] = append(fields[k], field{embedded: true, Field: Field{TypeName: fmt.Sprintf("%s", x.Type)}})
+					fields[k] = append(fields[k], field{embedded: true, Field: flds.Field{TypeName: fmt.Sprintf("%s", x.Type)}})
 				}
 			case *ast.ArrayType:
 				s := fields[k]
@@ -422,7 +218,7 @@ func getField(name string, x ast.Node) field {
 
 	fn, cat, pt := lookupTypeAndCategory(typ, optional, repeated)
 	return field{
-		Field: Field{
+		Field: flds.Field{
 			FieldNames:  []string{name},
 			FieldTypes:  []string{typ},
 			TypeName:    getTypeName(typ, optional),

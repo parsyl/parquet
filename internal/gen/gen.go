@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/parsyl/parquet"
+	"github.com/parsyl/parquet/internal/fields"
 	"github.com/parsyl/parquet/internal/parse"
 	"github.com/parsyl/parquet/internal/structs"
 	sch "github.com/parsyl/parquet/schema"
@@ -151,7 +152,7 @@ type input struct {
 	Package string
 	Type    string
 	Import  string
-	Fields  []parse.Field
+	Fields  []fields.Field
 }
 
 func getFieldType(se *sch.SchemaElement) string {
@@ -175,10 +176,10 @@ func getFieldType(se *sch.SchemaElement) string {
 	return fmt.Sprintf("%s%s", star, out)
 }
 
-func dedupe(fields []parse.Field) []parse.Field {
+func dedupe(flds []fields.Field) []fields.Field {
 	seen := map[string]bool{}
-	out := make([]parse.Field, 0, len(fields))
-	for _, f := range fields {
+	out := make([]fields.Field, 0, len(flds))
+	for _, f := range flds {
 		_, ok := seen[f.FieldType]
 		if !ok {
 			out = append(out, f)
@@ -198,7 +199,7 @@ func getImport(i string) string {
 type newStruct struct {
 	Package string
 	Structs string
-	Fields  []parse.Field
+	Fields  []fields.Field
 }
 
 type fieldType struct {
