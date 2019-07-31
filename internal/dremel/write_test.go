@@ -341,7 +341,7 @@ func TestWrite(t *testing.T) {
 		case 3:
 			switch rep {
 			default:
-				x.Names[ind[0]].Languages[ind[1]].Country =  pstring(vals[nVals])
+				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
 			}
 			nVals++
 		}

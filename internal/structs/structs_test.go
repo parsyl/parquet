@@ -11,12 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAppend(t *testing.T) {
+func TestInit(t *testing.T) {
 	testCases := []struct {
 		name     string
 		field    fields.Field
 		def      int
 		rep      int
+		seen     int
 		expected string
 	}{
 		{
@@ -45,7 +46,7 @@ func TestAppend(t *testing.T) {
 			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
 			def:      2,
 			rep:      0,
-			expected: "x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}",
+			expected: "x.Names[ind[0]].Languages.Code = append(x.Names[ind[0]].Languages.Code, vals[nVals])",
 		},
 		{
 			name:     "NamesLanguagesCode, def 2, rep 2",
@@ -66,7 +67,7 @@ func TestAppend(t *testing.T) {
 			field:    fields.Field{FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Link = &Link{Backward: []string{vals[nVals]}}",
+			expected: "x.Link = append(x.Link, &Link{Backward: []string{vals[nVals]}})",
 		},
 		{
 			name:     "LinkBackward, def 2, rep 1",
@@ -80,14 +81,14 @@ func TestAppend(t *testing.T) {
 			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Names = []Name{{Language: Language{Codes: []string{vals[nVals]}}}}",
+			expected: "x.Names[ind[0]].Language.Codes = append(x.Names[ind[0]].Language.Codes, []string{vals[nVals]})",
 		},
 		{
 			name:     "required repeated repeated",
 			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Name.Languages = []Language{{Codes: []string{vals[nVals]}}}",
+			expected: "x.Name = append(x.Name, Name{[]Language{{Codes: []string{vals[nVals]}}}})",
 		},
 		{
 			name:     "repeated required repeated rep 1",
@@ -108,14 +109,14 @@ func TestAppend(t *testing.T) {
 			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Names = []Name{{Language: Language{Codes: []string{vals[nVals]}}}}",
+			expected: "x.Names[ind[0]].Language.Codes = append(x.Names[ind[0]].Language.Codes, []string{vals[nVals]})",
 		},
 		{
 			name:     "required repeated repeated rep 0",
 			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Name.Languages = []Language{{Codes: []string{vals[nVals]}}}",
+			expected: "x.Name = append(x.Name, Name{[]Language{{Codes: []string{vals[nVals]}}}})",
 		},
 		{
 			name:     "repeated required repeated rep 2",
@@ -138,31 +139,6 @@ func TestAppend(t *testing.T) {
 			rep:      3,
 			expected: "x.Thing.Names[ind[0]].Languages[ind[1]].Codes = append(x.Thing.Names[ind[0]].Languages[ind[1]].Codes, vals[nVals])",
 		},
-	}
-
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			assert.Equal(t, tc.expected, structs.Init(tc.def, tc.rep, tc.field))
-		})
-	}
-}
-
-/*
-| names    | Friend | Hobby | Name   | definition levels      |                                 |
-| types    | Entity | Item  | string | 1/2                    | 2/2                             |
-|----------+--------+-------+--------+------------------------+---------------------------------|
-| optional | true   | false | true   | &Entity{}              | &Entity{Hobby: Item{Name: v}}   |
-|          | false  | true  | true   | Entity{Hobby: &Item{}} | &Entity{Hobby: Item{Name: v}}   |
-|          | true   | true  | false  | &Entity{}              | &Entity{Hobby: &Item{Name: *v}} |
-*/
-
-func TestInit(t *testing.T) {
-	testCases := []struct {
-		name     string
-		field    fields.Field
-		def      int
-		expected string
-	}{
 		{
 			name:     "2 deep def 1 of 2",
 			field:    fields.Field{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}},
@@ -223,14 +199,39 @@ func TestInit(t *testing.T) {
 			def:      1,
 			expected: "x.Friend.Hobby = &Item{}",
 		},
+		{
+			name:     "namesLanguagesCountry def 3",
+			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
+			seen:     3,
+			def:      3,
+			rep:      0,
+			expected: "x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])",
+		},
+		{
+			name:     "namesLanguagesCountry def 2, seen 2",
+			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
+			seen:     3,
+			def:      3,
+			rep:      0,
+			expected: "x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])",
+		},
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
-			assert.Equal(t, tc.expected, structs.Init(tc.def, 0, tc.field))
+			assert.Equal(t, tc.expected, structs.Init(tc.def, tc.rep, tc.seen, tc.field))
 		})
 	}
 }
+
+/*
+| names    | Friend | Hobby | Name   | definition levels      |                                 |
+| types    | Entity | Item  | string | 1/2                    | 2/2                             |
+|----------+--------+-------+--------+------------------------+---------------------------------|
+| optional | true   | false | true   | &Entity{}              | &Entity{Hobby: Item{Name: v}}   |
+|          | false  | true  | true   | Entity{Hobby: &Item{}} | &Entity{Hobby: Item{Name: v}}   |
+|          | true   | true  | false  | &Entity{}              | &Entity{Hobby: &Item{Name: *v}} |
+*/
 
 func TestStruct(t *testing.T) {
 	type testInput struct {

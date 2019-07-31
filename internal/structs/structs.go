@@ -10,19 +10,40 @@ import (
 
 // Init generates the statement to append a value based
 // on the definition and repetition level
-func Init(def, rep int, f fields.Field) string {
-	if rep == 0 || !f.Repeated() {
+func Init(def, rep, seen int, f fields.Field) string {
+	if (seen > 0 && def == f.MaxDef()) || def == 0 || !f.Repeated() {
 		if f.Required() {
 			return fmt.Sprintf("x.%s = %s", strings.Join(f.FieldNames, "."), "vals[nVals]")
 		}
 
-		i := f.DefIndex(1)
+		var i int
+		if seen == 0 {
+			i = f.DefIndex(1)
+		} else {
+			i = f.DefIndex(seen)
+			if i < len(f.FieldNames)-1 {
+				i++
+			}
+		}
 		ch := f.Child(i)
-		append := ch.RepetitionTypes[0] == fields.Repeated && def < f.MaxDef()
-		n := strings.Join(f.FieldNames[:i+1], ".")
+
+		names := f.FieldNames[:i+1]
+
+		var reps int
+		for s := 1; s <= seen; s++ {
+			j := f.DefIndex(s)
+			if f.RepetitionTypes[j] == fields.Repeated {
+				names[j] = fmt.Sprintf("%s[ind[%d]]", names[j], reps)
+				reps++
+			}
+		}
+
+		n := strings.Join(names, ".")
+		append := seen == 0 && ch.RepetitionTypes[0] == fields.Repeated && def < f.MaxDef()
 		if append {
 			return fmt.Sprintf("x.%s = append(x.%s, %s)", n, n, doInit(def, rep, 0, ch, true))
 		}
+
 		return fmt.Sprintf("x.%s = %s", n, doInit(def, rep, 0, ch, false))
 	}
 

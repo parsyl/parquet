@@ -24,8 +24,8 @@ func init() {
 		},
 		"plusOne":    func(i int) int { return i + 1 },
 		"newDefCase": func(def, seen int, f fields.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
-		"init": func(def, rep int, f fields.Field) string {
-			return structs.Init(def, rep, f)
+		"init": func(def, rep, seen int, f fields.Field) string {
+			return structs.Init(def, rep, seen, f)
 		},
 		"repeat": func(def int, f fields.Field) bool { return f.Repeated() && def == f.MaxDef() },
 	}
@@ -68,11 +68,11 @@ func init() {
 				nVals++{{end}}{{end}}			
 		}{{end}}`
 
-	defCaseTpl := `{{define "defCase"}}{{if repeat .Def .Field}}{{ template "repSwitch" .}}{{else}}{{init .Def 0 .Field}}{{end}}{{end}}`
+	defCaseTpl := `{{define "defCase"}}{{if repeat .Def .Field}}{{ template "repSwitch" .}}{{else}}{{init .Def 0 .Seen .Field}}{{end}}{{end}}`
 
 	repSwitchTpl := `{{define "repSwitch"}}switch rep {
 {{range $case := .Field.RepCases $.Seen}}{{$case.Case}}
-{{init $.Def $case.Rep $.Field}}
+{{init $.Def $case.Rep $.Seen $.Field}}
 {{end}} } {{end}}`
 
 	for _, t := range []string{notRepeatedTpl, repeatedTpl, defSwitchTpl, defCaseTpl, repSwitchTpl} {

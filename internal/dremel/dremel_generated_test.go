@@ -282,7 +282,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 		switch def {
 		case 3:
 			switch rep {
-			case 0, 1:
+			default:
 				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
 			}
 			nVals++
