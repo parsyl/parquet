@@ -95,7 +95,6 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 		}
 
 		nLevels++
-
 		switch def {
 		case 1:
 			x.Link = &Link{}
@@ -153,6 +152,8 @@ func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) 
 		switch def {
 		case 2:
 			switch rep {
+			case 0, 1:
+				x.Link.Forward = append(x.Link.Forward, vals[nVals])
 			}
 			nVals++
 		}
@@ -257,6 +258,14 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
+
+// in.rep(rep)
+// 		if def == 3 { // 3 should be written by parquetgen based on the 'depth' field
+// 			s := vals[v]
+// 			x.Names[ind[0]].Languages[ind[1]].Country = &s
+// 			v++
+// 		}
+
 func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 
@@ -273,6 +282,8 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 		switch def {
 		case 3:
 			switch rep {
+			case 0, 1:
+				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
 			}
 			nVals++
 		}
@@ -309,6 +320,7 @@ func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 
+	ind := make(indices, 1)
 	for i := range defs {
 		def := defs[i]
 		rep := reps[i]
@@ -318,9 +330,12 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 
 		nLevels++
 
+		ind.rep(rep)
 		switch def {
 		case 2:
 			switch rep {
+			case 0, 1:
+				x.Names[ind[0]].URL = pstring(vals[nVals])
 			}
 			nVals++
 		}
@@ -1020,8 +1035,9 @@ type indices []int
 
 func (i indices) rep(rep uint8) {
 	if rep > 0 {
-		i[rep-1] = i[rep-1] + 1
-		for j := 0; j < int(rep)-1; j++ {
+		r := int(rep) - 1
+		i[r] = i[r] + 1
+		for j := int(rep); j < len(i); j++ {
 			i[j] = 0
 		}
 	}
