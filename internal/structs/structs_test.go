@@ -46,7 +46,7 @@ func TestInit(t *testing.T) {
 			field:    fields.Field{FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
 			def:      2,
 			rep:      0,
-			expected: "x.Names[ind[0]].Languages.Code = append(x.Names[ind[0]].Languages.Code, vals[nVals])",
+			expected: "x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})",
 		},
 		{
 			name:     "NamesLanguagesCode, def 2, rep 2",
@@ -81,14 +81,14 @@ func TestInit(t *testing.T) {
 			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Names[ind[0]].Language.Codes = append(x.Names[ind[0]].Language.Codes, []string{vals[nVals]})",
+			expected: "x.Names = append(x.Names, Name{Language: Language{Codes: []string{vals[nVals]}}})",
 		},
 		{
 			name:     "required repeated repeated",
 			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Name = append(x.Name, Name{[]Language{{Codes: []string{vals[nVals]}}}})",
+			expected: "x.Name.Languages = append(x.Name.Languages, Language{Codes: []string{vals[nVals]}})",
 		},
 		{
 			name:     "repeated required repeated rep 1",
@@ -109,14 +109,14 @@ func TestInit(t *testing.T) {
 			field:    fields.Field{FieldNames: []string{"Names", "Language", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Required, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Names[ind[0]].Language.Codes = append(x.Names[ind[0]].Language.Codes, []string{vals[nVals]})",
+			expected: "x.Names = append(x.Names, Name{Language: Language{Codes: []string{vals[nVals]}}})",
 		},
 		{
 			name:     "required repeated repeated rep 0",
 			field:    fields.Field{FieldNames: []string{"Name", "Languages", "Codes"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Repeated, fields.Repeated}},
 			def:      2,
 			rep:      0,
-			expected: "x.Name = append(x.Name, Name{[]Language{{Codes: []string{vals[nVals]}}}})",
+			expected: "x.Name.Languages = append(x.Name.Languages, Language{Codes: []string{vals[nVals]}})",
 		},
 		{
 			name:     "repeated required repeated rep 2",

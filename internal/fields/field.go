@@ -121,6 +121,19 @@ func (f Field) DefIndex(def int) int {
 	return def
 }
 
+func (f Field) RepIndex(rep int) int {
+	var count int
+	for j, o := range f.RepetitionTypes {
+		if o == Repeated {
+			count++
+		}
+		if count == rep {
+			return j
+		}
+	}
+	return rep
+}
+
 func (f Field) NthDef(i int) (int, RepetitionType) {
 	var count int
 	var out RepetitionType

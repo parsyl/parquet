@@ -226,7 +226,7 @@ func TestWrite(t *testing.T) {
 			fields: []fields.Field{{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}}},
 			result: `func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
-	defs, reps, nLevels = getDocLevels(defs, reps)
+	ind := make(indices, 1)
 
 	for i := range defs {
 		def := defs[i]
@@ -235,13 +235,16 @@ func TestWrite(t *testing.T) {
 			break
 		}
 
+		nLevels++
+		ind.rep(rep)
+
 		switch def {
 		case 1:
 			x.Link = &Link{}
 		case 2:
 			switch rep {
 			case 0:
-				x.Link = &Link{Backward: []int64{vals[nVals]}}
+				x.Link = append(x.Link, &Link{Backward: []int64{vals[nVals]}})
 			case 1:
 				x.Link.Backward = append(x.Link.Backward, vals[nVals])
 			}
@@ -260,6 +263,7 @@ func TestWrite(t *testing.T) {
 			},
 			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
+	ind := make(indices, 1)
 
 	for i := range defs {
 		def := defs[i]
@@ -268,10 +272,13 @@ func TestWrite(t *testing.T) {
 			break
 		}
 
+		nLevels++
+		ind.rep(rep)
+
 		switch def {
 		case 2:
 			switch rep {
-			case 0, 1:
+			default:
 				x.Link.Forward = append(x.Link.Forward, vals[nVals])
 			}
 			nVals++

@@ -51,7 +51,13 @@ func Init(def, rep, seen int, f fields.Field) string {
 	var repeats []bool
 	var count int
 
-	for i, n := range f.FieldNames {
+	end := f.DefIndex(def) + 1
+	if def == f.MaxDef() && rep == 0 {
+		end = f.DefIndex(1) + 1
+	} else if def == f.MaxDef() && rep > 0 {
+		end = f.RepIndex(rep) + 1
+	}
+	for i, n := range f.FieldNames[:end] {
 		var r bool
 		if f.RepetitionTypes[i] == fields.Repeated {
 			count++
@@ -59,13 +65,9 @@ func Init(def, rep, seen int, f fields.Field) string {
 		}
 		names = append(names, n)
 		repeats = append(repeats, r)
-		if count == rep {
-			break
-		}
 	}
 
 	names = addIndex(names, repeats)
-
 	s := strings.Join(names, ".")
 
 	var val string
