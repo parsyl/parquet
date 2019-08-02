@@ -12,7 +12,10 @@ import (
 
 func TestWrite(t *testing.T) {
 	testCases := []struct {
-		name   string
+		name string
+		// fields is a slice so that the parts of the field's path
+		// that have been seen already can be included in before the
+		// the field being tested.  The last field is the one being tested.
 		fields []fields.Field
 		result string
 	}{
@@ -311,7 +314,7 @@ func TestWrite(t *testing.T) {
 		case 2:
 			switch rep {
 			case 0:
-				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
+				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 1:
 				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:

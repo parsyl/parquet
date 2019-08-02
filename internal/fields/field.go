@@ -55,6 +55,14 @@ func (f Field) Child(i int) Field {
 	}
 }
 
+func (f Field) Parent(i int) Field {
+	return Field{
+		FieldNames:      f.FieldNames[:i],
+		FieldTypes:      f.FieldTypes[:i],
+		RepetitionTypes: f.RepetitionTypes[:i],
+	}
+}
+
 func (f Field) DefChild(def int) Field {
 	i := f.DefIndex(def)
 	if i >= len(f.FieldNames) {

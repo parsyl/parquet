@@ -16,6 +16,12 @@ func Init(def, rep, seen int, f fields.Field) string {
 			return fmt.Sprintf("x.%s = %s", strings.Join(f.FieldNames, "."), "vals[nVals]")
 		}
 
+		rt := f.RepetitionTypes[len(f.FieldTypes)-1]
+		if rt == fields.Repeated && def == f.MaxDef() && !f.Parent(len(f.FieldTypes)-1).Repeated() {
+			n := strings.Join(f.FieldNames, ".")
+			return fmt.Sprintf("x.%s = append(x.%s, %s)", n, n, "vals[nVals]")
+		}
+
 		var i int
 		if seen == 0 {
 			i = f.DefIndex(1)
