@@ -25,6 +25,14 @@ func init() {
 		"plusOne":    func(i int) int { return i + 1 },
 		"newDefCase": func(def, seen int, f fields.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
 		"init": func(def, rep, seen int, f fields.Field) string {
+			if def < f.MaxDef() {
+				//calculate what rep should be
+				for _, rt := range f.RepetitionTypes[:def] {
+					if rt == fields.Repeated {
+						rep++
+					}
+				}
+			}
 			return structs.Init(def, rep, seen, f)
 		},
 		"repeat": func(def int, f fields.Field) bool { return f.Repeated() && def == f.MaxDef() },

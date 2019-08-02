@@ -75,19 +75,21 @@ func Init(def, rep, seen int, f fields.Field) string {
 
 	names = addIndex(names, repeats)
 	s := strings.Join(names, ".")
-
 	var val string
 	tpl := "x.%s = append(x.%s, %s)"
 	s2 := s
 
 	i, rt := f.NthDef(def)
-
 	if def == f.MaxDef() && rep == nReps(f) && f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Repeated {
 		val = "vals[nVals]"
+	} else if rep == 0 {
+		f = f.Child(len(names) - 1)
+		tpl = "x.%s%s = %s"
+		s2 = ""
+		val = doInit(def, rep, 0, f, false)
 	} else if rt != fields.Repeated {
 		tpl = "x.%s%s = %s"
 		s2 = ""
-		//def -= nDefs(f.RepetitionTypes[:i])
 		names = names[:i]
 		s = strings.Join(names, ".")
 		f = f.Child(i - 1)

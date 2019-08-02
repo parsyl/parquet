@@ -247,7 +247,7 @@ func TestWrite(t *testing.T) {
 		case 2:
 			switch rep {
 			case 0:
-				x.Link = append(x.Link, &Link{Backward: []int64{vals[nVals]}})
+				x.Link = &Link{Backward: []int64{vals[nVals]}}
 			case 1:
 				x.Link.Backward = append(x.Link.Backward, vals[nVals])
 			}
@@ -314,7 +314,7 @@ func TestWrite(t *testing.T) {
 		case 2:
 			switch rep {
 			case 0:
-				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
+				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
 			case 1:
 				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
@@ -366,7 +366,6 @@ func TestWrite(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(len(tc.fields)-1, tc.fields)
 			gocode, err := format.Source([]byte(s))
-			fmt.Println(string(gocode))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))
 		})
