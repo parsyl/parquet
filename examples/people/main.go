@@ -35,19 +35,19 @@ func write() {
 		log.Fatal(err)
 	}
 
-	for i := 0; i < 2000; i++ {
+	for i := 0; i < 20; i++ {
 		w.Add(newPerson(i))
 	}
 
-	// Every call to w.Write flushes data to disk (because
-	// f is *os.File) and creates a new RowGroup.
-	if err := w.Write(); err != nil {
-		log.Fatal(err)
-	}
+	// // Every call to w.Write flushes data to disk (because
+	// // f is *os.File) and creates a new RowGroup.
+	// if err := w.Write(); err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	for i := 2000; i < 4000; i++ {
-		w.Add(newPerson(i))
-	}
+	// for i := 2000; i < 4000; i++ {
+	// 	w.Add(newPerson(i))
+	// }
 
 	if err := w.Write(); err != nil {
 		log.Fatal(err)
@@ -95,7 +95,7 @@ type Hobby struct {
 }
 
 type Person struct {
-	Being
+	//Being
 	Happiness   int64    `parquet:"happiness"`
 	Sadness     *int64   `parquet:"sadness"`
 	Code        *string  `parquet:"code"`
@@ -106,6 +106,7 @@ type Person struct {
 	Anniversary *uint64  `parquet:"anniversary"`
 	Difficulty  *int32   `parquet:"difficulty"`
 	Hobby       *Hobby   `parquet:"hobby"`
+	Friends     []Being  `parquet:"friends"`
 
 	// Secret will not be part of parquet.
 	Secret string `parquet:"-"`

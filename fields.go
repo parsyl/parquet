@@ -147,6 +147,7 @@ type OptionalField struct {
 	MaxLevels      MaxLevel
 	compression    sch.CompressionCodec
 	RepetitionType FieldFunc
+	Types          []int
 	repeated       bool
 }
 
@@ -168,6 +169,7 @@ func NewOptionalField(pth []string, types []int, opts ...func(*OptionalField)) O
 			Rep: rts.MaxRep(),
 		},
 		RepetitionType: fieldFuncs[types[len(types)-1]],
+		Types:          types,
 		repeated:       rts.MaxRep() > 0,
 	}
 

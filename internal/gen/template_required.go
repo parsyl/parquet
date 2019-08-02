@@ -19,7 +19,7 @@ func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Ty
 }
 
 func (f *{{.FieldType}}) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.{{.ParquetType}}, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.{{.ParquetType}}, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {

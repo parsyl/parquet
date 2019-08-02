@@ -16,6 +16,7 @@ import (
 type Field struct {
 	Name           string
 	Path           []string
+	Types          []int
 	Type           FieldFunc
 	RepetitionType FieldFunc
 }
@@ -45,12 +46,12 @@ func (s schema) schema() (int64, []*sch.SchemaElement) {
 	m := map[string]*sch.SchemaElement{}
 	for _, f := range s.fields {
 		if len(f.Path) > 1 {
-			for _, name := range f.Path[:len(f.Path)-1] {
+			for i, name := range f.Path[:len(f.Path)-1] {
 				par, ok := m[name]
 				if !ok {
 					children++
 					parts := strings.Split(name, ".")
-					rt := sch.FieldRepetitionType_OPTIONAL
+					rt := sch.FieldRepetitionType(f.Types[i])
 					par = &sch.SchemaElement{
 						Name:           parts[len(parts)-1],
 						RepetitionType: &rt,

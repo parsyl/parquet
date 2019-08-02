@@ -360,6 +360,40 @@ func TestWrite(t *testing.T) {
 	return nVals, nLevels
 }`,
 		},
+		{
+			name: "writeFriendsID",
+			fields: []fields.Field{
+				{Type: "Person", FieldNames: []string{"Friends", "ID"}, FieldTypes: []string{"Being", "int32"}, TypeName: "int32", FieldType: "Int32OptionalField", ParquetType: "Int32Type", ColumnName: "id", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{2, 0}},
+			},
+			result: `func writeFriendsID(x *Person, vals []int32, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			switch rep {
+			case 0:
+				x.Friends = []Being{{ID: vals[nVals]}}
+			case 1:
+				x.Friends = append(x.Friends, Being{ID: vals[nVals]})
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}`,
+		},
 	}
 
 	for i, tc := range testCases {

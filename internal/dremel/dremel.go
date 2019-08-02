@@ -1,6 +1,8 @@
 package dremel
 
-import "github.com/parsyl/parquet/internal/fields"
+import (
+	"github.com/parsyl/parquet/internal/fields"
+)
 
 // Package dremel generates code that parquetgen
 // uses to encode/decode a struct for writing and

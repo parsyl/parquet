@@ -672,7 +672,7 @@ func NewInt64Field(read func(r Document) int64, write func(r *Document, vals []i
 }
 
 func (f *Int64Field) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *Int64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -734,7 +734,7 @@ func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), wr
 }
 
 func (f *Int64OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: f.RepetitionType}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -802,7 +802,7 @@ func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), 
 }
 
 func (f *StringOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *StringOptionalField) Add(r Document) {

@@ -30,11 +30,11 @@ func randString(n int) string {
 }
 
 func newPerson(i int) Person {
-	var age *int32
-	if i%2 == 0 {
-		a := int32(20 + i%5)
-		age = &a
-	}
+	// var age *int32
+	// if i%2 == 0 {
+	// 	a := int32(20 + i%5)
+	// 	age = &a
+	// }
 
 	var sadness *int64
 	if i%3 == 0 {
@@ -60,6 +60,16 @@ func newPerson(i int) Person {
 		anv = &x
 	}
 
+	nFriends := rand.Int31n(4)
+	friends := make([]Being, nFriends)
+	for i := range friends {
+		d := rand.Int31n(100)
+		friends[i] = Being{
+			ID:  int32(rand.Int()),
+			Age: &d,
+		}
+	}
+
 	var hobby *Hobby
 	if i%2 == 0 {
 		d := int32(i % 10)
@@ -70,10 +80,10 @@ func newPerson(i int) Person {
 	}
 
 	return Person{
-		Being: Being{
-			ID:  int32(i),
-			Age: age,
-		},
+		// Being: Being{
+		// 	ID:  int32(i),
+		// 	Age: age,
+		// },
 		Happiness:   int64(i * 2),
 		Sadness:     sadness,
 		Code:        reallyRandString(8),
@@ -83,5 +93,6 @@ func newPerson(i int) Person {
 		Birthday:    uint32(i * 1000),
 		Anniversary: anv,
 		Hobby:       hobby,
+		Friends:     friends,
 	}
 }
