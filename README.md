@@ -150,7 +150,7 @@ type Being struct {
 type Person struct {
 	Being    Being
 	Username string `parquet:"username"`
-    Friends  []Being
+	Friends  []Being
 }
 ```
 
