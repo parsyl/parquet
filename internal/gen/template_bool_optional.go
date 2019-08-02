@@ -13,7 +13,7 @@ func NewBoolOptionalField(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		stats:         newBoolOptionalStats(),
+		stats:         newBoolOptionalStats(maxDef(types)),
 	}
 }
 
@@ -47,7 +47,7 @@ func (f *BoolOptionalField) Scan(r *{{.Type}}) {
 
 func (f *BoolOptionalField) Add(r {{.Type}}) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -74,16 +74,19 @@ func (f *BoolOptionalField) Levels() ([]uint8, []uint8) {
 
 var boolOptionalStatsTpl = `{{define "boolOptionalStats"}}
 type boolOptionalStats struct {
+	maxDef uint8
 	nils int64
 }
 
-func newBoolOptionalStats() *boolOptionalStats {
-	return &boolOptionalStats{}
+func newBoolOptionalStats(d uint8) *boolOptionalStats {
+	return &boolOptionalStats{maxDef: d}
 }
 
-func (b *boolOptionalStats) add(val *bool) {
-	if val == nil {
-		b.nils++	
+func (b *boolOptionalStats) add(vals []bool, defs []uint8) {
+	for _, def := range defs {
+		if def < b.maxDef {
+			b.nils++
+		}
 	}
 }
 

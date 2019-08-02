@@ -179,7 +179,6 @@ func (p *ParquetWriter) Close() error {
 }
 
 func (p *ParquetWriter) Add(rec {{.Type}}) {
-	p.meta.NextDoc()
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
@@ -190,6 +189,7 @@ func (p *ParquetWriter) Add(rec {{.Type}}) {
 		return
 	}
 
+	p.meta.NextDoc()
 	for _, f := range p.fields {
 		f.Add(rec)
 	}
@@ -428,5 +428,15 @@ func (i indices) rep(rep uint8) {
 			i[j] = 0
 		}
 	}
+}
+
+func maxDef(types []int) uint8 {
+	var out uint8
+	for _, typ := range types {
+		if typ > 0 {
+			out++
+		}
+	}
+	return out
 }
 `

@@ -650,7 +650,7 @@ func NewInt32OptionalField(read func(r Person) ([]int32, []uint8, []uint8), writ
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newint32optionalStats(),
+		stats:         newint32optionalStats(maxDef(types)),
 	}
 }
 
@@ -665,7 +665,7 @@ func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -682,7 +682,7 @@ func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 func (f *Int32OptionalField) Add(r Person) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -780,7 +780,7 @@ func NewInt64OptionalField(read func(r Person) ([]int64, []uint8, []uint8), writ
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newint64optionalStats(),
+		stats:         newint64optionalStats(maxDef(types)),
 	}
 }
 
@@ -795,7 +795,7 @@ func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -812,7 +812,7 @@ func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 func (f *Int64OptionalField) Add(r Person) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -848,7 +848,7 @@ func NewStringOptionalField(read func(r Person) ([]string, []uint8, []uint8), wr
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newStringOptionalStats(),
+		stats:         newStringOptionalStats(maxDef(types)),
 	}
 }
 
@@ -858,7 +858,7 @@ func (f *StringOptionalField) Schema() parquet.Field {
 
 func (f *StringOptionalField) Add(r Person) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -1057,7 +1057,7 @@ func NewFloat32OptionalField(read func(r Person) ([]float32, []uint8, []uint8), 
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newfloat32optionalStats(),
+		stats:         newfloat32optionalStats(maxDef(types)),
 	}
 }
 
@@ -1072,7 +1072,7 @@ func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error 
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1089,7 +1089,7 @@ func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 func (f *Float32OptionalField) Add(r Person) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -1125,7 +1125,7 @@ func NewBoolOptionalField(read func(r Person) ([]bool, []uint8, []uint8), write 
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		stats:         newBoolOptionalStats(),
+		stats:         newBoolOptionalStats(maxDef(types)),
 	}
 }
 
@@ -1159,7 +1159,7 @@ func (f *BoolOptionalField) Scan(r *Person) {
 
 func (f *BoolOptionalField) Add(r Person) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -1258,7 +1258,7 @@ func NewUint64OptionalField(read func(r Person) ([]uint64, []uint8, []uint8), wr
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newuint64optionalStats(),
+		stats:         newuint64optionalStats(maxDef(types)),
 	}
 }
 
@@ -1273,7 +1273,7 @@ func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *Uint64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1290,7 +1290,7 @@ func (f *Uint64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 func (f *Uint64OptionalField) Add(r Person) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -1496,26 +1496,33 @@ type int32optionalStats struct {
 	max     int32
 	nils    int64
 	nonNils int64
+	maxDef  uint8
 }
 
-func newint32optionalStats() *int32optionalStats {
+func newint32optionalStats(d uint8) *int32optionalStats {
 	return &int32optionalStats{
-		min: int32(math.MaxInt32),
+		min:    int32(math.MaxInt32),
+		maxDef: d,
 	}
 }
 
-func (f *int32optionalStats) add(val *int32) {
-	if val == nil {
-		f.nils++
-		return
-	}
+func (f *int32optionalStats) add(vals []int32, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
 
-	f.nonNils++
-	if *val < f.min {
-		f.min = *val
-	}
-	if *val > f.max {
-		f.max = *val
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
 	}
 }
 
@@ -1594,26 +1601,33 @@ type int64optionalStats struct {
 	max     int64
 	nils    int64
 	nonNils int64
+	maxDef  uint8
 }
 
-func newint64optionalStats() *int64optionalStats {
+func newint64optionalStats(d uint8) *int64optionalStats {
 	return &int64optionalStats{
-		min: int64(math.MaxInt64),
+		min:    int64(math.MaxInt64),
+		maxDef: d,
 	}
 }
 
-func (f *int64optionalStats) add(val *int64) {
-	if val == nil {
-		f.nils++
-		return
-	}
+func (f *int64optionalStats) add(vals []int64, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
 
-	f.nonNils++
-	if *val < f.min {
-		f.min = *val
-	}
-	if *val > f.max {
-		f.max = *val
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
 	}
 }
 
@@ -1646,22 +1660,27 @@ func (f *int64optionalStats) Max() []byte {
 }
 
 type stringOptionalStats struct {
-	vals []string
-	min  []byte
-	max  []byte
-	nils int64
+	vals   []string
+	min    []byte
+	max    []byte
+	nils   int64
+	maxDef uint8
 }
 
-func newStringOptionalStats() *stringOptionalStats {
-	return &stringOptionalStats{}
+func newStringOptionalStats(d uint8) *stringOptionalStats {
+	return &stringOptionalStats{maxDef: d}
 }
 
-func (s *stringOptionalStats) add(val *string) {
-	if val == nil {
-		s.nils++
-		return
+func (s *stringOptionalStats) add(vals []string, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < s.maxDef {
+			s.nils++
+		} else {
+			s.vals = append(s.vals, vals[i])
+			i++
+		}
 	}
-	s.vals = append(s.vals, *val)
 }
 
 func (s *stringOptionalStats) NullCount() *int64 {
@@ -1787,26 +1806,33 @@ type float32optionalStats struct {
 	max     float32
 	nils    int64
 	nonNils int64
+	maxDef  uint8
 }
 
-func newfloat32optionalStats() *float32optionalStats {
+func newfloat32optionalStats(d uint8) *float32optionalStats {
 	return &float32optionalStats{
-		min: float32(math.MaxFloat32),
+		min:    float32(math.MaxFloat32),
+		maxDef: d,
 	}
 }
 
-func (f *float32optionalStats) add(val *float32) {
-	if val == nil {
-		f.nils++
-		return
-	}
+func (f *float32optionalStats) add(vals []float32, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
 
-	f.nonNils++
-	if *val < f.min {
-		f.min = *val
-	}
-	if *val > f.max {
-		f.max = *val
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
 	}
 }
 
@@ -1839,16 +1865,19 @@ func (f *float32optionalStats) Max() []byte {
 }
 
 type boolOptionalStats struct {
-	nils int64
+	maxDef uint8
+	nils   int64
 }
 
-func newBoolOptionalStats() *boolOptionalStats {
-	return &boolOptionalStats{}
+func newBoolOptionalStats(d uint8) *boolOptionalStats {
+	return &boolOptionalStats{maxDef: d}
 }
 
-func (b *boolOptionalStats) add(val *bool) {
-	if val == nil {
-		b.nils++
+func (b *boolOptionalStats) add(vals []bool, defs []uint8) {
+	for _, def := range defs {
+		if def < b.maxDef {
+			b.nils++
+		}
 	}
 }
 
@@ -1915,26 +1944,33 @@ type uint64optionalStats struct {
 	max     uint64
 	nils    int64
 	nonNils int64
+	maxDef  uint8
 }
 
-func newuint64optionalStats() *uint64optionalStats {
+func newuint64optionalStats(d uint8) *uint64optionalStats {
 	return &uint64optionalStats{
-		min: uint64(math.MaxUint64),
+		min:    uint64(math.MaxUint64),
+		maxDef: d,
 	}
 }
 
-func (f *uint64optionalStats) add(val *uint64) {
-	if val == nil {
-		f.nils++
-		return
-	}
+func (f *uint64optionalStats) add(vals []uint64, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
 
-	f.nonNils++
-	if *val < f.min {
-		f.min = *val
-	}
-	if *val > f.max {
-		f.max = *val
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
 	}
 }
 
@@ -2043,4 +2079,14 @@ func (i indices) rep(rep uint8) {
 			i[j] = 0
 		}
 	}
+}
+
+func maxDef(types []int) uint8 {
+	var out uint8
+	for _, typ := range types {
+		if typ > 0 {
+			out++
+		}
+	}
+	return out
 }

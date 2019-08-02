@@ -157,12 +157,12 @@ func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compresse
 			Encoding:                sch.Encoding_PLAIN,
 			DefinitionLevelEncoding: sch.Encoding_RLE,
 			RepetitionLevelEncoding: sch.Encoding_RLE,
-			// Statistics: &sch.Statistics{
-			// 	NullCount:     stats.NullCount(),
-			// 	DistinctCount: stats.DistinctCount(),
-			// 	MinValue:      stats.Min(),
-			// 	MaxValue:      stats.Max(),
-			// },
+			Statistics: &sch.Statistics{
+				NullCount:     stats.NullCount(),
+				DistinctCount: stats.DistinctCount(),
+				MinValue:      stats.Min(),
+				MaxValue:      stats.Max(),
+			},
 		},
 	}
 

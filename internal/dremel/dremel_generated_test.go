@@ -468,7 +468,6 @@ func (p *ParquetWriter) Close() error {
 }
 
 func (p *ParquetWriter) Add(rec Document) {
-	p.meta.NextDoc()
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
@@ -479,6 +478,7 @@ func (p *ParquetWriter) Add(rec Document) {
 		return
 	}
 
+	p.meta.NextDoc()
 	for _, f := range p.fields {
 		f.Add(rec)
 	}
@@ -721,7 +721,7 @@ type Int64OptionalField struct {
 	vals  []int64
 	read  func(r Document) ([]int64, []uint8, []uint8)
 	write func(r *Document, vals []int64, def, rep []uint8) (int, int)
-	stats []int64optionalStats
+	stats *int64optionalStats
 }
 
 func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), write func(r *Document, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
@@ -729,7 +729,7 @@ func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), wr
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newint64optionalStats(),
+		stats:         newint64optionalStats(maxDef(types)),
 	}
 }
 
@@ -744,7 +744,7 @@ func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -761,7 +761,7 @@ func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 func (f *Int64OptionalField) Add(r Document) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -797,7 +797,7 @@ func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), 
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newStringOptionalStats(),
+		stats:         newStringOptionalStats(maxDef(types)),
 	}
 }
 
@@ -807,7 +807,7 @@ func (f *StringOptionalField) Schema() parquet.Field {
 
 func (f *StringOptionalField) Add(r Document) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -916,26 +916,33 @@ type int64optionalStats struct {
 	max     int64
 	nils    int64
 	nonNils int64
+	maxDef  uint8
 }
 
-func newint64optionalStats() *int64optionalStats {
+func newint64optionalStats(d uint8) *int64optionalStats {
 	return &int64optionalStats{
-		min: int64(math.MaxInt64),
+		min:    int64(math.MaxInt64),
+		maxDef: d,
 	}
 }
 
-func (f *int64optionalStats) add(val *int64) {
-	if val == nil {
-		f.nils++
-		return
-	}
+func (f *int64optionalStats) add(vals []int64, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
 
-	f.nonNils++
-	if *val < f.min {
-		f.min = *val
-	}
-	if *val > f.max {
-		f.max = *val
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
 	}
 }
 
@@ -968,22 +975,27 @@ func (f *int64optionalStats) Max() []byte {
 }
 
 type stringOptionalStats struct {
-	vals []string
-	min  []byte
-	max  []byte
-	nils int64
+	vals   []string
+	min    []byte
+	max    []byte
+	nils   int64
+	maxDef uint8
 }
 
-func newStringOptionalStats() *stringOptionalStats {
-	return &stringOptionalStats{}
+func newStringOptionalStats(d uint8) *stringOptionalStats {
+	return &stringOptionalStats{maxDef: d}
 }
 
-func (s *stringOptionalStats) add(val *string) {
-	if val == nil {
-		s.nils++
-		return
+func (s *stringOptionalStats) add(vals []string, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < s.maxDef {
+			s.nils++
+		} else {
+			s.vals = append(s.vals, vals[i])
+			i++
+		}
 	}
-	s.vals = append(s.vals, *val)
 }
 
 func (s *stringOptionalStats) NullCount() *int64 {
@@ -1041,4 +1053,14 @@ func (i indices) rep(rep uint8) {
 			i[j] = 0
 		}
 	}
+}
+
+func maxDef(types []int) uint8 {
+	var out uint8
+	for _, typ := range types {
+		if typ > 0 {
+			out++
+		}
+	}
+	return out
 }

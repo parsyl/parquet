@@ -655,16 +655,16 @@ func TestStats(t *testing.T) {
 				if !assert.Equal(t, len(pages), len(tc.stats), tc.name) {
 					return
 				}
-				// for i, st := range tc.stats {
-				// 	ph := pages[i]
-				// 	assert.Equal(t, st.min, ph.DataPageHeader.Statistics.MinValue)
-				// 	assert.Equal(t, st.max, ph.DataPageHeader.Statistics.MaxValue)
-				// 	if st.nilCount == nil {
-				// 		assert.Equal(t, st.nilCount, ph.DataPageHeader.Statistics.NullCount)
-				// 	} else {
-				// 		assert.Equal(t, *st.nilCount, *ph.DataPageHeader.Statistics.NullCount)
-				// 	}
-				// }
+				for i, st := range tc.stats {
+					ph := pages[i]
+					assert.Equal(t, st.min, ph.DataPageHeader.Statistics.MinValue)
+					assert.Equal(t, st.max, ph.DataPageHeader.Statistics.MaxValue)
+					if st.nilCount == nil {
+						assert.Equal(t, st.nilCount, ph.DataPageHeader.Statistics.NullCount)
+					} else {
+						assert.Equal(t, *st.nilCount, *ph.DataPageHeader.Statistics.NullCount)
+					}
+				}
 			})
 		}
 	}

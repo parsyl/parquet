@@ -14,7 +14,7 @@ func NewStringOptionalField(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, 
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         newStringOptionalStats(),
+		stats:         newStringOptionalStats(maxDef(types)),
 	}
 }
 
@@ -24,7 +24,7 @@ func (f *StringOptionalField) Schema() parquet.Field {
 
 func (f *StringOptionalField) Add(r {{.Type}}) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -93,18 +93,23 @@ type stringOptionalStats struct {
 	min []byte
 	max []byte
 	nils int64
+	maxDef uint8
 }
 
-func newStringOptionalStats() *stringOptionalStats {
-	return &stringOptionalStats{}
+func newStringOptionalStats(d uint8) *stringOptionalStats {
+	return &stringOptionalStats{maxDef: d}
 }
 
-func (s *stringOptionalStats) add(val *string) {
-	if val == nil {
-		s.nils++
-		return
+func (s *stringOptionalStats) add(vals []string, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < s.maxDef {
+			s.nils++
+		} else {
+			s.vals = append(s.vals, vals[i])
+			i++
+		}
 	}
-	s.vals = append(s.vals, *val)
 }
 
 func (s *stringOptionalStats) NullCount() *int64 {

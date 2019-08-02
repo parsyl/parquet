@@ -9,7 +9,7 @@ type {{.FieldType}} struct {
 	vals  []{{removeStar .TypeName}}
 	read   func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
 	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
-	stats {{.TypeName}}optionalStats
+	stats *{{removeStar .TypeName}}optionalStats
 }
 
 func New{{.FieldType}}(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
@@ -17,7 +17,7 @@ func New{{.FieldType}}(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uin
 		read:          read,
 		write:         write,
 		OptionalField: parquet.NewOptionalField(path, types, opts...),
-		//stats:         new{{removeStar .TypeName}}optionalStats(),
+		stats:         new{{removeStar .TypeName}}optionalStats(maxDef(types)),
 	}
 }
 
@@ -32,7 +32,7 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -49,7 +49,7 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 func (f *{{.FieldType}}) Add(r {{.Type}}) {
 	vals, defs, reps := f.read(r)
-	//f.stats.add(v)
+	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
 	f.Defs = append(f.Defs, defs...)
 	f.Reps = append(f.Reps, reps...)
@@ -79,26 +79,33 @@ type {{removeStar .TypeName}}optionalStats struct {
 	max {{removeStar .TypeName}}
 	nils int64
 	nonNils int64
+	maxDef uint8
 }
 
-func new{{removeStar .TypeName}}optionalStats() *{{removeStar .TypeName}}optionalStats {
+func new{{removeStar .TypeName}}optionalStats(d uint8) *{{removeStar .TypeName}}optionalStats {
 	return &{{removeStar .TypeName}}optionalStats{
 		min: {{removeStar .TypeName}}(math.Max{{camelCaseRemoveStar .TypeName}}),
+		maxDef: d,
 	}
 }
 
-func (f *{{removeStar .TypeName}}optionalStats) add(val *{{removeStar .TypeName}}) {
-	if val == nil {
-		f.nils++
-		return
-	}
+func (f *{{removeStar .TypeName}}optionalStats) add(vals []{{removeStar .TypeName}}, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
 
-	f.nonNils++
-	if *val < f.min {
-		f.min = *val
-	}
-	if *val > f.max {
-		f.max = *val
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}			
+		}
 	}
 }
 
