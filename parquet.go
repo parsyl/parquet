@@ -49,9 +49,10 @@ func (s schema) schema() (int64, []*sch.SchemaElement) {
 				par, ok := m[name]
 				if !ok {
 					children++
+					parts := strings.Split(name, ".")
 					rt := sch.FieldRepetitionType_OPTIONAL
 					par = &sch.SchemaElement{
-						Name:           name,
+						Name:           parts[len(parts)-1],
 						RepetitionType: &rt,
 						NumChildren:    &z,
 					}
@@ -67,7 +68,7 @@ func (s schema) schema() (int64, []*sch.SchemaElement) {
 		}
 
 		se := &sch.SchemaElement{
-			Name:       f.Name,
+			Name:       f.Path[len(f.Path)-1],
 			TypeLength: &z,
 			Scale:      &z,
 			Precision:  &z,
@@ -428,6 +429,8 @@ func RepetitionRepeated(se *sch.SchemaElement) {
 	t := sch.FieldRepetitionType_REPEATED
 	se.RepetitionType = &t
 }
+
+var fieldFuncs = []FieldFunc{RepetitionRequired, RepetitionOptional, RepetitionRepeated}
 
 func Int32Type(se *sch.SchemaElement) {
 	t := sch.Type_INT32

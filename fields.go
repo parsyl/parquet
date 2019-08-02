@@ -160,11 +160,6 @@ func getRepetitionTypes(in []int) fields.RepetitionTypes {
 
 func NewOptionalField(pth []string, types []int, opts ...func(*OptionalField)) OptionalField {
 	rts := getRepetitionTypes(types)
-	ff := RepetitionOptional
-	if rts.MaxRep() > 0 {
-		ff = RepetitionRepeated
-	}
-
 	f := OptionalField{
 		pth:         pth,
 		compression: sch.CompressionCodec_SNAPPY,
@@ -172,7 +167,7 @@ func NewOptionalField(pth []string, types []int, opts ...func(*OptionalField)) O
 			Def: rts.MaxDef(),
 			Rep: rts.MaxRep(),
 		},
-		RepetitionType: ff,
+		RepetitionType: fieldFuncs[types[len(types)-1]],
 		repeated:       rts.MaxRep() > 0,
 	}
 
