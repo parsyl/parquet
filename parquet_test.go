@@ -11,12 +11,11 @@ import (
 	"time"
 
 	"github.com/parsyl/parquet"
-	sch "github.com/parsyl/parquet/generated"
+	sch "github.com/parsyl/parquet/schema"
 	"github.com/stretchr/testify/assert"
 )
 
 //go:generate parquetgen -input parquet_test.go -type Person -package parquet_test -output parquet_generated_test.go
-//go:generate parquetgen -input parquet_test.go -type Document -package parquet_test -output parquet_generated_dremel_test.go
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -656,16 +655,16 @@ func TestStats(t *testing.T) {
 				if !assert.Equal(t, len(pages), len(tc.stats), tc.name) {
 					return
 				}
-				for i, st := range tc.stats {
-					ph := pages[i]
-					assert.Equal(t, st.min, ph.DataPageHeader.Statistics.MinValue)
-					assert.Equal(t, st.max, ph.DataPageHeader.Statistics.MaxValue)
-					if st.nilCount == nil {
-						assert.Equal(t, st.nilCount, ph.DataPageHeader.Statistics.NullCount)
-					} else {
-						assert.Equal(t, *st.nilCount, *ph.DataPageHeader.Statistics.NullCount)
-					}
-				}
+				// for i, st := range tc.stats {
+				// 	ph := pages[i]
+				// 	assert.Equal(t, st.min, ph.DataPageHeader.Statistics.MinValue)
+				// 	assert.Equal(t, st.max, ph.DataPageHeader.Statistics.MaxValue)
+				// 	if st.nilCount == nil {
+				// 		assert.Equal(t, st.nilCount, ph.DataPageHeader.Statistics.NullCount)
+				// 	} else {
+				// 		assert.Equal(t, *st.nilCount, *ph.DataPageHeader.Statistics.NullCount)
+				// 	}
+				// }
 			})
 		}
 	}
@@ -710,15 +709,6 @@ func getExpected(peeps [][]Person, i int) *Person {
 	}
 	return nil
 }
-
-func pint32(i int32) *int32       { return &i }
-func puint32(i uint32) *uint32    { return &i }
-func pint64(i int64) *int64       { return &i }
-func puint64(i uint64) *uint64    { return &i }
-func pbool(b bool) *bool          { return &b }
-func pstring(s string) *string    { return &s }
-func pfloat32(f float32) *float32 { return &f }
-func pfloat64(f float64) *float64 { return &f }
 
 func getOptBools(count int) [][]Person {
 	var out [][]Person

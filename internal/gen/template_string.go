@@ -72,7 +72,7 @@ func (f *StringField) Add(r {{.Type}}) {
 }
 
 func (f *StringField) Levels() ([]uint8, []uint8) {
-	return f.Defs, f.Reps
+	return nil, nil
 }
 {{end}}`
 

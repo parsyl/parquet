@@ -59,8 +59,8 @@ func (f *BoolField) Add(r {{.Type}}) {
 	f.vals = append(f.vals, v)
 }
 
-func (f *BoolOptionalField) Levels() ([]uint8, []uint8) {
-	return f.Defs, f.Reps
+func (f *BoolField) Levels() ([]uint8, []uint8) {
+	return nil, nil
 }
 {{end}}`
 

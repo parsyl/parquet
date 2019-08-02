@@ -44,20 +44,20 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt32Field(readID, writeID, []string{"id"}, fieldCompression(compression)),
-		NewInt32OptionalField(readAge, writeAge, []string{"age"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
+		NewInt32OptionalField(readAge, writeAge, []string{"age"}, []int{1}, optionalFieldCompression(compression)),
 		NewInt64Field(readHappiness, writeHappiness, []string{"happiness"}, fieldCompression(compression)),
-		NewInt64OptionalField(readSadness, writeSadness, []string{"sadness"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
-		NewStringOptionalField(readCode, writeCode, []string{"code"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
+		NewInt64OptionalField(readSadness, writeSadness, []string{"sadness"}, []int{1}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readCode, writeCode, []string{"code"}, []int{1}, optionalFieldCompression(compression)),
 		NewFloat32Field(readFunkiness, writeFunkiness, []string{"funkiness"}, fieldCompression(compression)),
 		NewFloat64Field(readBoldness, writeBoldness, []string{"boldness"}, fieldCompression(compression)),
-		NewFloat32OptionalField(readLameness, writeLameness, []string{"lameness"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
-		NewBoolOptionalField(readKeen, writeKeen, []string{"keen"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
+		NewFloat32OptionalField(readLameness, writeLameness, []string{"lameness"}, []int{1}, optionalFieldCompression(compression)),
+		NewBoolOptionalField(readKeen, writeKeen, []string{"keen"}, []int{1}, optionalFieldCompression(compression)),
 		NewUint32Field(readBirthday, writeBirthday, []string{"birthday"}, fieldCompression(compression)),
-		NewUint64OptionalField(readAnniversary, writeAnniversary, []string{"anniversary"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
+		NewUint64OptionalField(readAnniversary, writeAnniversary, []string{"anniversary"}, []int{1}, optionalFieldCompression(compression)),
 		NewStringField(readBFF, writeBFF, []string{"bff"}, fieldCompression(compression)),
 		NewBoolField(readHungry, writeHungry, []string{"hungry"}, fieldCompression(compression)),
-		NewStringOptionalField(readHobbyName, writeHobbyName, []string{"hobby", "name"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(1), parquet.OptionalFieldRepetitionType(parquet.RepetitionRequired)),
-		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, optionalFieldCompression(compression), parquet.OptionalFieldDepth(2), parquet.OptionalFieldRepetitionType(parquet.RepetitionOptional)),
+		NewStringOptionalField(readHobbyName, writeHobbyName, []string{"hobby", "name"}, []int{1, 0}, optionalFieldCompression(compression)),
+		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, []int{1, 1}, optionalFieldCompression(compression)),
 		NewBoolField(readSleepy, writeSleepy, []string{"sleepy"}, fieldCompression(compression)),
 	}
 }
@@ -68,22 +68,24 @@ func readID(x Person) int32 {
 func writeID(x *Person, vals []int32) {
 	x.ID = vals[0]
 }
-func readAge(x Person) (*int32, uint8) {
+func readAge(x Person) ([]int32, []uint8, []uint8) {
 	switch {
 	case x.Age == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	default:
-		return x.Age, 1
+		return []int32{*x.Age}, []uint8{1}, nil
 	}
 }
-func writeAge(x *Person, vals []int32, def, rep uint8) bool {
+func writeAge(x *Person, vals []int32, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
 	case 1:
-		v := vals[0]
-		x.Age = &v
-		return true
+		x.Age = pint32(vals[nVals])
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
 func readHappiness(x Person) int64 {
 	return x.Happiness
@@ -91,39 +93,43 @@ func readHappiness(x Person) int64 {
 func writeHappiness(x *Person, vals []int64) {
 	x.Happiness = vals[0]
 }
-func readSadness(x Person) (*int64, uint8) {
+func readSadness(x Person) ([]int64, []uint8, []uint8) {
 	switch {
 	case x.Sadness == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	default:
-		return x.Sadness, 1
+		return []int64{*x.Sadness}, []uint8{1}, nil
 	}
 }
-func writeSadness(x *Person, vals []int64, def, rep uint8) bool {
+func writeSadness(x *Person, vals []int64, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
 	case 1:
-		v := vals[0]
-		x.Sadness = &v
-		return true
+		x.Sadness = pint64(vals[nVals])
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
-func readCode(x Person) (*string, uint8) {
+func readCode(x Person) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Code == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	default:
-		return x.Code, 1
+		return []string{*x.Code}, []uint8{1}, nil
 	}
 }
-func writeCode(x *Person, vals []string, def, rep uint8) bool {
+func writeCode(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
 	case 1:
-		v := vals[0]
-		x.Code = &v
-		return true
+		x.Code = pstring(vals[nVals])
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
 func readFunkiness(x Person) float32 {
 	return x.Funkiness
@@ -137,39 +143,43 @@ func readBoldness(x Person) float64 {
 func writeBoldness(x *Person, vals []float64) {
 	x.Boldness = vals[0]
 }
-func readLameness(x Person) (*float32, uint8) {
+func readLameness(x Person) ([]float32, []uint8, []uint8) {
 	switch {
 	case x.Lameness == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	default:
-		return x.Lameness, 1
+		return []float32{*x.Lameness}, []uint8{1}, nil
 	}
 }
-func writeLameness(x *Person, vals []float32, def, rep uint8) bool {
+func writeLameness(x *Person, vals []float32, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
 	case 1:
-		v := vals[0]
-		x.Lameness = &v
-		return true
+		x.Lameness = pfloat32(vals[nVals])
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
-func readKeen(x Person) (*bool, uint8) {
+func readKeen(x Person) ([]bool, []uint8, []uint8) {
 	switch {
 	case x.Keen == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	default:
-		return x.Keen, 1
+		return []bool{*x.Keen}, []uint8{1}, nil
 	}
 }
-func writeKeen(x *Person, vals []bool, def, rep uint8) bool {
+func writeKeen(x *Person, vals []bool, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
 	case 1:
-		v := vals[0]
-		x.Keen = &v
-		return true
+		x.Keen = pbool(vals[nVals])
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
 func readBirthday(x Person) uint32 {
 	return x.Birthday
@@ -177,22 +187,24 @@ func readBirthday(x Person) uint32 {
 func writeBirthday(x *Person, vals []uint32) {
 	x.Birthday = vals[0]
 }
-func readAnniversary(x Person) (*uint64, uint8) {
+func readAnniversary(x Person) ([]uint64, []uint8, []uint8) {
 	switch {
 	case x.Anniversary == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	default:
-		return x.Anniversary, 1
+		return []uint64{*x.Anniversary}, []uint8{1}, nil
 	}
 }
-func writeAnniversary(x *Person, vals []uint64, def, rep uint8) bool {
+func writeAnniversary(x *Person, vals []uint64, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
 	case 1:
-		v := vals[0]
-		x.Anniversary = &v
-		return true
+		x.Anniversary = puint64(vals[nVals])
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
 func readBFF(x Person) string {
 	return x.BFF
@@ -206,53 +218,45 @@ func readHungry(x Person) bool {
 func writeHungry(x *Person, vals []bool) {
 	x.Hungry = vals[0]
 }
-func readHobbyName(x Person) (*string, uint8) {
+func readHobbyName(x Person) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Hobby == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	default:
-		return &x.Hobby.Name, 1
+		return []string{x.Hobby.Name}, []uint8{1}, nil
 	}
 }
-func writeHobbyName(x *Person, vals []string, def, rep uint8) bool {
+func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
 	case 1:
-		v := vals[0]
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{Name: v}
-		} else {
-			x.Hobby.Name = v
-		}
-		return true
+		x.Hobby = &Hobby{Name: vals[nVals]}
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
-func readHobbyDifficulty(x Person) (*int32, uint8) {
+func readHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
 	switch {
 	case x.Hobby == nil:
-		return nil, 0
+		return nil, []uint8{0}, nil
 	case x.Hobby.Difficulty == nil:
-		return nil, 1
+		return nil, []uint8{1}, nil
 	default:
-		return x.Hobby.Difficulty, 2
+		return []int32{*x.Hobby.Difficulty}, []uint8{2}, nil
 	}
 }
-func writeHobbyDifficulty(x *Person, vals []int32, def, rep uint8) bool {
+func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
+	var nVals int
+	def := defs[0]
 	switch def {
-	case 1:
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{}
-		}
 	case 2:
-		v := vals[0]
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{Difficulty: &v}
-		} else {
-			x.Hobby.Difficulty = &v
-		}
-		return true
+		x.Hobby.Difficulty = pint32(vals[nVals])
+		nVals++
 	}
-	return false
+
+	return nVals, 1
 }
 func readSleepy(x Person) bool {
 	return x.Sleepy
@@ -395,6 +399,7 @@ func (p *ParquetWriter) Add(rec Person) {
 		return
 	}
 
+	p.meta.NextDoc()
 	for _, f := range p.fields {
 		f.Add(rec)
 	}
@@ -410,6 +415,7 @@ type Field interface {
 	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
 	Key() string
+	Levels() ([]uint8, []uint8)
 }
 
 func getFields(ff []Field) map[string]Field {
@@ -432,6 +438,7 @@ func NewParquetReader(r io.ReadSeeker, opts ...func(*ParquetReader)) (*ParquetRe
 
 	schema := make([]parquet.Field, len(ff))
 	for i, f := range ff {
+		pr.fieldNames = append(pr.fieldNames, f.Name())
 		schema[i] = f.Schema()
 	}
 
@@ -465,6 +472,7 @@ func readerIndex(i int) func(*ParquetReader) {
 // ParquetReader reads one page from a row group.
 type ParquetReader struct {
 	fields         map[string]Field
+	fieldNames     []string
 	index          int
 	cursor         int64
 	rows           int64
@@ -476,6 +484,27 @@ type ParquetReader struct {
 
 	r         io.ReadSeeker
 	rowGroups []parquet.RowGroup
+}
+
+type Levels struct {
+	Name string
+	Defs []uint8
+	Reps []uint8
+}
+
+func (p *ParquetReader) Levels() []Levels {
+	var out []Levels
+	//for {
+	for _, name := range p.fieldNames {
+		f := p.fields[name]
+		d, r := f.Levels()
+		out = append(out, Levels{Name: f.Name(), Defs: d, Reps: r})
+	}
+	//	if err := p.readRowGroup(); err != nil {
+	//		break
+	//	}
+	//}
+	return out
 }
 
 func (p *ParquetReader) Error() error {
@@ -540,7 +569,8 @@ func (p *ParquetReader) Scan(x *Person) {
 		return
 	}
 
-	for _, f := range p.fields {
+	for _, name := range p.fieldNames {
+		f := p.fields[name]
 		f.Scan(x)
 	}
 }
@@ -603,20 +633,24 @@ func (f *Int32Field) Add(r Person) {
 	f.vals = append(f.vals, v)
 }
 
+func (f *Int32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
 type Int32OptionalField struct {
 	parquet.OptionalField
 	vals  []int32
-	read  func(r Person) (*int32, uint8, uint8)
-	write func(r *Person, vals []int32, def, rep uint8) bool
+	read  func(r Person) ([]int32, []uint8, []uint8)
+	write func(r *Person, vals []int32, def, rep []uint8) (int, int)
 	stats *int32optionalStats
 }
 
-func NewInt32OptionalField(read func(r Person) (*int32, uint8, uint8), write func(r *Person, vals []int32, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
+func NewInt32OptionalField(read func(r Person) ([]int32, []uint8, []uint8), write func(r *Person, vals []int32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
 	return &Int32OptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
-		stats:         newint32optionalStats(),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		//stats:         newint32optionalStats(),
 	}
 }
 
@@ -631,7 +665,7 @@ func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
 }
 
 func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -647,13 +681,11 @@ func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int32OptionalField) Add(r Person) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *Int32OptionalField) Scan(r *Person) {
@@ -661,10 +693,16 @@ func (f *Int32OptionalField) Scan(r *Person) {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
+}
+
+func (f *Int32OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type Int64Field struct {
@@ -725,20 +763,24 @@ func (f *Int64Field) Add(r Person) {
 	f.vals = append(f.vals, v)
 }
 
+func (f *Int64Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
 type Int64OptionalField struct {
 	parquet.OptionalField
 	vals  []int64
-	read  func(r Person) (*int64, uint8, uint8)
-	write func(r *Person, vals []int64, def, rep uint8) bool
+	read  func(r Person) ([]int64, []uint8, []uint8)
+	write func(r *Person, vals []int64, def, rep []uint8) (int, int)
 	stats *int64optionalStats
 }
 
-func NewInt64OptionalField(read func(r Person) (*int64, uint8, uint8), write func(r *Person, vals []int64, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+func NewInt64OptionalField(read func(r Person) ([]int64, []uint8, []uint8), write func(r *Person, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
 	return &Int64OptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
-		stats:         newint64optionalStats(),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		//stats:         newint64optionalStats(),
 	}
 }
 
@@ -753,7 +795,7 @@ func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
 }
 
 func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -769,13 +811,11 @@ func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int64OptionalField) Add(r Person) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *Int64OptionalField) Scan(r *Person) {
@@ -783,26 +823,32 @@ func (f *Int64OptionalField) Scan(r *Person) {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
+}
+
+func (f *Int64OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
-	read  func(r Person) (*string, uint8, uint8)
-	write func(r *Person, vals []string, def, rep uint8) bool
+	read  func(r Person) ([]string, []uint8, []uint8)
+	write func(r *Person, vals []string, def, rep []uint8) (int, int)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r Person) (*string, uint8, uint8), write func(r *Person, vals []string, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r Person) ([]string, []uint8, []uint8), write func(r *Person, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
-		stats:         newStringOptionalStats(),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		//stats:         newStringOptionalStats(),
 	}
 }
 
@@ -810,25 +856,25 @@ func (f *StringOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType}
 }
 
+func (f *StringOptionalField) Add(r Person) {
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
 func (f *StringOptionalField) Scan(r *Person) {
 	if len(f.Defs) == 0 {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
-}
-
-func (f *StringOptionalField) Add(r Person) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
 }
 
 func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -852,7 +898,7 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	}
 
 	for j := 0; j < pg.N; j++ {
-		if f.Defs[start+j] == 0 {
+		if f.Defs[start+j] < f.MaxLevels.Def {
 			continue
 		}
 
@@ -868,6 +914,10 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 		f.vals = append(f.vals, string(s))
 	}
 	return nil
+}
+
+func (f *StringOptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type Float32Field struct {
@@ -928,6 +978,10 @@ func (f *Float32Field) Add(r Person) {
 	f.vals = append(f.vals, v)
 }
 
+func (f *Float32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
 type Float64Field struct {
 	vals []float64
 	parquet.RequiredField
@@ -986,20 +1040,24 @@ func (f *Float64Field) Add(r Person) {
 	f.vals = append(f.vals, v)
 }
 
+func (f *Float64Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
 type Float32OptionalField struct {
 	parquet.OptionalField
 	vals  []float32
-	read  func(r Person) (*float32, uint8, uint8)
-	write func(r *Person, vals []float32, def, rep uint8) bool
+	read  func(r Person) ([]float32, []uint8, []uint8)
+	write func(r *Person, vals []float32, def, rep []uint8) (int, int)
 	stats *float32optionalStats
 }
 
-func NewFloat32OptionalField(read func(r Person) (*float32, uint8, uint8), write func(r *Person, vals []float32, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
+func NewFloat32OptionalField(read func(r Person) ([]float32, []uint8, []uint8), write func(r *Person, vals []float32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
 	return &Float32OptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
-		stats:         newfloat32optionalStats(),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		//stats:         newfloat32optionalStats(),
 	}
 }
 
@@ -1014,7 +1072,7 @@ func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error 
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
 }
 
 func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1030,13 +1088,11 @@ func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Float32OptionalField) Add(r Person) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *Float32OptionalField) Scan(r *Person) {
@@ -1044,25 +1100,31 @@ func (f *Float32OptionalField) Scan(r *Person) {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
+}
+
+func (f *Float32OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	read  func(r Person) (*bool, uint8, uint8)
-	write func(r *Person, vals []bool, def, rep uint8) bool
+	read  func(r Person) ([]bool, []uint8, []uint8)
+	write func(r *Person, vals []bool, defs, reps []uint8) (int, int)
 	stats *boolOptionalStats
 }
 
-func NewBoolOptionalField(read func(r Person) (*bool, uint8, uint8), write func(r *Person, vals []bool, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+func NewBoolOptionalField(read func(r Person) ([]bool, []uint8, []uint8), write func(r *Person, vals []bool, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
 		stats:         newBoolOptionalStats(),
 	}
 }
@@ -1087,20 +1149,20 @@ func (f *BoolOptionalField) Scan(r *Person) {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
 }
 
 func (f *BoolOptionalField) Add(r Person) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -1115,6 +1177,10 @@ func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 	}
 
 	return f.DoWrite(w, meta, rawBuf, len(f.vals), f.stats)
+}
+
+func (f *BoolOptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type Uint32Field struct {
@@ -1175,20 +1241,24 @@ func (f *Uint32Field) Add(r Person) {
 	f.vals = append(f.vals, v)
 }
 
+func (f *Uint32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
 type Uint64OptionalField struct {
 	parquet.OptionalField
 	vals  []uint64
-	read  func(r Person) (*uint64, uint8, uint8)
-	write func(r *Person, vals []uint64, def, rep uint8) bool
+	read  func(r Person) ([]uint64, []uint8, []uint8)
+	write func(r *Person, vals []uint64, def, rep []uint8) (int, int)
 	stats *uint64optionalStats
 }
 
-func NewUint64OptionalField(read func(r Person) (*uint64, uint8, uint8), write func(r *Person, vals []uint64, def, rep uint8) bool, path []string, opts ...func(*parquet.OptionalField)) *Uint64OptionalField {
+func NewUint64OptionalField(read func(r Person) ([]uint64, []uint8, []uint8), write func(r *Person, vals []uint64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Uint64OptionalField {
 	return &Uint64OptionalField{
 		read:          read,
 		write:         write,
-		OptionalField: parquet.NewOptionalField(path, opts...),
-		stats:         newuint64optionalStats(),
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		//stats:         newuint64optionalStats(),
 	}
 }
 
@@ -1203,7 +1273,7 @@ func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), nil)
 }
 
 func (f *Uint64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1219,13 +1289,11 @@ func (f *Uint64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Uint64OptionalField) Add(r Person) {
-	v, def := f.read(r)
-	f.stats.add(v)
-	if v != nil {
-		f.vals = append(f.vals, *v)
-
-	}
-	f.Defs = append(f.Defs, def)
+	vals, defs, reps := f.read(r)
+	//f.stats.add(v)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
 }
 
 func (f *Uint64OptionalField) Scan(r *Person) {
@@ -1233,10 +1301,16 @@ func (f *Uint64OptionalField) Scan(r *Person) {
 		return
 	}
 
-	if f.write(r, f.vals, f.Defs[0]) {
-		f.vals = f.vals[1:]
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
 	}
-	f.Defs = f.Defs[1:]
+}
+
+func (f *Uint64OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type StringField struct {
@@ -1309,6 +1383,10 @@ func (f *StringField) Add(r Person) {
 	f.vals = append(f.vals, v)
 }
 
+func (f *StringField) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
 type BoolField struct {
 	parquet.RequiredField
 	vals  []bool
@@ -1365,6 +1443,10 @@ func (f *BoolField) Scan(r *Person) {
 func (f *BoolField) Add(r Person) {
 	v := f.read(r)
 	f.vals = append(f.vals, v)
+}
+
+func (f *BoolField) Levels() ([]uint8, []uint8) {
+	return nil, nil
 }
 
 type int32stats struct {
@@ -1939,3 +2021,26 @@ func (b *boolStats) NullCount() *int64     { return nil }
 func (b *boolStats) DistinctCount() *int64 { return nil }
 func (b *boolStats) Min() []byte           { return nil }
 func (b *boolStats) Max() []byte           { return nil }
+
+func pint32(i int32) *int32       { return &i }
+func puint32(i uint32) *uint32    { return &i }
+func pint64(i int64) *int64       { return &i }
+func puint64(i uint64) *uint64    { return &i }
+func pbool(b bool) *bool          { return &b }
+func pstring(s string) *string    { return &s }
+func pfloat32(f float32) *float32 { return &f }
+func pfloat64(f float64) *float64 { return &f }
+
+// keeps track of the indices of repeated fields
+// that have already been handled by a previous field
+type indices []int
+
+func (i indices) rep(rep uint8) {
+	if rep > 0 {
+		r := int(rep) - 1
+		i[r] = i[r] + 1
+		for j := int(rep); j < len(i); j++ {
+			i[j] = 0
+		}
+	}
+}

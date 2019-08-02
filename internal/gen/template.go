@@ -1,6 +1,6 @@
 package gen
 
-var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }{{if .Repeated}}, []int{ {{joinTypes .RepetitionTypes}} }{{end}}, {{compressionFunc .}}(compression)),{{end}}`
+var newFieldTpl = `{{define "newField"}}New{{.FieldType}}({{readFuncName .}}, {{writeFuncName .}}, []string{ {{.Path}} }{{if not .Required}}, []int{ {{joinTypes .RepetitionTypes}} }{{end}}, {{compressionFunc .}}(compression)),{{end}}`
 
 var tpl = `package {{.Package}}
 

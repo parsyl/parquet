@@ -3,7 +3,7 @@ package gen
 var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	read   func(r {{.Type}}) ({{removeStar .TypeName}}, uint8, uint8)
+	read   func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
 	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int)
 	stats *boolOptionalStats
 }

@@ -307,7 +307,9 @@ var parquetTypes = map[string]string{
 var primitiveTypes = map[string]bool{
 	"bool":    true,
 	"int32":   true,
+	"uint32":  true,
 	"int64":   true,
+	"uint64":  true,
 	"float32": true,
 	"float64": true,
 	"string":  true,

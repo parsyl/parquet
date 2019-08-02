@@ -120,7 +120,6 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		out = append(out, data...)
 		nRead += int(ph.DataPageHeader.NumValues)
 	}
-
 	return bytes.NewBuffer(out), sizes, nil
 }
 
