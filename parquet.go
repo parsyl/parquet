@@ -150,13 +150,13 @@ func (m *Metadata) RowGroups() []RowGroup {
 }
 
 // WritePageHeader is called when no more data is written to a column chunk
-func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compressedLen, count int, comp sch.CompressionCodec, stats Stats) error {
+func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compressedLen, defCount, count int, comp sch.CompressionCodec, stats Stats) error {
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
 		UncompressedPageSize: int32(dataLen),
 		CompressedPageSize:   int32(compressedLen),
 		DataPageHeader: &sch.DataPageHeader{
-			NumValues:               int32(count),
+			NumValues:               int32(defCount),
 			Encoding:                sch.Encoding_PLAIN,
 			DefinitionLevelEncoding: sch.Encoding_RLE,
 			RepetitionLevelEncoding: sch.Encoding_RLE,

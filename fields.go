@@ -92,7 +92,7 @@ func RequiredFieldUncompressed(r *RequiredField) {
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	l, cl, vals := compress(f.compression, vals)
-	if err := meta.WritePageHeader(w, f.pth, l, cl, count, f.compression, stats); err != nil {
+	if err := meta.WritePageHeader(w, f.pth, l, cl, count, count, f.compression, stats); err != nil {
 		return err
 	}
 
@@ -226,7 +226,7 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 
 	wc.Write(vals)
 	l, cl, vals := compress(f.compression, buf.Bytes())
-	if err := meta.WritePageHeader(w, f.pth, l, cl, len(f.Defs), f.compression, stats); err != nil {
+	if err := meta.WritePageHeader(w, f.pth, l, cl, len(f.Defs), count, f.compression, stats); err != nil {
 		return err
 	}
 	_, err = w.Write(vals)
@@ -249,13 +249,15 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	var nRead int
 	var out []byte
 	var sizes []int
-	for nRead < pg.N {
+	start, _ := r.Seek(0, io.SeekCurrent)
+	for nRead < pg.Size {
 		ph, err := PageHeader(r)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		data, err := pageData(r, ph, pg)
+
 		if err != nil {
 			return nil, nil, err
 		}
@@ -268,7 +270,6 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
 		if f.repeated {
 			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(uint(f.MaxLevels.Rep))))
-
 			if err != nil {
 				return nil, nil, err
 			}
@@ -278,7 +279,9 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 
 		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.MaxLevels.Def)))
 		out = append(out, data[l:]...)
-		nRead += len(defs)
+		x, _ := r.Seek(0, io.SeekCurrent)
+		nRead += int(x - start)
+		start = x
 	}
 	return bytes.NewBuffer(out), sizes, nil
 }
