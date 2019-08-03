@@ -89,11 +89,11 @@ func (s schema) schema() (int64, []*sch.SchemaElement) {
 // be kept track of in order to write the FileMetaData
 // at the end of the parquet file.
 type Metadata struct {
-	ts        *thrift.TSerializer
-	schema    schema
-	rows      int64
-	docs      int64
-	rowGroups []RowGroup
+	ts           *thrift.TSerializer
+	schema       schema
+	docs         int64
+	rowGroupDocs int64
+	rowGroups    []RowGroup
 
 	metadata *sch.FileMetaData
 }
@@ -122,6 +122,7 @@ func New(fields ...Field) *Metadata {
 
 // StartRowGroup is called when starting a new row group
 func (m *Metadata) StartRowGroup(fields ...Field) {
+	m.rowGroupDocs = 0
 	m.rowGroups = append(m.rowGroups, RowGroup{
 		fields:  schemaElements(fields),
 		columns: make(map[string]sch.ColumnChunk),
@@ -133,6 +134,7 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 // is used for the FileMetaData.NumRows
 func (m *Metadata) NextDoc() {
 	m.docs++
+	m.rowGroupDocs++
 }
 
 // RowGroups returns a summary of each schema.RowGroup
@@ -149,7 +151,6 @@ func (m *Metadata) RowGroups() []RowGroup {
 
 // WritePageHeader is called when no more data is written to a column chunk
 func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compressedLen, count int, comp sch.CompressionCodec, stats Stats) error {
-	m.rows += int64(count)
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
 		UncompressedPageSize: int32(dataLen),
@@ -189,7 +190,7 @@ func (m *Metadata) updateRowGroup(pth []string, dataLen, compressedLen, headerLe
 
 	rg := m.rowGroups[i-1]
 
-	rg.rowGroup.NumRows += int64(count)
+	rg.rowGroup.NumRows = m.rowGroupDocs
 	err := rg.updateColumnChunk(pth, dataLen+headerLen, compressedLen+headerLen, count, m.schema, comp)
 	m.rowGroups[i-1] = rg
 	return err
@@ -209,7 +210,7 @@ func (m *Metadata) Rows() int64 {
 
 // Footer writes the FileMetaData at the end of the file.
 func (m *Metadata) Footer(w io.Writer) error {
-	l, s := m.schema.schema()
+	_, s := m.schema.schema()
 	fmd := &sch.FileMetaData{
 		Version:   1,
 		Schema:    s,
@@ -237,7 +238,6 @@ func (m *Metadata) Footer(w io.Writer) error {
 			pos += ch.MetaData.TotalCompressedSize
 		}
 
-		rg.NumRows = rg.NumRows / int64(l) //TODO: not correct
 		fmd.RowGroups = append(fmd.RowGroups, &rg)
 	}
 

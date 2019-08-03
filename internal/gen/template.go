@@ -52,7 +52,9 @@ func Fields(compression compression) []Field {
 }
 
 {{range $i, $field := .Fields}}{{readFunc $field}}
+
 {{writeFunc $i $.Fields}}
+
 {{end}}
 
 func fieldCompression(c compression) func(*parquet.RequiredField) {

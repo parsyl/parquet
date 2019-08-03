@@ -201,10 +201,14 @@ func seen(i int, fields []fields.Field) int {
 	}
 
 	for _, f := range fields[:i] {
-		for _, ft := range f.FieldNames {
-			_, ok := m[ft]
+		if len(f.FieldNames) == 1 {
+			continue
+		}
+
+		for _, fn := range f.FieldNames {
+			_, ok := m[fn]
 			if ok {
-				m[ft]++
+				m[fn]++
 			}
 		}
 	}

@@ -278,7 +278,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 
 		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.MaxLevels.Def)))
 		out = append(out, data[l:]...)
-		nRead += int(ph.DataPageHeader.NumValues)
+		nRead += len(defs)
 	}
 	return bytes.NewBuffer(out), sizes, nil
 }
