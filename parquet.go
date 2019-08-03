@@ -369,7 +369,7 @@ func (m *Metadata) ReadFooter(r io.ReadSeeker) error {
 }
 
 // PageHeader reads the page header from a column page
-func PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
+func PageHeader(r io.Reader) (*sch.PageHeader, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	pg := &sch.PageHeader{}
 	err := pg.Read(p)

@@ -249,14 +249,14 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	var nRead int
 	var out []byte
 	var sizes []int
-	start, _ := r.Seek(0, io.SeekCurrent)
 	for nRead < pg.Size {
-		ph, err := PageHeader(r)
+		rc := &readCounter{r: r}
+		ph, err := PageHeader(rc)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		data, err := pageData(r, ph, pg)
+		data, err := pageData(rc, ph, pg)
 
 		if err != nil {
 			return nil, nil, err
@@ -279,9 +279,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 
 		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.MaxLevels.Def)))
 		out = append(out, data[l:]...)
-		x, _ := r.Seek(0, io.SeekCurrent)
-		nRead += int(x - start)
-		start = x
+		nRead += int(rc.n)
 	}
 	return bytes.NewBuffer(out), sizes, nil
 }
@@ -314,7 +312,22 @@ func (w *writeCounter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func pageData(r io.ReadSeeker, ph *sch.PageHeader, pg Page) ([]byte, error) {
+// writeCounter keeps track of the number of bytes written
+// it is used for calls to binary.Write, which does not
+// return the number of bytes written.
+type readCounter struct {
+	n int64
+	r io.Reader
+}
+
+// Write makes writeCounter an io.Writer
+func (r *readCounter) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	r.n += int64(n)
+	return n, err
+}
+
+func pageData(r io.Reader, ph *sch.PageHeader, pg Page) ([]byte, error) {
 	var data []byte
 	switch pg.Codec {
 	case sch.CompressionCodec_SNAPPY:
