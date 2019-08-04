@@ -759,12 +759,14 @@ func (f *Int64Field) Schema() parquet.Field {
 
 func (f *Int64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 	rr, _, err := f.DoRead(r, pg)
+	fmt.Printf("do read %+v, err: %v\n", pg, err)
 	if err != nil {
 		return err
 	}
 
 	v := make([]int64, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
+	fmt.Println("here", err)
 	f.vals = append(f.vals, v...)
 	return err
 }
@@ -975,6 +977,7 @@ func (f *Float32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 	v := make([]float32, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
+	fmt.Printf("float field pg %+v, err: %v\n", pg, err)
 	f.vals = append(f.vals, v...)
 	return err
 }

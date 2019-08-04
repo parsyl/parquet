@@ -55,9 +55,11 @@ func Fields(compression compression) []Field {
 func readDocID(x Document) int64 {
 	return x.DocID
 }
+
 func writeDocID(x *Document, vals []int64) {
 	x.DocID = vals[0]
 }
+
 func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
 	var vals []int64
 	var defs, reps []uint8
@@ -84,6 +86,7 @@ func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
+
 func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)
@@ -114,6 +117,7 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 
 	return nVals, nLevels
 }
+
 func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 	var vals []int64
 	var defs, reps []uint8
@@ -140,6 +144,7 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
+
 func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)
@@ -166,6 +171,7 @@ func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) 
 
 	return nVals, nLevels
 }
+
 func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
@@ -197,6 +203,7 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
+
 func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 2)
@@ -229,6 +236,7 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 
 	return nVals, nLevels
 }
+
 func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
@@ -265,6 +273,7 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
+
 func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 2)
@@ -291,6 +300,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 
 	return nVals, nLevels
 }
+
 func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
@@ -317,6 +327,7 @@ func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 
 	return vals, defs, reps
 }
+
 func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)

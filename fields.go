@@ -104,13 +104,14 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	var nRead int
 	var out []byte
 	var sizes []int
+	fmt.Printf("DoRead required %v, %+v\n", f.pth, pg)
 	for nRead < pg.N {
 		ph, err := PageHeader(r)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		sizes = append(sizes, int(ph.DataPageHeader.NumValues))
+		sizes = append(sizes, int(ph.DataPageHeaderV2.NumValues))
 
 		data, err := pageData(r, ph, pg)
 		if err != nil {
@@ -118,8 +119,9 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		}
 
 		out = append(out, data...)
-		nRead += int(ph.DataPageHeader.NumValues)
+		nRead += int(ph.DataPageHeaderV2.NumValues)
 	}
+	fmt.Println("do read req done", sizes, len(out))
 	return bytes.NewBuffer(out), sizes, nil
 }
 
@@ -197,10 +199,10 @@ func (f *OptionalField) Values() int {
 	return f.valsFromDefs(f.Defs, uint8(f.MaxLevels.Def))
 }
 
-func (f *OptionalField) valsFromDefs(defs []uint8, depth uint8) int {
+func (f *OptionalField) valsFromDefs(defs []uint8, max uint8) int {
 	var out int
 	for _, d := range defs {
-		if d == depth {
+		if d == max {
 			out++
 		}
 	}
@@ -249,15 +251,14 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	var nRead int
 	var out []byte
 	var sizes []int
-	start, _ := r.Seek(0, io.SeekCurrent)
-	for nRead < pg.Size {
+	fmt.Printf("DoRead optional %v, %+v\n", f.pth, pg)
+	for nRead < pg.N {
 		ph, err := PageHeader(r)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		data, err := pageData(r, ph, pg)
-
 		if err != nil {
 			return nil, nil, err
 		}
@@ -267,21 +268,21 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 
-		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
+		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeaderV2.NumValues)]...)
 		if f.repeated {
 			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(uint(f.MaxLevels.Rep))))
 			if err != nil {
 				return nil, nil, err
 			}
 			l += l2
-			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeader.NumValues)]...)
+			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeaderV2.NumValues)]...)
 		}
 
-		sizes = append(sizes, f.valsFromDefs(defs, uint8(f.MaxLevels.Def)))
+		n := f.valsFromDefs(defs, uint8(f.MaxLevels.Def))
+		fmt.Printf("n: %d, numvals: %d, numNulls: %d\n", n, ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.NumNulls)
+		sizes = append(sizes, n)
 		out = append(out, data[l:]...)
-		x, _ := r.Seek(0, io.SeekCurrent)
-		nRead += int(x - start)
-		start = x
+		nRead += n
 	}
 	return bytes.NewBuffer(out), sizes, nil
 }
@@ -314,7 +315,22 @@ func (w *writeCounter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func pageData(r io.ReadSeeker, ph *sch.PageHeader, pg Page) ([]byte, error) {
+// writeCounter keeps track of the number of bytes written
+// it is used for calls to binary.Write, which does not
+// return the number of bytes written.
+type readCounter struct {
+	n int64
+	r io.Reader
+}
+
+// Write makes writeCounter an io.Writer
+func (r *readCounter) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	r.n += int64(n)
+	return n, err
+}
+
+func pageData(r io.Reader, ph *sch.PageHeader, pg Page) ([]byte, error) {
 	var data []byte
 	switch pg.Codec {
 	case sch.CompressionCodec_SNAPPY:

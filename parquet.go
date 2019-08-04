@@ -155,11 +155,11 @@ func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compresse
 		Type:                 sch.PageType_DATA_PAGE,
 		UncompressedPageSize: int32(dataLen),
 		CompressedPageSize:   int32(compressedLen),
-		DataPageHeader: &sch.DataPageHeader{
-			NumValues:               int32(defCount),
-			Encoding:                sch.Encoding_PLAIN,
-			DefinitionLevelEncoding: sch.Encoding_RLE,
-			RepetitionLevelEncoding: sch.Encoding_RLE,
+		DataPageHeaderV2: &sch.DataPageHeaderV2{
+			NumValues: int32(defCount),
+			NumNulls:  int32(defCount - count),
+			NumRows:   int32(m.docs),
+			Encoding:  sch.Encoding_PLAIN,
 			Statistics: &sch.Statistics{
 				NullCount:     stats.NullCount(),
 				DistinctCount: stats.DistinctCount(),
@@ -369,7 +369,7 @@ func (m *Metadata) ReadFooter(r io.ReadSeeker) error {
 }
 
 // PageHeader reads the page header from a column page
-func PageHeader(r io.ReadSeeker) (*sch.PageHeader, error) {
+func PageHeader(r io.Reader) (*sch.PageHeader, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	pg := &sch.PageHeader{}
 	err := pg.Read(p)
@@ -380,7 +380,7 @@ func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, e
 	var pageHeaders []sch.PageHeader
 	for _, rg := range footer.RowGroups {
 		for _, col := range rg.Columns {
-			h, err := PageHeadersAtOffset(r, col.MetaData.DataPageOffset, col.MetaData.NumValues)
+			h, err := PageHeadersAtOffset(r, col.MetaData.DataPageOffset, col.MetaData.TotalCompressedSize)
 			if err != nil {
 				return nil, err
 			}
@@ -397,18 +397,20 @@ func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) 
 	if err != nil {
 		return nil, fmt.Errorf("unable to seek to offset %d, err: %s", o, err)
 	}
-
 	for nRead < n {
-		ph, err := PageHeader(r)
+		rc := &readCounter{r: r}
+		ph, err := PageHeader(rc)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read page header: %s", err)
 		}
 		out = append(out, *ph)
-		nRead += int64(ph.DataPageHeader.NumValues)
-		_, err = r.Seek(int64(ph.CompressedPageSize), io.SeekCurrent)
+		x, err := r.Seek(int64(ph.CompressedPageSize), io.SeekCurrent)
 		if err != nil {
 			return nil, fmt.Errorf("unable to seek to next page: %s", err)
 		}
+
+		nRead += rc.n + x
+		fmt.Println("nread", nRead, n, ph.CompressedPageSize)
 	}
 	return out, nil
 }
@@ -479,10 +481,12 @@ func StringType(se *sch.SchemaElement) {
 
 // GetBools reads a byte array and turns each bit into a bool
 func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
+	fmt.Println("getbools", n, pageSizes)
 	var vals [8]bool
 	data, _ := ioutil.ReadAll(r)
 	out := make([]bool, 0, n)
 	for _, nVals := range pageSizes {
+
 		if nVals == 0 {
 			continue
 		}
@@ -491,6 +495,8 @@ func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
 		if nVals%8 > 0 {
 			l++
 		}
+
+		fmt.Println("for", nVals, len(data), l)
 
 		var i int
 		chunk := data[:l]
