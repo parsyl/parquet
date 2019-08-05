@@ -39,20 +39,8 @@ func init() {
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.Type}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
-	{{if .Field.Repeated}}{{template "repeated" .}}{{else}}{{template "notRepeated" .}}{{end}}	
-}`)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	notRepeatedTpl := `{{define "notRepeated"}}var nVals int
-	def := defs[0]
-	{{template "defSwitch" .}}
-
-	return nVals, 1{{end}}`
-
-	repeatedTpl := `{{define "repeated"}}var nVals, nLevels int
+	writeRepeatedTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.Type}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
 	ind := make(indices, {{.Field.MaxRep}})
 
 	for i := range defs {
@@ -68,7 +56,11 @@ func init() {
 		{{template "defSwitch" .}}
 	}
 
-	return nVals, nLevels{{end}}`
+	return nVals, nLevels
+}`)
+	if err != nil {
+		log.Fatalf("unable to create templates: %s", err)
+	}
 
 	defSwitchTpl := `{{define "defSwitch"}}switch def { {{range $i, $def := .Defs}}
 			case {{$def}}:
@@ -83,8 +75,8 @@ func init() {
 {{init $.Def $case.Rep $.Seen $.Field}}
 {{end}} } {{end}}`
 
-	for _, t := range []string{notRepeatedTpl, repeatedTpl, defSwitchTpl, defCaseTpl, repSwitchTpl} {
-		writeTpl, err = writeTpl.Parse(t)
+	for _, t := range []string{defCaseTpl, defSwitchTpl, repSwitchTpl} {
+		writeRepeatedTpl, err = writeRepeatedTpl.Parse(t)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -92,10 +84,10 @@ func init() {
 }
 
 var (
-	writeTpl *template.Template
+	writeRepeatedTpl *template.Template
 )
 
-type writeInput struct {
+type writeRepeatedInput struct {
 	Field fields.Field
 	Defs  []int
 	Seen  int
@@ -108,11 +100,11 @@ func writeRequired(f fields.Field) string {
 }`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func writeOptional(i int, fields []fields.Field) string {
+func writeRepeated(i int, fields []fields.Field) string {
 	f := fields[i]
 	s := seen(i, fields)
 	defs := writeCases(f, s)
-	wi := writeInput{
+	wi := writeRepeatedInput{
 		Field: f,
 		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")),
 		Defs:  defs,
@@ -120,7 +112,7 @@ func writeOptional(i int, fields []fields.Field) string {
 	}
 
 	var buf bytes.Buffer
-	err := writeTpl.Execute(&buf, wi)
+	err := writeRepeatedTpl.Execute(&buf, wi)
 	if err != nil {
 		log.Fatal(err) //TODO: return error
 	}

@@ -10,19 +10,23 @@ import (
 
 func Write(i int, fields []fields.Field) string {
 	f := fields[i]
-	if !isOptional(f) && !isRepeated(f) {
-		return writeRequired(f)
+	if f.Repeated() {
+		return writeRepeated(i, fields)
 	}
-	return writeOptional(i, fields)
+	if f.Optional() {
+		return writeOptional(f)
+	}
+
+	return writeRequired(f)
 }
 
 func Read(f fields.Field) string {
-	if isOptional(f) && !isRepeated(f) {
-		return readOptional(f)
+	if f.Repeated() {
+		return readRepeated(f)
 	}
 
-	if isRepeated(f) {
-		return readRepeated(f)
+	if f.Optional() {
+		return readOptional(f)
 	}
 
 	return readRequired(f)
