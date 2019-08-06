@@ -290,6 +290,7 @@ func TestWriteOptional(t *testing.T) {
 		}
 		return 1, 1
 	}
+
 	return 0, 1
 }`,
 		},
@@ -298,7 +299,7 @@ func TestWriteOptional(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(0, []fields.Field{tc.f})
-			//fmt.Println(s)
+			fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			fmt.Println(string(gocode))
 			assert.NoError(t, err)

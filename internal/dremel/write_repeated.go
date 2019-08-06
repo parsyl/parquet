@@ -166,16 +166,6 @@ func defs(f fields.Field) int {
 	return out
 }
 
-func optionals(f fields.Field) int {
-	var out int
-	for _, o := range f.RepetitionTypes {
-		if o == fields.Optional {
-			out++
-		}
-	}
-	return out
-}
-
 func pointer(i, n int, p string, levels []bool) string {
 	if levels[n] && n < i {
 		return p

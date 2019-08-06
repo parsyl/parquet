@@ -16,20 +16,32 @@ func init() {
 		"removeStar": func(s string) string {
 			return strings.Replace(s, "*", "", 1)
 		},
+		"plusOne": func(i int) int { return i + 1 },
+		"notNil":  func(x *ifElse) bool { return x != nil },
 	}
 
 	var err error
 	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Field.Type}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
 	def := defs[0]
-	switch def { {{range .Cases}}
-	{{.}}{{end}} }
+	switch def { {{range $i, $case := .Cases}}{{$def:=plusOne $i}}
+	case {{$def}}:
+	{{template "ifelse" $case}}{{if eq $def $.MaxDef}}
+	return 1, 1{{end}}{{end}}
+	}
+
 	return 0, 1
 }`)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	writeTpl, err = writeTpl.Parse(`{{define "initStructs"}}{{range .}}{{.}}{{end}}{{end}}`)
+	writeTpl, err = writeTpl.Parse(`{{define "ifelse"}}if {{.If.Cond}} {
+	{{.If.Val}}
+} {{range $else := .ElseIf}} else if {{$else.Cond}} {
+	{{$else.Val}}
+}{{end}} {{if notNil .Else}} else {
+	{{.Else.Val}}
+} {{end}}{{end}}`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,8 +53,19 @@ var (
 
 type writeInput struct {
 	fields.Field
-	Cases    []string
+	Cases    []ifElses
 	FuncName string
+}
+
+type ifElse struct {
+	Cond string
+	Val  string
+}
+
+type ifElses struct {
+	If     ifElse
+	ElseIf []ifElse
+	Else   *ifElse
 }
 
 func writeOptional(f fields.Field) string {
@@ -60,69 +83,51 @@ func writeOptional(f fields.Field) string {
 	return string(buf.Bytes())
 }
 
-func writeOptionalCases(f fields.Field) []string {
-	var out []string
+func writeOptionalCases(f fields.Field) []ifElses {
+	var out []ifElses
 	for def := 1; def <= defs(f); def++ {
-		var v, ret string
-		if def == defs(f) {
-			v = `v := vals[0]
-		`
-			ret = `
-	return 1, 1
-	`
-		}
-
-		cs := fmt.Sprintf(`case %d:
-	`, def)
-
-		out = append(out, fmt.Sprintf(`%s%s%s%s`, cs, v, ifelse(0, def, f), ret))
+		out = append(out, ifelse(def, f))
 	}
 	return out
 }
 
 // return an if else block for the definition level
-func ifelse(i, def int, f fields.Field) string {
-	if i == recursions(def, f) {
-		return ""
-	}
-
-	var stmt, brace, val, cmp string
-	if i == 0 && defs(f) == 1 && (f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Optional) {
-		return fmt.Sprintf(`x.%s = &v`, strings.Join(f.FieldNames, "."))
-	} else if i == 0 {
-		stmt = "if"
-		brace = "}"
-		//field = fmt.Sprintf("x.%s", nilField(i, f))
-		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
-		//ch := f.Child(defIndex(i, f))
-		val = structs.Init(def, 0, 0, f.DefChild(i))
-	} else if i > 0 && i < defs(f)-1 {
-		stmt = " else if"
-		brace = "}"
-		cmp = fmt.Sprintf(" x.%s == nil", nilField(i, f))
-		//ch := f.Child(defIndex(i, f))
-		val = structs.Init(def, 0, 0, f.DefChild(i))
-		//field = fmt.Sprintf("x.%s", nilField(i, f))
-	} else {
-		stmt = " else"
-		val = "v"
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Optional {
-			val = "&v"
+func ifelse(def int, f fields.Field) ifElses {
+	opts := optionals(def, f)
+	fmt.Println("opts", opts)
+	var out ifElses
+	for i, o := range opts {
+		p := f.Parent(o + 1)
+		if i == 0 {
+			cond := fmt.Sprintf("x.%s == nil", strings.Join(p.FieldNames, "."))
+			out.If.Cond = cond
+			out.If.Val = structs.Init(def, 0, 0, f)
+		} else if i+1 == f.MaxDef() {
+			out.Else = &ifElse{
+				Val: fmt.Sprintf("x.%s = vals[nVals]", strings.Join(f.FieldNames, ".")),
+			}
+		} else {
+			cond := fmt.Sprintf("x.%s == nil", strings.Join(p.FieldNames, "."))
+			ch := f.Child(o)
+			out.ElseIf = append(out.ElseIf, ifElse{
+				Cond: cond,
+				Val:  structs.Init(def, 0, 0, ch),
+			})
 		}
-		brace = "}"
-		//field = fmt.Sprintf("x.%s", strings.Join(f.FieldNames, "."))
 	}
 
-	return fmt.Sprintf(`%s%s {
-	%s
-	%s%s`, stmt, cmp, val, brace, ifelse(i+1, def, f))
+	return out
 }
 
-// recursions calculates the number of times ifelse should execute
-func recursions(def int, f fields.Field) int {
-	n := def
-	if defs(f) == 1 {
-		n++
+func optionals(def int, f fields.Field) []int {
+	var out []int
+	for i, rt := range f.RepetitionTypes {
+		if rt == fields.Optional {
+			out = append(out, i)
+			if len(out) == def {
+				return out
+			}
+		}
 	}
-	return n
+	return out
 }
