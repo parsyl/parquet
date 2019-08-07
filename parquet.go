@@ -92,6 +92,7 @@ type Metadata struct {
 	ts           *thrift.TSerializer
 	schema       schema
 	docs         int64
+	pageDocs     int64
 	rowGroupDocs int64
 	rowGroups    []RowGroup
 
@@ -135,6 +136,7 @@ func (m *Metadata) StartRowGroup(fields ...Field) {
 func (m *Metadata) NextDoc() {
 	m.docs++
 	m.rowGroupDocs++
+	m.pageDocs++
 }
 
 // RowGroups returns a summary of each schema.RowGroup
@@ -150,16 +152,18 @@ func (m *Metadata) RowGroups() []RowGroup {
 }
 
 // WritePageHeader is called when no more data is written to a column chunk
-func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compressedLen, defCount, count int, comp sch.CompressionCodec, stats Stats) error {
+func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compressedLen, defCount, count int, defLen, repLen int64, comp sch.CompressionCodec, stats Stats) error {
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
 		UncompressedPageSize: int32(dataLen),
 		CompressedPageSize:   int32(compressedLen),
 		DataPageHeaderV2: &sch.DataPageHeaderV2{
-			NumValues: int32(defCount),
-			NumNulls:  int32(defCount - count),
-			NumRows:   int32(m.docs),
-			Encoding:  sch.Encoding_PLAIN,
+			NumValues:                  int32(count),
+			NumNulls:                   int32(defCount - count),
+			NumRows:                    int32(defCount),
+			DefinitionLevelsByteLength: int32(defLen),
+			RepetitionLevelsByteLength: int32(repLen),
+			Encoding:                   sch.Encoding_PLAIN,
 			Statistics: &sch.Statistics{
 				NullCount:     stats.NullCount(),
 				DistinctCount: stats.DistinctCount(),
@@ -168,6 +172,8 @@ func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compresse
 			},
 		},
 	}
+
+	m.pageDocs = 0
 
 	buf, err := m.ts.Write(context.TODO(), ph)
 	if err != nil {
@@ -231,7 +237,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 				continue
 			}
 
-			ch.FileOffset = pos + ch.MetaData.TotalCompressedSize
+			ch.FileOffset = pos
 			ch.MetaData.DataPageOffset = pos
 			rg.TotalByteSize += ch.MetaData.TotalCompressedSize
 			rg.Columns = append(rg.Columns, &ch)

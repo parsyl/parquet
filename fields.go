@@ -92,7 +92,7 @@ func RequiredFieldUncompressed(r *RequiredField) {
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	l, cl, vals := compress(f.compression, vals)
-	if err := meta.WritePageHeader(w, f.pth, l, cl, count, count, f.compression, stats); err != nil {
+	if err := meta.WritePageHeader(w, f.pth, l, cl, count, count, 0, 0, f.compression, stats); err != nil {
 		return err
 	}
 
@@ -217,6 +217,8 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 		return err
 	}
 
+	defLen := wc.n
+
 	if f.repeated {
 		err := writeLevels(wc, f.Reps, int32(bits.Len(uint(f.MaxLevels.Rep))))
 		if err != nil {
@@ -224,9 +226,11 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 		}
 	}
 
+	repLen := wc.n - defLen
+
 	wc.Write(vals)
 	l, cl, vals := compress(f.compression, buf.Bytes())
-	if err := meta.WritePageHeader(w, f.pth, l, cl, len(f.Defs), count, f.compression, stats); err != nil {
+	if err := meta.WritePageHeader(w, f.pth, l, cl, len(f.Defs), count, defLen, repLen, f.compression, stats); err != nil {
 		return err
 	}
 	_, err = w.Write(vals)
