@@ -158,7 +158,7 @@ func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compresse
 		UncompressedPageSize: int32(dataLen),
 		CompressedPageSize:   int32(compressedLen),
 		DataPageHeaderV2: &sch.DataPageHeaderV2{
-			NumValues:                  int32(count),
+			NumValues:                  int32(defCount),
 			NumNulls:                   int32(defCount - count),
 			NumRows:                    int32(defCount),
 			DefinitionLevelsByteLength: int32(defLen),

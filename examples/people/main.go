@@ -106,7 +106,7 @@ type Person struct {
 	Anniversary *uint64  `parquet:"anniversary"`
 	Difficulty  *int32   `parquet:"difficulty"`
 	Hobby       *Hobby   `parquet:"hobby"`
-	Friends     []Being  `parquet:"friends"`
+	//Friends     []Being  `parquet:"friends"`
 
 	// Secret will not be part of parquet.
 	Secret string `parquet:"-"`
