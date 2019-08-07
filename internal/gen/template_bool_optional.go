@@ -64,7 +64,7 @@ func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		}
 	}
 
-	return f.DoWrite(w, meta, rawBuf, len(f.vals), f.stats)
+	return f.DoWrite(w, meta, rawBuf, len(f.Defs), f.stats)
 }
 
 func (f *BoolOptionalField) Levels() ([]uint8, []uint8) {

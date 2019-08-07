@@ -110,7 +110,7 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 
-		sizes = append(sizes, int(ph.DataPageHeaderV2.NumValues))
+		sizes = append(sizes, int(ph.DataPageHeader.NumValues))
 
 		data, err := pageData(r, ph, pg)
 		if err != nil {
@@ -118,7 +118,7 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		}
 
 		out = append(out, data...)
-		nRead += int(ph.DataPageHeaderV2.NumValues)
+		nRead += int(ph.DataPageHeader.NumValues)
 	}
 	return bytes.NewBuffer(out), sizes, nil
 }
@@ -254,6 +254,7 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	var out []byte
 	var sizes []int
 	var rc *readCounter
+
 	for nRead < pg.Size {
 		rc = &readCounter{r: r}
 		ph, err := PageHeader(rc)
@@ -271,14 +272,14 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 
-		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeaderV2.NumValues)]...)
+		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
 		if f.repeated {
 			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(uint(f.MaxLevels.Rep))))
 			if err != nil {
 				return nil, nil, err
 			}
 			l += l2
-			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeaderV2.NumValues)]...)
+			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeader.NumValues)]...)
 		}
 
 		n := f.valsFromDefs(defs, uint8(f.MaxLevels.Def))

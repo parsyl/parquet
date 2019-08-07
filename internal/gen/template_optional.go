@@ -32,7 +32,7 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
 }
 
 func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {

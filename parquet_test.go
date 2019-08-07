@@ -657,12 +657,12 @@ func TestStats(t *testing.T) {
 				}
 				for i, st := range tc.stats {
 					ph := pages[i]
-					assert.Equal(t, st.min, ph.DataPageHeaderV2.Statistics.MinValue)
-					assert.Equal(t, st.max, ph.DataPageHeaderV2.Statistics.MaxValue)
+					assert.Equal(t, st.min, ph.DataPageHeader.Statistics.MinValue)
+					assert.Equal(t, st.max, ph.DataPageHeader.Statistics.MaxValue)
 					if st.nilCount == nil {
-						assert.Equal(t, st.nilCount, ph.DataPageHeaderV2.Statistics.NullCount)
+						assert.Equal(t, st.nilCount, ph.DataPageHeader.Statistics.NullCount)
 					} else {
-						assert.Equal(t, *st.nilCount, *ph.DataPageHeaderV2.Statistics.NullCount)
+						assert.Equal(t, *st.nilCount, *ph.DataPageHeader.Statistics.NullCount)
 					}
 				}
 			})

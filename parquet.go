@@ -157,13 +157,11 @@ func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compresse
 		Type:                 sch.PageType_DATA_PAGE,
 		UncompressedPageSize: int32(dataLen),
 		CompressedPageSize:   int32(compressedLen),
-		DataPageHeaderV2: &sch.DataPageHeaderV2{
-			NumValues:                  int32(defCount),
-			NumNulls:                   int32(defCount - count),
-			NumRows:                    int32(defCount),
-			DefinitionLevelsByteLength: int32(defLen),
-			RepetitionLevelsByteLength: int32(repLen),
-			Encoding:                   sch.Encoding_PLAIN,
+		DataPageHeader: &sch.DataPageHeader{
+			NumValues:               int32(count),
+			Encoding:                sch.Encoding_PLAIN,
+			DefinitionLevelEncoding: sch.Encoding_RLE,
+			RepetitionLevelEncoding: sch.Encoding_RLE,
 			Statistics: &sch.Statistics{
 				NullCount:     stats.NullCount(),
 				DistinctCount: stats.DistinctCount(),
@@ -425,7 +423,7 @@ func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) 
 			return nil, fmt.Errorf("unable to seek to next page: %s", err)
 		}
 
-		nRead += int64(ph.DataPageHeaderV2.NumValues)
+		nRead += int64(ph.DataPageHeader.NumValues)
 	}
 	return out, nil
 }

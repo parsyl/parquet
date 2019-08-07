@@ -700,7 +700,7 @@ func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
 }
 
 func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -830,7 +830,7 @@ func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
 }
 
 func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -922,7 +922,7 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		buf.Write([]byte(s))
 	}
 
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
 }
 
 func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -931,7 +931,7 @@ func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 		return err
 	}
 
-	for j := 0; j < pg.N; j++ {
+	for j := 0; j < f.Values(); j++ {
 		var x int32
 		if err := binary.Read(rr, binary.LittleEndian, &x); err != nil {
 			return err
@@ -1102,7 +1102,7 @@ func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error 
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
 }
 
 func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1206,7 +1206,7 @@ func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		}
 	}
 
-	return f.DoWrite(w, meta, rawBuf, len(f.vals), f.stats)
+	return f.DoWrite(w, meta, rawBuf, len(f.Defs), f.stats)
 }
 
 func (f *BoolOptionalField) Levels() ([]uint8, []uint8) {
@@ -1303,7 +1303,7 @@ func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 			return err
 		}
 	}
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
 }
 
 func (f *Uint64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
