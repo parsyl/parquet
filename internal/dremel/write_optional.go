@@ -25,7 +25,7 @@ func init() {
 	def := defs[0]
 	switch def { {{range $i, $case := .Cases}}{{$def:=plusOne $i}}
 	case {{$def}}:
-	{{template "ifelse" $case}}{{if eq $def $.MaxDef}}
+	{{$defIndex := $.Field.DefIndex $def}}{{if $case.UseIf $.Field.Len $defIndex $.Field.NDefs $def $.MaxDef}}{{template "ifelse" $case}}{{else}}{{$case.If.Val}}{{end}}{{if eq $def $.MaxDef}}
 	return 1, 1{{end}}{{end}}
 	}
 
@@ -68,6 +68,16 @@ type ifElses struct {
 	Else   *ifElse
 }
 
+func (i ifElses) UseIf(l, defIndex, nDefs, def, maxDef int) bool {
+	if nDefs == 1 && defIndex == l-1 {
+		return false
+	}
+	if def < maxDef {
+		return true
+	}
+	return len(i.ElseIf) > 0 || i.Else != nil
+}
+
 func writeOptional(f fields.Field) string {
 	i := writeInput{
 		Field:    f,
@@ -94,29 +104,41 @@ func writeOptionalCases(f fields.Field) []ifElses {
 // return an if else block for the definition level
 func ifelse(def int, f fields.Field) ifElses {
 	opts := optionals(def, f)
-	fmt.Println("opts", opts)
 	var out ifElses
 	for i, o := range opts {
 		p := f.Parent(o + 1)
 		if i == 0 {
-			cond := fmt.Sprintf("x.%s == nil", strings.Join(p.FieldNames, "."))
+			n := strings.Join(p.FieldNames, ".")
+			cond := fmt.Sprintf("x.%s == nil", n)
 			out.If.Cond = cond
-			out.If.Val = structs.Init(def, 0, 0, f)
+			out.If.Val = fmt.Sprintf("x.%s = %s", n, removeAssigment(structs.Init(def, 0, 0, f)))
+			if len(opts) == 1 && def == f.MaxDef() {
+				ch := f.Child(len(f.FieldNames) - 1)
+				out.Else = &ifElse{
+					Val: fmt.Sprintf("x.%s = %s", strings.Join(f.FieldNames, "."), removeAssigment(structs.Init(def, 0, 0, ch))),
+				}
+			}
 		} else if i+1 == f.MaxDef() {
+			ch := f.Child(len(f.FieldNames) - 1)
 			out.Else = &ifElse{
-				Val: fmt.Sprintf("x.%s = vals[nVals]", strings.Join(f.FieldNames, ".")),
+				Val: fmt.Sprintf("x.%s = %s", strings.Join(f.FieldNames, "."), removeAssigment(structs.Init(def, 0, 0, ch))),
 			}
 		} else {
-			cond := fmt.Sprintf("x.%s == nil", strings.Join(p.FieldNames, "."))
+			n := strings.Join(p.FieldNames, ".")
+			cond := fmt.Sprintf("x.%s == nil", n)
 			ch := f.Child(o)
 			out.ElseIf = append(out.ElseIf, ifElse{
 				Cond: cond,
-				Val:  structs.Init(def, 0, 0, ch),
+				Val:  fmt.Sprintf("x.%s = %s", n, removeAssigment(structs.Init(def-i, 0, 0, ch))),
 			})
 		}
 	}
 
 	return out
+}
+
+func removeAssigment(s string) string {
+	return strings.Replace(s[strings.Index(s, "= ")+1:], "nVals", "0", 1)
 }
 
 func optionals(def int, f fields.Field) []int {

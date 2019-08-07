@@ -79,6 +79,20 @@ func (f Field) DefChild(def int) Field {
 	}
 }
 
+func (f Field) Len() int {
+	return len(f.FieldNames)
+}
+
+func (f Field) NDefs() int {
+	var out int
+	for _, t := range f.RepetitionTypes {
+		if t == Optional || t == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
 func (f Field) Optional() bool {
 	for _, t := range f.RepetitionTypes {
 		if t == Optional {
