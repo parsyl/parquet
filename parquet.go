@@ -393,7 +393,7 @@ func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, e
 func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) {
 	var out []sch.PageHeader
 	var nRead int64
-	_, err := r.Seek(o, 0)
+	_, err := r.Seek(o, io.SeekStart)
 	if err != nil {
 		return nil, fmt.Errorf("unable to seek to offset %d, err: %s", o, err)
 	}
@@ -410,7 +410,7 @@ func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) 
 		}
 
 		nRead += rc.n + x
-		fmt.Println("nread", nRead, n, ph.CompressedPageSize)
+		fmt.Println("nread", nRead, n)
 	}
 	return out, nil
 }
@@ -481,7 +481,6 @@ func StringType(se *sch.SchemaElement) {
 
 // GetBools reads a byte array and turns each bit into a bool
 func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
-	fmt.Println("getbools", n, pageSizes)
 	var vals [8]bool
 	data, _ := ioutil.ReadAll(r)
 	out := make([]bool, 0, n)
@@ -495,8 +494,6 @@ func GetBools(r io.Reader, n int, pageSizes []int) ([]bool, error) {
 		if nVals%8 > 0 {
 			l++
 		}
-
-		fmt.Println("for", nVals, len(data), l)
 
 		var i int
 		chunk := data[:l]

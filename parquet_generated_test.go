@@ -80,15 +80,14 @@ func readAge(x Person) ([]int32, []uint8, []uint8) {
 }
 
 func writeAge(x *Person, vals []int32, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Age = pint32(vals[nVals])
-		nVals++
+		x.Age = pint32(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readHappiness(x Person) int64 {
@@ -109,15 +108,14 @@ func readSadness(x Person) ([]int64, []uint8, []uint8) {
 }
 
 func writeSadness(x *Person, vals []int64, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Sadness = pint64(vals[nVals])
-		nVals++
+		x.Sadness = pint64(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readCode(x Person) ([]string, []uint8, []uint8) {
@@ -130,15 +128,14 @@ func readCode(x Person) ([]string, []uint8, []uint8) {
 }
 
 func writeCode(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Code = pstring(vals[nVals])
-		nVals++
+		x.Code = pstring(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readFunkiness(x Person) float32 {
@@ -167,15 +164,14 @@ func readLameness(x Person) ([]float32, []uint8, []uint8) {
 }
 
 func writeLameness(x *Person, vals []float32, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Lameness = pfloat32(vals[nVals])
-		nVals++
+		x.Lameness = pfloat32(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readKeen(x Person) ([]bool, []uint8, []uint8) {
@@ -188,15 +184,14 @@ func readKeen(x Person) ([]bool, []uint8, []uint8) {
 }
 
 func writeKeen(x *Person, vals []bool, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Keen = pbool(vals[nVals])
-		nVals++
+		x.Keen = pbool(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readBirthday(x Person) uint32 {
@@ -217,15 +212,14 @@ func readAnniversary(x Person) ([]uint64, []uint8, []uint8) {
 }
 
 func writeAnniversary(x *Person, vals []uint64, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Anniversary = puint64(vals[nVals])
-		nVals++
+		x.Anniversary = puint64(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readBFF(x Person) string {
@@ -254,15 +248,18 @@ func readHobbyName(x Person) ([]string, []uint8, []uint8) {
 }
 
 func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Hobby = &Hobby{Name: vals[nVals]}
-		nVals++
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Name: vals[0]}
+		} else {
+			x.Hobby.Name = vals[0]
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
@@ -277,15 +274,22 @@ func readHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
 }
 
 func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
+	case 1:
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{}
+		}
 	case 2:
-		x.Hobby.Difficulty = pint32(vals[nVals])
-		nVals++
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Difficulty: pint32(vals[0])}
+		} else {
+			x.Hobby.Difficulty = pint32(vals[0])
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }
 
 func readSleepy(x Person) bool {
@@ -759,14 +763,12 @@ func (f *Int64Field) Schema() parquet.Field {
 
 func (f *Int64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 	rr, _, err := f.DoRead(r, pg)
-	fmt.Printf("do read %+v, err: %v\n", pg, err)
 	if err != nil {
 		return err
 	}
 
 	v := make([]int64, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	fmt.Println("here", err)
 	f.vals = append(f.vals, v...)
 	return err
 }
@@ -977,7 +979,6 @@ func (f *Float32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 
 	v := make([]float32, int(pg.N))
 	err = binary.Read(rr, binary.LittleEndian, &v)
-	fmt.Printf("float field pg %+v, err: %v\n", pg, err)
 	f.vals = append(f.vals, v...)
 	return err
 }

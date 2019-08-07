@@ -104,7 +104,6 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	var nRead int
 	var out []byte
 	var sizes []int
-	fmt.Printf("DoRead required %v, %+v\n", f.pth, pg)
 	for nRead < pg.N {
 		ph, err := PageHeader(r)
 		if err != nil {
@@ -121,7 +120,6 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		out = append(out, data...)
 		nRead += int(ph.DataPageHeaderV2.NumValues)
 	}
-	fmt.Println("do read req done", sizes, len(out))
 	return bytes.NewBuffer(out), sizes, nil
 }
 
@@ -252,7 +250,6 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	var out []byte
 	var sizes []int
 	var rc *readCounter
-	fmt.Printf("DoRead optional %v, %+v\n", f.pth, pg)
 	for nRead < pg.Size {
 		rc = &readCounter{r: r}
 		ph, err := PageHeader(rc)
@@ -281,7 +278,6 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 		}
 
 		n := f.valsFromDefs(defs, uint8(f.MaxLevels.Def))
-		//fmt.Printf("n: %d, numvals: %d, numNulls: %d\n", n, ph.DataPageHeaderV2.NumValues, ph.DataPageHeaderV2.NumNulls)
 		sizes = append(sizes, n)
 		out = append(out, data[l:]...)
 		nRead += int(rc.n)

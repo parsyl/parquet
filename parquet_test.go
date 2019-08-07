@@ -652,7 +652,6 @@ func TestStats(t *testing.T) {
 					return
 				}
 
-				fmt.Println(pages, tc.col)
 				if !assert.Equal(t, len(tc.stats), len(pages), tc.name) {
 					return
 				}
@@ -676,7 +675,6 @@ func getPageHeaders(r io.ReadSeeker, name string, footer *sch.FileMetaData) ([]s
 	for _, rg := range footer.RowGroups {
 		for _, col := range rg.Columns {
 			pth := col.MetaData.PathInSchema
-			fmt.Println(pth, name, pth[len(pth)-1] == name)
 			if pth[len(pth)-1] == name {
 				h, err := parquet.PageHeadersAtOffset(r, col.MetaData.DataPageOffset, col.MetaData.TotalCompressedSize)
 				if err != nil {
