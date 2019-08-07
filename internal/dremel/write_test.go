@@ -30,15 +30,14 @@ func TestWrite(t *testing.T) {
 			name:   "optional and not nested",
 			fields: []fields.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, FieldTypes: []string{"int32"}, RepetitionTypes: []fields.RepetitionType{fields.Optional}}},
 			result: `func writeID(x *Person, vals []int32, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.ID = pint32(vals[nVals])
-		nVals++
+		x.ID = pint32(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
@@ -52,176 +51,250 @@ func TestWrite(t *testing.T) {
 			name:   "optional and nested",
 			fields: []fields.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}}},
 			result: `func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Hobby = &Hobby{}
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{}
+		}
 	case 2:
-		x.Hobby = &Hobby{Difficulty: pint32(vals[nVals])}
-		nVals++
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Difficulty: pint32(vals[0])}
+		} else {
+			x.Hobby.Difficulty = pint32(vals[0])
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "mix of optional and required and nested",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}}},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Hobby = &Hobby{Name: vals[nVals]}
-		nVals++
+		if x.Hobby == nil {
+			x.Hobby = &Hobby{Name: vals[0]}
+		} else {
+			x.Hobby.Name = vals[0]
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "mix of optional and required and nested v2",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}}},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Hobby.Name = pstring(vals[nVals])
-		nVals++
+		x.Hobby.Name = pstring(vals[0])
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "mix of optional and require and nested 3 deep",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Friend = &Entity{}
+		if x.Friend == nil {
+			x.Friend = &Entity{}
+		}
 	case 2:
-		x.Friend = &Entity{Hobby: Item{Name: pstring(vals[nVals])}}
-		nVals++
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: Item{Name: pstring(vals[0])}}
+		} else {
+			x.Friend.Hobby.Name = pstring(vals[0])
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "mix of optional and require and nested 3 deep v2",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Friend.Hobby = &Item{}
+		if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{}
+		}
 	case 2:
-		x.Friend.Hobby = &Item{Name: pstring(vals[nVals])}
-		nVals++
+		if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: pstring(vals[0])}
+		} else {
+			x.Friend.Hobby.Name = pstring(vals[0])
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "mix of optional and require and nested 3 deep v3",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Required}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Friend = &Entity{}
+		if x.Friend == nil {
+			x.Friend = &Entity{}
+		}
 	case 2:
-		x.Friend = &Entity{Hobby: &Item{Name: vals[nVals]}}
-		nVals++
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{Name: vals[0]}}
+		} else {
+			x.Friend.Hobby.Name = vals[0]
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "nested 3 deep all optional",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Friend = &Entity{}
+		if x.Friend == nil {
+			x.Friend = &Entity{}
+		}
 	case 2:
-		x.Friend = &Entity{Hobby: &Item{}}
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{}
+		}
 	case 3:
-		x.Friend = &Entity{Hobby: &Item{Name: pstring(vals[nVals])}}
-		nVals++
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{Name: pstring(vals[0])}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: pstring(vals[0])}
+		} else {
+			x.Friend.Hobby.Name = pstring(vals[0])
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "four deep",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Friend = &Entity{}
+		if x.Friend == nil {
+			x.Friend = &Entity{}
+		}
 	case 2:
-		x.Friend = &Entity{Hobby: &Item{}}
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{}
+		}
 	case 3:
-		x.Friend = &Entity{Hobby: &Item{Name: &Name{}}}
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{Name: &Name{}}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: &Name{}}
+		} else if x.Friend.Hobby.Name == nil {
+			x.Friend.Hobby.Name = &Name{}
+		}
 	case 4:
-		x.Friend = &Entity{Hobby: &Item{Name: &Name{First: pstring(vals[nVals])}}}
-		nVals++
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{Name: &Name{First: pstring(vals[0])}}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[0])}}
+		} else if x.Friend.Hobby.Name == nil {
+			x.Friend.Hobby.Name = &Name{First: pstring(vals[0])}
+		} else {
+			x.Friend.Hobby.Name.First = pstring(vals[0])
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "four deep mixed",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional, fields.Optional}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Friend.Hobby = &Item{}
+		if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{}
+		}
 	case 2:
-		x.Friend.Hobby = &Item{Name: &Name{}}
+		if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: &Name{}}
+		} else if x.Friend.Hobby.Name == nil {
+			x.Friend.Hobby.Name = &Name{}
+		}
 	case 3:
-		x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[nVals])}}
-		nVals++
+		if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[0])}}
+		} else if x.Friend.Hobby.Name == nil {
+			x.Friend.Hobby.Name = &Name{First: pstring(vals[0])}
+		} else {
+			x.Friend.Hobby.Name.First = pstring(vals[0])
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
 			name:   "four deep mixed v2",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Required}}},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
-	var nVals int
 	def := defs[0]
 	switch def {
 	case 1:
-		x.Friend = &Entity{}
+		if x.Friend == nil {
+			x.Friend = &Entity{}
+		}
 	case 2:
-		x.Friend = &Entity{Hobby: &Item{}}
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{}
+		}
 	case 3:
-		x.Friend = &Entity{Hobby: &Item{Name: &Name{First: vals[nVals]}}}
-		nVals++
+		if x.Friend == nil {
+			x.Friend = &Entity{Hobby: &Item{Name: &Name{First: vals[0]}}}
+		} else if x.Friend.Hobby == nil {
+			x.Friend.Hobby = &Item{Name: &Name{First: vals[0]}}
+		} else {
+			x.Friend.Hobby.Name.First = vals[0]
+		}
+		return 1, 1
 	}
 
-	return nVals, 1
+	return 0, 1
 }`,
 		},
 		{
