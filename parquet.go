@@ -273,6 +273,7 @@ func (r *RowGroup) Columns() []*sch.ColumnChunk {
 
 func (r *RowGroup) updateColumnChunk(pth []string, dataLen, compressedLen, count int, fields schema, comp sch.CompressionCodec) error {
 	col := strings.Join(pth, ".")
+
 	ch, ok := r.columns[col]
 	if !ok {
 		t, err := columnType(col, fields)
@@ -380,7 +381,7 @@ func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, e
 	var pageHeaders []sch.PageHeader
 	for _, rg := range footer.RowGroups {
 		for _, col := range rg.Columns {
-			h, err := PageHeadersAtOffset(r, col.MetaData.DataPageOffset, col.MetaData.TotalCompressedSize)
+			h, err := PageHeadersAtOffset(r, col.MetaData.DataPageOffset, col.MetaData.NumValues)
 			if err != nil {
 				return nil, err
 			}
@@ -397,20 +398,28 @@ func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) 
 	if err != nil {
 		return nil, fmt.Errorf("unable to seek to offset %d, err: %s", o, err)
 	}
-	for nRead < n {
+
+	var readOne bool
+	if n > 0 {
+		readOne = true
+	}
+
+	for !readOne || nRead < n {
+		if n == 0 {
+			readOne = true
+		}
 		rc := &readCounter{r: r}
 		ph, err := PageHeader(rc)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read page header: %s", err)
 		}
 		out = append(out, *ph)
-		x, err := r.Seek(int64(ph.CompressedPageSize), io.SeekCurrent)
+		_, err = r.Seek(int64(ph.CompressedPageSize), io.SeekCurrent)
 		if err != nil {
 			return nil, fmt.Errorf("unable to seek to next page: %s", err)
 		}
 
-		nRead += rc.n + x
-		fmt.Println("nread", nRead, n)
+		nRead += int64(ph.DataPageHeaderV2.NumValues)
 	}
 	return out, nil
 }
