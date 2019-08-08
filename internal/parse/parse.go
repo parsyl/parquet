@@ -82,24 +82,34 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 	}
 	if ok {
 		for _, fld := range ff {
-			if (!fld.optional && (o == flds.Optional || f.optional)) || (!fld.repeated && (o == flds.Repeated || f.repeated)) {
-				fld = makeOptional(fld)
+			if fld.embedded {
+				x, more, moreerrs := getOut(0, fld, fields, nil, nil)
+				i += x
+				out = append(out, more...)
+				errs = append(errs, moreerrs...)
+			} else {
+				if (!fld.optional && (o == flds.Optional || f.optional)) || (!fld.repeated && (o == flds.Repeated || f.repeated)) {
+					fld = makeOptional(fld)
+				}
+
+				if !f.embedded {
+					fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
+					fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
+					fld.Field.FieldTypes = append(f.Field.FieldTypes, fld.Field.FieldTypes...)
+				}
+				i, out, errs = getOut(i, fld, fields, errs, out)
 			}
-			fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
-			fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
-			fld.Field.FieldTypes = append(f.Field.FieldTypes, fld.Field.FieldTypes...)
-			i, out, errs = getOut(i, fld, fields, errs, out)
 		}
 		return i, out, errs
 	} else if f.err == nil && f.embedded {
 		embeddedFields := fields[f.Field.TypeName]
-		for i, f := range embeddedFields {
+		for j, ef := range embeddedFields {
 			var rt flds.RepetitionType = flds.Required
 			if strings.Contains(f.Field.TypeName, "*") {
 				rt = flds.Optional
 			}
-			f.Field.RepetitionTypes = append(f.Field.RepetitionTypes, rt)
-			embeddedFields[i] = f
+			ef.Field.RepetitionTypes = append(ef.Field.RepetitionTypes, rt)
+			embeddedFields[j] = f
 		}
 		out = append(out[:i], append(embeddedFields, out[i:]...)...)
 		i += len(embeddedFields)
@@ -174,7 +184,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 					f := getField(x.Names[0].Name, x)
 					fields[k] = append(fields[k], f)
 				} else if len(x.Names) == 0 && !isPrivate(x) {
-					fields[k] = append(fields[k], field{embedded: true, Field: flds.Field{TypeName: fmt.Sprintf("%s", x.Type)}})
+					fields[k] = append(fields[k], field{embedded: true, fieldType: fmt.Sprintf("%s", x.Type), Field: flds.Field{TypeName: fmt.Sprintf("%s", x.Type)}})
 				}
 			case *ast.ArrayType:
 				s := fields[k]
