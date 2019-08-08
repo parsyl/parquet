@@ -130,7 +130,8 @@ func getType(typ string) string {
 	return parts[len(parts)-1]
 }
 
-func getFields(typ string, fields []field, m map[string][]field) []flds.Field {
+func getFields(fullTyp string, fields []field, m map[string][]field) []flds.Field {
+	typ := getType(fullTyp)
 	out := make([]flds.Field, 0, len(fields))
 	for _, f := range fields {
 		_, ok := m[typ]
@@ -142,7 +143,7 @@ func getFields(typ string, fields []field, m map[string][]field) []flds.Field {
 			f.Field.TypeName = fmt.Sprintf("[]%s", f.Field.TypeName)
 		}
 
-		f.Field.Type = typ
+		f.Field.Type = fullTyp
 		if f.tagName != "" {
 			f.Field.ColumnName = f.tagName
 		} else {
