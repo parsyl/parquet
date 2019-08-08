@@ -9,7 +9,9 @@ var tpl = `package {{.Package}}
 import (
 	"fmt"
 	"io"
+	"bytes"
 	"strings"
+	"encoding/binary"
 
 	"github.com/parsyl/parquet"
 	{{.Import}}
