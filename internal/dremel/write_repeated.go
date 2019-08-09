@@ -22,7 +22,6 @@ func init() {
 		"removeStar": func(s string) string {
 			return strings.Replace(strings.Replace(s, "*", "", 1), "[]", "", 1)
 		},
-		"plusOne":    func(i int) int { return i + 1 },
 		"newDefCase": func(def, seen int, f fields.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
 		"init": func(def, rep, seen int, f fields.Field) string {
 			if def < f.MaxDef() {
@@ -142,19 +141,6 @@ func nilField(i int, f fields.Field) string {
 	return strings.Join(flds, ".")
 }
 
-func defIndex(i int, f fields.Field) int {
-	var count int
-	for j, o := range f.RepetitionTypes {
-		if o == fields.Optional || o == fields.Repeated {
-			count++
-		}
-		if count > i {
-			return j
-		}
-	}
-	return -1
-}
-
 // count the number of fields in the path that can be optional
 func defs(f fields.Field) int {
 	var out int
@@ -164,13 +150,6 @@ func defs(f fields.Field) int {
 		}
 	}
 	return out
-}
-
-func pointer(i, n int, p string, levels []bool) string {
-	if levels[n] && n < i {
-		return p
-	}
-	return ""
 }
 
 // seen counts how many sub-fields have been previously processed

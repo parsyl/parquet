@@ -397,7 +397,43 @@ func TestParquet(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "repeated two pages",
+			pageSize: 2,
+			input: [][]Person{
+				{
+					{
+						Friends: []Being{
+							{ID: 1, Age: pint32(10)},
+						},
+					},
+					{Code: pstring("c")},
+					{
+						Friends: []Being{
+							{ID: 2, Age: pint32(12)},
+							{ID: 3, Age: pint32(14)},
+						},
+					},
+				},
+				{
+					{Code: pstring("g")},
+					{
+						Friends: []Being{
+							{ID: 4, Age: pint32(16)},
+							{ID: 5, Age: pint32(18)},
+						},
+					},
+					{
+						Friends: []Being{
+							{ID: 6, Age: pint32(20)},
+							{ID: 7, Age: pint32(22)},
+						},
+					},
+				},
+			},
+		},
 	}
+
 	for i, tc := range testCases {
 		for j, comp := range []string{"uncompressed", "snappy"} {
 			t.Run(fmt.Sprintf("%02d %s %s", 2*i+j, tc.name, comp), func(t *testing.T) {
@@ -922,6 +958,7 @@ type Person struct {
 	Hungry      bool     `parquet:"hungry"`
 	Secret      string   `parquet:"-"`
 	Hobby       *Hobby   `parquet:"hobby"`
+	Friends     []Being  `parquet:"friends"`
 	Sleepy      bool
 }
 

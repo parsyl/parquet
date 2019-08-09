@@ -7,8 +7,6 @@ import (
 
 	"fmt"
 
-	"encoding/binary"
-
 	"io"
 
 	"github.com/golang/snappy"
@@ -18,48 +16,6 @@ import (
 )
 
 // RequiredField writes the raw data for required columns
-type IntStats struct {
-	len int
-}
-
-func NewIntStats(len int) IntStats {
-	return IntStats{len}
-}
-
-func (i IntStats) Statistics(min, max int64) *sch.Statistics {
-	return &sch.Statistics{
-		MinValue: i.minmax(min),
-		MaxValue: i.minmax(min),
-	}
-}
-
-func (i IntStats) minmax(val int64) []byte {
-	buf := make([]byte, i.len)
-	n := binary.PutVarint(buf, int64(val))
-	return buf[:n]
-}
-
-type UintStats struct {
-	len int
-}
-
-func NewUintStats(len int) UintStats {
-	return UintStats{len}
-}
-
-func (i UintStats) Statistics(min, max uint64) *sch.Statistics {
-	return &sch.Statistics{
-		MinValue: i.minmax(min),
-		MaxValue: i.minmax(min),
-	}
-}
-
-func (i UintStats) minmax(val uint64) []byte {
-	buf := make([]byte, i.len)
-	n := binary.PutUvarint(buf, uint64(val))
-	return buf[:n]
-}
-
 type RequiredField struct {
 	pth         []string
 	compression sch.CompressionCodec

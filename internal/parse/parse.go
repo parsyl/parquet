@@ -101,18 +101,6 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 			}
 		}
 		return i, out, errs
-	} else if f.err == nil && f.embedded {
-		embeddedFields := fields[f.Field.TypeName]
-		for j, ef := range embeddedFields {
-			var rt flds.RepetitionType = flds.Required
-			if strings.Contains(f.Field.TypeName, "*") {
-				rt = flds.Optional
-			}
-			ef.Field.RepetitionTypes = append(ef.Field.RepetitionTypes, rt)
-			embeddedFields[j] = f
-		}
-		out = append(out[:i], append(embeddedFields, out[i:]...)...)
-		i += len(embeddedFields)
 	} else if f.err == nil {
 		_, ok := types[f.fieldType]
 		if ok {

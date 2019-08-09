@@ -554,10 +554,3 @@ func getMetaDataSize(r io.ReadSeeker) (int, error) {
 	var size uint32
 	return int(size), binary.Read(r, binary.LittleEndian, &size)
 }
-
-func Pint32(i int32) *int32       { return &i }
-func Puint32(i uint32) *uint32    { return &i }
-func Pint64(i int64) *int64       { return &i }
-func Puint64(i uint64) *uint64    { return &i }
-func Pfloat32(f float32) *float32 { return &f }
-func Pfloat64(f float64) *float64 { return &f }

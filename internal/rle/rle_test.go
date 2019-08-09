@@ -65,6 +65,11 @@ func TestRLE(t *testing.T) {
 			in:    []uint8{1, 2, 3},
 		},
 		{
+			name:  "width 3",
+			width: 3,
+			in:    []uint8{1, 2, 7},
+		},
+		{
 			name:  "width 4",
 			width: 4,
 			err:   fmt.Errorf("bitwidth 4 is greater than 3 (highest supported)"),

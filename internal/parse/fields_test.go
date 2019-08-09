@@ -275,6 +275,16 @@ func TestFields(t *testing.T) {
 				{Type: "Document", FieldNames: []string{"Names", "URL"}, FieldTypes: []string{"Name", "string"}, TypeName: "*string", FieldType: "StringOptionalField", ParquetType: "StringType", ColumnName: "Names.URL", Category: "stringOptional", RepetitionTypes: []fields.RepetitionType{2, 1}},
 			},
 		},
+		{
+			name: "embedded embedded embedded",
+			typ:  "A",
+			expected: []fields.Field{
+				{Type: "A", FieldNames: []string{"D"}, FieldTypes: []string{"int32"}, TypeName: "int32", FieldType: "Int32Field", ParquetType: "Int32Type", ColumnName: "D", Category: "numeric", RepetitionTypes: []fields.RepetitionType{0}},
+				{Type: "A", FieldNames: []string{"C"}, FieldTypes: []string{"string"}, TypeName: "string", FieldType: "StringField", ParquetType: "StringType", ColumnName: "C", Category: "string", RepetitionTypes: []fields.RepetitionType{0}},
+				{Type: "A", FieldNames: []string{"B"}, FieldTypes: []string{"bool"}, TypeName: "bool", FieldType: "BoolField", ParquetType: "BoolType", ColumnName: "B", Category: "bool", RepetitionTypes: []fields.RepetitionType{0}},
+				{Type: "A", FieldNames: []string{"Name"}, FieldTypes: []string{"string"}, TypeName: "string", FieldType: "StringField", ParquetType: "StringType", ColumnName: "Name", Category: "string", RepetitionTypes: []fields.RepetitionType{0}},
+			},
+		},
 	}
 
 	for i, tc := range testCases {

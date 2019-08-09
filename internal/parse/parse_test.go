@@ -157,3 +157,22 @@ type Document struct {
 	Links []Link
 	Names []Name
 }
+
+type D struct {
+	D int32
+}
+
+type C struct {
+	D
+	C string
+}
+
+type B struct {
+	C
+	B bool
+}
+
+type A struct {
+	B
+	Name string
+}

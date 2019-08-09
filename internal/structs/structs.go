@@ -135,23 +135,6 @@ func nRepeats(repeats []bool) int {
 	return out
 }
 
-func initOptional(def int, f fields.Field) string {
-	return doInit(def, 0, 0, f, false)
-}
-
-func defIndex(i int, f fields.Field) int {
-	var count int
-	for j, o := range f.RepetitionTypes {
-		if o == fields.Optional || o == fields.Repeated {
-			count++
-		}
-		if count > i {
-			return j
-		}
-	}
-	return i
-}
-
 func primitive(typ string) bool {
 	return primitiveTypes[typ]
 }
@@ -210,16 +193,6 @@ func doInit(def, rep, i int, f fields.Field, append bool) string {
 	}
 
 	return fmt.Sprintf("%s%s%s%s%s%s", field, ptr, typ, leftBrace, doInit(def, rep, i, f.Child(1), false), rightBrace)
-}
-
-func isBeingAppended(f fields.Field, rep int, i int) bool {
-	var reps int
-	for _, rt := range f.RepetitionTypes {
-		if rt == fields.Repeated {
-			reps++
-		}
-	}
-	return reps < rep
 }
 
 func nDefs(rt []fields.RepetitionType) int {

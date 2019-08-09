@@ -58,6 +58,8 @@ func Fields(compression compression) []Field {
 		NewBoolField(readHungry, writeHungry, []string{"hungry"}, fieldCompression(compression)),
 		NewStringOptionalField(readHobbyName, writeHobbyName, []string{"hobby", "name"}, []int{1, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, []int{1, 1}, optionalFieldCompression(compression)),
+		NewInt32OptionalField(readFriendsID, writeFriendsID, []string{"friends", "id"}, []int{2, 0}, optionalFieldCompression(compression)),
+		NewInt32OptionalField(readFriendsAge, writeFriendsAge, []string{"friends", "age"}, []int{2, 1}, optionalFieldCompression(compression)),
 		NewBoolField(readSleepy, writeSleepy, []string{"sleepy"}, fieldCompression(compression)),
 	}
 }
@@ -290,6 +292,111 @@ func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int
 	}
 
 	return 0, 1
+}
+
+func readFriendsID(x Person) ([]int32, []uint8, []uint8) {
+	var vals []int32
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Friends) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Friends {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+			vals = append(vals, x0.ID)
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeFriendsID(x *Person, vals []int32, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			switch rep {
+			case 0:
+				x.Friends = []Being{{ID: vals[nVals]}}
+			case 1:
+				x.Friends = append(x.Friends, Being{ID: vals[nVals]})
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readFriendsAge(x Person) ([]int32, []uint8, []uint8) {
+	var vals []int32
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Friends) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Friends {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			if x0.Age == nil {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, *x0.Age)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeFriendsAge(x *Person, vals []int32, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			switch rep {
+			default:
+				x.Friends[ind[0]].Age = pint32(vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
 }
 
 func readSleepy(x Person) bool {
