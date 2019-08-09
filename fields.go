@@ -193,16 +193,6 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
-func (f *OptionalField) NilCount() *int64 {
-	var out int64
-	for _, v := range f.Defs {
-		if v == 0 {
-			out++
-		}
-	}
-	return &out
-}
-
 // DoRead is called by all optional fields.  It reads the definition levels and uses
 // them to interpret the raw data.
 func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, error) {

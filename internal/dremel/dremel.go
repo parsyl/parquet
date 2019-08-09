@@ -31,21 +31,3 @@ func Read(f fields.Field) string {
 
 	return readRequired(f)
 }
-
-func isRepeated(f fields.Field) bool {
-	for _, o := range f.RepetitionTypes {
-		if o == fields.Repeated {
-			return true
-		}
-	}
-	return false
-}
-
-func isOptional(f fields.Field) bool {
-	for _, o := range f.RepetitionTypes {
-		if o == fields.Optional {
-			return true
-		}
-	}
-	return false
-}
