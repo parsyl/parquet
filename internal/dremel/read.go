@@ -29,10 +29,6 @@ func readOptional(f fields.Field) string {
 	out += fmt.Sprintf(`	default:
 		return []%s{%sx.%s}, []uint8{%d}, nil`, cleanTypeName(f.TypeName), ptr, nilField(n, f), n)
 
-	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Required {
-		ptr = "*"
-	}
-
 	return fmt.Sprintf(`func read%s(x %s) ([]%s, []uint8, []uint8) {
 	switch {
 	%s
