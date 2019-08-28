@@ -111,6 +111,34 @@ type ifElseCase struct {
 	p fields.Field
 }
 
+// ifelses returns an if else block for the given definition and repetition level
+func ifelses(def, rep int, orig fields.Field) ifElses {
+	opts := optionals(def, orig)
+	var seen []fields.RepetitionType
+
+	di := int(orig.DefIndex(def))
+
+	for _, rt := range orig.RepetitionTypes[:di+1] {
+		if rt == fields.Required {
+			seen = append(seen, fields.Repeated)
+		} else {
+			break
+		}
+	}
+
+	var cases ifElseCases
+	for _, o := range opts {
+		f := orig.Copy()
+		if len(orig.Seen) <= len(seen) {
+			f.Seen = append(seen[:0:0], seen...)
+		}
+		cases = append(cases, ifElseCase{f: f, p: f.Parent(o + 1)})
+		seen = append(seen, fields.Repeated)
+	}
+
+	return cases.ifElses(def, rep, int(orig.MaxDef()))
+}
+
 type ifElseCases []ifElseCase
 
 func (i ifElseCases) ifElses(def, rep, md int) ifElses {
@@ -144,34 +172,8 @@ func (i ifElseCases) ifElses(def, rep, md int) ifElses {
 	return out
 }
 
-// ifelses returns an if else block for the given definition level
-func ifelses(def, rep int, orig fields.Field) ifElses {
-	opts := optionals(def, orig)
-	var seen []fields.RepetitionType
-
-	di := int(orig.DefIndex(def))
-
-	for _, rt := range orig.RepetitionTypes[:di+1] {
-		if rt == fields.Required {
-			seen = append(seen, fields.Repeated)
-		} else {
-			break
-		}
-	}
-
-	var cases ifElseCases
-	for _, o := range opts {
-		f := orig.Copy()
-		if len(orig.Seen) <= len(seen) {
-			f.Seen = append(seen[:0:0], seen...)
-		}
-		cases = append(cases, ifElseCase{f: f, p: f.Parent(o + 1)})
-		seen = append(seen, fields.Repeated)
-	}
-
-	return cases.ifElses(def, rep, int(orig.MaxDef()))
-}
-
+// optionals returns a slice that contains the index of
+// each optional field.
 func optionals(def int, f fields.Field) []int {
 	var out []int
 	di := f.DefIndex(def)

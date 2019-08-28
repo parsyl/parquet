@@ -10,10 +10,8 @@ import (
 
 //go:generate parquetgen -input dremel_test.go -type Document -package dremel_test -output dremel_generated_test.go
 
-// TestLevels verifies that the example from the dremel paper
-// results in the correct definition and repetition levels.
-func TestLevels(t *testing.T) {
-	docs := []Document{
+var (
+	dremelDocs = []Document{
 		{
 			DocID: 10,
 			Link:  &Link{Forward: []int64{20, 40, 60}},
@@ -41,14 +39,18 @@ func TestLevels(t *testing.T) {
 			Names: []Name{{URL: pstring("http://C")}},
 		},
 	}
+)
 
+// TestLevels verifies that the example from the dremel paper
+// results in the correct definition and repetition levels.
+func TestLevels(t *testing.T) {
 	var buf bytes.Buffer
 	pw, err := NewParquetWriter(&buf)
 	if err != nil {
 		assert.NoError(t, err)
 	}
 
-	for _, doc := range docs {
+	for _, doc := range dremelDocs {
 		pw.Add(doc)
 	}
 
@@ -75,43 +77,16 @@ func TestLevels(t *testing.T) {
 	assert.Equal(t, expected, pr.Levels())
 }
 
+// TestDremel uses the example from the dremel paper and writes then
+// reads from a parquet file to make sure nested fields work correctly.
 func TestDremel(t *testing.T) {
-	docs := []Document{
-		{
-			DocID: 10,
-			Link:  &Link{Forward: []int64{20, 40, 60}},
-			Names: []Name{
-				{
-					Languages: []Language{
-						{Code: "en-us", Country: pstring("us")},
-						{Code: "en"},
-					},
-					URL: pstring("http://A"),
-				},
-				{
-					URL: pstring("http://B"),
-				},
-				{
-					Languages: []Language{
-						{Code: "en-gb", Country: pstring("gb")},
-					},
-				},
-			},
-		},
-		{
-			DocID: 20,
-			Link:  &Link{Backward: []int64{10, 30}, Forward: []int64{80}},
-			Names: []Name{{URL: pstring("http://C")}},
-		},
-	}
-
 	var buf bytes.Buffer
 	pw, err := NewParquetWriter(&buf)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, doc := range docs {
+	for _, doc := range dremelDocs {
 		pw.Add(doc)
 	}
 
@@ -133,7 +108,7 @@ func TestDremel(t *testing.T) {
 		out = append(out, d)
 	}
 
-	assert.Equal(t, docs, out)
+	assert.Equal(t, dremelDocs, out)
 }
 
 type Link struct {

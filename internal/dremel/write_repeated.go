@@ -112,21 +112,17 @@ func writeRequired(f fields.Field) string {
 
 func writeRepeated(i int, flds []fields.Field) string {
 	f := flds[i]
-	s := fields.Seen(i, flds)
-	defs := writeCases(f, s)
-	f.Seen = s
+	f.Seen = fields.Seen(i, flds)
+
 	wi := writeRepeatedInput{
 		Field: f,
 		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")),
-		Defs:  defs,
-		Seen:  s,
+		Defs:  writeCases(f, f.Seen),
+		Seen:  f.Seen,
 	}
 
 	var buf bytes.Buffer
-	err := writeRepeatedTpl.Execute(&buf, wi)
-	if err != nil {
-		log.Fatal(err) //TODO: return error
-	}
+	writeRepeatedTpl.Execute(&buf, wi)
 	return string(buf.Bytes())
 }
 
@@ -134,7 +130,6 @@ func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) str
 	md := int(f.MaxDef())
 	rt := f.RepetitionTypes.Def(def)
 
-	//fmt.Printf("def: %d, max def: %d, rep: %d", def, md, rep)
 	if def < md && rep == 0 && rt == fields.Repeated {
 		rep = def
 	}
