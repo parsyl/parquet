@@ -20,7 +20,7 @@ possibilities.
     
     go get -u github.com/parsyl/parquet/...
 
-This will also install parquet's only dependency: thift
+This will also install parquet's only two dependencies: thift and snappy
 
 ## Usage
 

@@ -8,12 +8,16 @@ import (
 	"text/template"
 
 	"github.com/parsyl/parquet/internal/fields"
-	"github.com/parsyl/parquet/internal/structs"
+)
+
+var (
+	writeRepeatedTpl *template.Template
+	ifTpl            *template.Template
 )
 
 type defCase struct {
 	Def   int
-	Seen  int
+	Seen  []fields.RepetitionType
 	Field fields.Field
 }
 
@@ -22,22 +26,33 @@ func init() {
 		"removeStar": func(s string) string {
 			return strings.Replace(strings.Replace(s, "*", "", 1), "[]", "", 1)
 		},
-		"newDefCase": func(def, seen int, f fields.Field) defCase { return defCase{Def: def, Seen: seen, Field: f} },
-		"init": func(def, rep, seen int, f fields.Field) string {
-			if def < f.MaxDef() {
-				//calculate what rep should be
-				for _, rt := range f.RepetitionTypes[:def] {
-					if rt == fields.Repeated {
-						rep++
-					}
+		"newDefCase": func(def int, seen []fields.RepetitionType, f fields.Field) defCase {
+			return defCase{Def: def, Seen: seen, Field: f}
+		},
+		"init": initRepeated,
+		"getRep": func(def int, f fields.Field) int {
+			var rep int
+			//defindex indead of def?
+			for _, rt := range f.RepetitionTypes[:f.DefIndex(def)] {
+				if rt == fields.Repeated {
+					rep++
 				}
 			}
-			return structs.Init(def, rep, seen, f)
+			return rep
 		},
-		"repeat": func(def int, f fields.Field) bool { return f.Repeated() && def == f.MaxDef() },
+		"notNil": func(x *ifElse) bool { return x != nil },
 	}
 
 	var err error
+	ifTpl, err = template.New("tmp").Funcs(funcs).Parse(`{{template "ifelse" .}}`)
+	if err != nil {
+		log.Fatalf("unable to create templates: %s", err)
+	}
+	ifTpl, err = ifTpl.Parse(ifelseStmt)
+	if err != nil {
+		log.Fatalf("unable to create templates: %s", err)
+	}
+
 	writeRepeatedTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.Type}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, {{.Field.MaxRep}})
@@ -67,7 +82,7 @@ func init() {
 				nVals++{{end}}{{end}}			
 		}{{end}}`
 
-	defCaseTpl := `{{define "defCase"}}{{if repeat .Def .Field}}{{ template "repSwitch" .}}{{else}}{{init .Def 0 .Seen .Field}}{{end}}{{end}}`
+	defCaseTpl := `{{define "defCase"}}{{if eq .Def .Field.MaxDef}}{{template "repSwitch" .}}{{else}}{{$rep:=getRep .Def .Field}}{{init .Def $rep .Seen .Field}}{{end}}{{end}}`
 
 	repSwitchTpl := `{{define "repSwitch"}}switch rep {
 {{range $case := .Field.RepCases $.Seen}}{{$case.Case}}
@@ -82,14 +97,10 @@ func init() {
 	}
 }
 
-var (
-	writeRepeatedTpl *template.Template
-)
-
 type writeRepeatedInput struct {
 	Field fields.Field
 	Defs  []int
-	Seen  int
+	Seen  []fields.RepetitionType
 	Func  string
 }
 
@@ -99,10 +110,11 @@ func writeRequired(f fields.Field) string {
 }`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
 }
 
-func writeRepeated(i int, fields []fields.Field) string {
-	f := fields[i]
-	s := seen(i, fields)
+func writeRepeated(i int, flds []fields.Field) string {
+	f := flds[i]
+	s := fields.Seen(i, flds)
 	defs := writeCases(f, s)
+	f.Seen = s
 	wi := writeRepeatedInput{
 		Field: f,
 		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")),
@@ -118,9 +130,54 @@ func writeRepeated(i int, fields []fields.Field) string {
 	return string(buf.Bytes())
 }
 
-func writeCases(f fields.Field, seen int) []int {
+func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) string {
+	md := int(f.MaxDef())
+	rt := f.RepetitionTypes.Def(def)
+
+	//fmt.Printf("def: %d, max def: %d, rep: %d", def, md, rep)
+	if def < md && rep == 0 && rt == fields.Repeated {
+		rep = def
+	}
+
+	if useIfElse(def, rep, seen, f) {
+		ie := ifelses(def, rep, f)
+		var buf bytes.Buffer
+		if err := ifTpl.Execute(&buf, ie); err != nil {
+			log.Fatalf("unable to execute ifTpl: %s", err)
+		}
+		return string(buf.Bytes())
+	}
+
+	f.Seen = seen
+	return f.Init(def, rep)
+}
+
+func useIfElse(def, rep int, seen fields.RepetitionTypes, f fields.Field) bool {
+	if len(seen) == 0 {
+		return false
+	}
+
+	i := f.DefIndex(def)
+	p := f.Parent(i + 1)
+	if !p.Optional() || seen.Repeated() {
+		return false
+	}
+
+	if def == f.MaxDef() && rep > 0 {
+		return false
+	}
+
+	return true
+}
+
+func writeCases(f fields.Field, seen fields.RepetitionTypes) []int {
 	var dfs []int
-	for def := 1 + seen; def <= f.MaxDef(); def++ {
+	start := 1
+	if seen.Repeated() {
+		start = 1 + len(seen)
+	}
+
+	for def := start; def <= f.MaxDef(); def++ {
 		dfs = append(dfs, def)
 	}
 	return dfs
@@ -149,37 +206,5 @@ func defs(f fields.Field) int {
 			out++
 		}
 	}
-	return out
-}
-
-// seen counts how many sub-fields have been previously processed
-// so that some of the cases and if statements can be skipped when
-// re-assembling records
-func seen(i int, fields []fields.Field) int {
-	m := map[string]int{}
-	for _, ft := range fields[i].FieldNames {
-		m[ft] = 1
-	}
-
-	for _, f := range fields[:i] {
-		if len(f.FieldNames) == 1 {
-			continue
-		}
-
-		for _, fn := range f.FieldNames {
-			_, ok := m[fn]
-			if ok {
-				m[fn]++
-			}
-		}
-	}
-
-	var out int
-	for _, i := range m {
-		if i > 1 {
-			out++
-		}
-	}
-
 	return out
 }

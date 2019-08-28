@@ -13,8 +13,9 @@ func Write(i int, fields []fields.Field) string {
 	if f.Repeated() {
 		return writeRepeated(i, fields)
 	}
+
 	if f.Optional() {
-		return writeOptional(f)
+		return writeOptional(i, fields)
 	}
 
 	return writeRequired(f)

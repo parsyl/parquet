@@ -48,8 +48,29 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "optional and nested",
-			fields: []fields.Field{{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}}},
+			name: "optional and nested",
+			fields: []fields.Field{
+				{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}},
+			},
+			result: `func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.Hobby = &Hobby{}
+	case 2:
+		x.Hobby = &Hobby{Difficulty: pint32(vals[0])}
+		return 1, 1
+	}
+
+	return 0, 1
+}`,
+		},
+		{
+			name: "optional and nested and seen by an optional fields",
+			fields: []fields.Field{
+				{FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}},
+				{Type: "Person", TypeName: "*int32", FieldNames: []string{"Hobby", "Difficulty"}, FieldTypes: []string{"Hobby", "int32"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}},
+			},
 			result: `func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -70,17 +91,15 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "mix of optional and required and nested",
-			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}}},
+			name: "mix of optional and required and nested",
+			fields: []fields.Field{
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}},
+			},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
 	case 1:
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{Name: vals[0]}
-		} else {
-			x.Hobby.Name = vals[0]
-		}
+		x.Hobby = &Hobby{Name: vals[0]}
 		return 1, 1
 	}
 
@@ -88,8 +107,10 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "mix of optional and required and nested v2",
-			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}}},
+			name: "mix of optional and required and nested v2",
+			fields: []fields.Field{
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Hobby", "Name"}, FieldTypes: []string{"Hobby", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+			},
 			result: `func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -102,21 +123,17 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "mix of optional and require and nested 3 deep",
-			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Optional}}},
+			name: "mix of optional and require and nested 3 deep",
+			fields: []fields.Field{
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required, fields.Optional}},
+			},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
 	case 1:
-		if x.Friend == nil {
-			x.Friend = &Entity{}
-		}
+		x.Friend = &Entity{}
 	case 2:
-		if x.Friend == nil {
-			x.Friend = &Entity{Hobby: Item{Name: pstring(vals[0])}}
-		} else {
-			x.Friend.Hobby.Name = pstring(vals[0])
-		}
+		x.Friend = &Entity{Hobby: Item{Name: pstring(vals[0])}}
 		return 1, 1
 	}
 
@@ -124,8 +141,11 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "mix of optional and require and nested 3 deep v2",
-			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional}}},
+			name: "mix of optional and required and nested 3 deep v2 and seen by optional field",
+			fields: []fields.Field{
+				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional}},
+			},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -146,21 +166,17 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "mix of optional and require and nested 3 deep v3",
-			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Required}}},
+			name: "mix of optional and required and nested 3 deep v3",
+			fields: []fields.Field{
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Required}},
+			},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
 	case 1:
-		if x.Friend == nil {
-			x.Friend = &Entity{}
-		}
+		x.Friend = &Entity{}
 	case 2:
-		if x.Friend == nil {
-			x.Friend = &Entity{Hobby: &Item{Name: vals[0]}}
-		} else {
-			x.Friend.Hobby.Name = vals[0]
-		}
+		x.Friend = &Entity{Hobby: &Item{Name: vals[0]}}
 		return 1, 1
 	}
 
@@ -168,8 +184,31 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "nested 3 deep all optional",
-			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}}},
+			name: "nested 3 deep all optional",
+			fields: []fields.Field{
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}},
+			},
+			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.Friend = &Entity{}
+	case 2:
+		x.Friend = &Entity{Hobby: &Item{}}
+	case 3:
+		x.Friend = &Entity{Hobby: &Item{Name: pstring(vals[0])}}
+		return 1, 1
+	}
+
+	return 0, 1
+}`,
+		},
+		{
+			name: "nested 3 deep all optional and seen by optional field",
+			fields: []fields.Field{
+				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}},
+			},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -200,6 +239,29 @@ func TestWrite(t *testing.T) {
 		{
 			name:   "four deep",
 			fields: []fields.Field{{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Optional}}},
+			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.Friend = &Entity{}
+	case 2:
+		x.Friend = &Entity{Hobby: &Item{}}
+	case 3:
+		x.Friend = &Entity{Hobby: &Item{Name: &Name{}}}
+	case 4:
+		x.Friend = &Entity{Hobby: &Item{Name: &Name{First: pstring(vals[0])}}}
+		return 1, 1
+	}
+
+	return 0, 1
+}`,
+		},
+		{
+			name: "four deep and seen by optional field",
+			fields: []fields.Field{
+				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Optional}},
+			},
 			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
@@ -244,6 +306,27 @@ func TestWrite(t *testing.T) {
 	def := defs[0]
 	switch def {
 	case 1:
+		x.Friend.Hobby = &Item{}
+	case 2:
+		x.Friend.Hobby = &Item{Name: &Name{}}
+	case 3:
+		x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[0])}}
+		return 1, 1
+	}
+
+	return 0, 1
+}`,
+		},
+		{
+			name: "four deep mixed and seen by optional field",
+			fields: []fields.Field{
+				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional, fields.Optional}},
+			},
+			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
 		if x.Friend.Hobby == nil {
 			x.Friend.Hobby = &Item{}
 		}
@@ -274,6 +357,27 @@ func TestWrite(t *testing.T) {
 	def := defs[0]
 	switch def {
 	case 1:
+		x.Friend = &Entity{}
+	case 2:
+		x.Friend = &Entity{Hobby: &Item{}}
+	case 3:
+		x.Friend = &Entity{Hobby: &Item{Name: &Name{First: vals[0]}}}
+		return 1, 1
+	}
+
+	return 0, 1
+}`,
+		},
+		{
+			name: "four deep mixed v2 and seen by optional fields",
+			fields: []fields.Field{
+				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Optional}},
+				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Required}},
+			},
+			result: `func writeFriendHobbyNameFirst(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
 		if x.Friend == nil {
 			x.Friend = &Entity{}
 		}
@@ -288,6 +392,8 @@ func TestWrite(t *testing.T) {
 			x.Friend = &Entity{Hobby: &Item{Name: &Name{First: vals[0]}}}
 		} else if x.Friend.Hobby == nil {
 			x.Friend.Hobby = &Item{Name: &Name{First: vals[0]}}
+		} else if x.Friend.Hobby.Name == nil {
+			x.Friend.Hobby.Name = &Name{First: vals[0]}
 		} else {
 			x.Friend.Hobby.Name.First = vals[0]
 		}
@@ -298,8 +404,10 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "writeLinkBackward",
-			fields: []fields.Field{{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}}},
+			name: "writeLinkBackward",
+			fields: []fields.Field{
+				{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
+			},
 			result: `func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)
@@ -334,7 +442,7 @@ func TestWrite(t *testing.T) {
 		{
 			name: "writeLinkFoward",
 			fields: []fields.Field{
-				{FieldNames: []string{"Link", "Backward"}},
+				{FieldNames: []string{"Link", "Backward"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 				{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			},
 			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
@@ -365,8 +473,10 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:   "writeNamesLanguagesCode",
-			fields: []fields.Field{{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}}},
+			name: "writeNamesLanguagesCode",
+			fields: []fields.Field{
+				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
+			},
 			result: `func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 2)
@@ -403,7 +513,7 @@ func TestWrite(t *testing.T) {
 		{
 			name: "writeNamesLanguagesCountry",
 			fields: []fields.Field{
-				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}},
+				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Code"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
 				{Type: "Document", TypeName: "string", FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
 			},
 			result: `func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
@@ -467,12 +577,90 @@ func TestWrite(t *testing.T) {
 	return nVals, nLevels
 }`,
 		},
+		{
+			name: "repeated primitive",
+			fields: []fields.Field{
+				{Type: "Document", TypeName: "int64", FieldNames: []string{"LuckyNumbers"}, FieldTypes: []string{"int64"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated}},
+			},
+			result: `func writeLuckyNumbers(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			switch rep {
+			case 0:
+				x.LuckyNumbers = []int64{vals[nVals]}
+			case 1:
+				x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}`,
+		},
+		{
+			name: "repeated field not handled by previous repeated field",
+			fields: []fields.Field{
+				{FieldNames: []string{"Link", "ID"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Required}},
+				{Type: "Document", TypeName: "int64", FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
+			},
+			result: `func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			if x.Link == nil {
+				x.Link = &Link{}
+			}
+		case 2:
+			switch rep {
+			case 0:
+				if x.Link == nil {
+					x.Link = &Link{Forward: []int64{vals[nVals]}}
+				} else {
+					x.Link.Forward = append(x.Link.Forward, vals[nVals])
+				}
+			case 1:
+				x.Link.Forward = append(x.Link.Forward, vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}`,
+		},
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(len(tc.fields)-1, tc.fields)
 			gocode, err := format.Source([]byte(s))
+			//fmt.Println(string(gocode))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))
 		})

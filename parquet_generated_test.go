@@ -253,11 +253,7 @@ func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
 	case 1:
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{Name: vals[0]}
-		} else {
-			x.Hobby.Name = vals[0]
-		}
+		x.Hobby = &Hobby{Name: vals[0]}
 		return 1, 1
 	}
 

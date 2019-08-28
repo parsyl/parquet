@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"github.com/parsyl/parquet/internal/fields"
-	"github.com/parsyl/parquet/internal/structs"
 )
 
 func init() {
@@ -25,7 +24,7 @@ func init() {
 	def := defs[0]
 	switch def { {{range $i, $case := .Cases}}{{$def:=plusOne $i}}
 	case {{$def}}:
-	{{$defIndex := $.Field.DefIndex $def}}{{if $case.UseIf $.Field.Len $defIndex $.Field.NDefs $def $.MaxDef}}{{template "ifelse" $case}}{{else}}{{$case.If.Val}}{{end}}{{if eq $def $.MaxDef}}
+	{{$defIndex := $.Field.DefIndex $def}}{{if $case.UseIf}}{{template "ifelse" $case}}{{else}}{{$case.Val}}{{end}}{{if eq $def $.MaxDef}}
 	return 1, 1{{end}}{{end}}
 	}
 
@@ -35,20 +34,23 @@ func init() {
 		log.Fatal(err)
 	}
 
-	writeTpl, err = writeTpl.Parse(`{{define "ifelse"}}if {{.If.Cond}} {
+	ifelseStmt = `{{define "ifelse"}}if {{.If.Cond}} {
 	{{.If.Val}}
 } {{range $else := .ElseIf}} else if {{$else.Cond}} {
 	{{$else.Val}}
 }{{end}} {{if notNil .Else}} else {
 	{{.Else.Val}}
-} {{end}}{{end}}`)
+} {{end}}{{end}}`
+
+	writeTpl, err = writeTpl.Parse(ifelseStmt)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 var (
-	writeTpl *template.Template
+	writeTpl   *template.Template
+	ifelseStmt string
 )
 
 type writeInput struct {
@@ -66,90 +68,124 @@ type ifElses struct {
 	If     ifElse
 	ElseIf []ifElse
 	Else   *ifElse
+	Val    *string
 }
 
-func (i ifElses) UseIf(l, defIndex, nDefs, def, maxDef int) bool {
-	if nDefs == 1 && defIndex == l-1 {
-		return false
-	}
-	if def < maxDef {
-		return true
-	}
-	return len(i.ElseIf) > 0 || i.Else != nil
+func (i ifElses) UseIf() bool {
+	return i.Val == nil
 }
 
-func writeOptional(f fields.Field) string {
-	i := writeInput{
+func writeOptional(i int, flds []fields.Field) string {
+	f := flds[i]
+	s := fields.Seen(i, flds)
+	f.Seen = s
+	wi := writeInput{
 		Field:    f,
 		FuncName: strings.Join(f.FieldNames, ""),
-		Cases:    writeOptionalCases(f),
+		Cases:    writeOptionalCases(f, s),
 	}
 
 	var buf bytes.Buffer
-	err := writeTpl.Execute(&buf, i)
+	err := writeTpl.Execute(&buf, wi)
 	if err != nil {
 		log.Fatal(err) //TODO: return error
 	}
 	return string(buf.Bytes())
 }
 
-func writeOptionalCases(f fields.Field) []ifElses {
+func writeOptionalCases(f fields.Field, seen fields.RepetitionTypes) []ifElses {
 	var out []ifElses
 	for def := 1; def <= defs(f); def++ {
-		out = append(out, ifelse(def, f))
+		if useIfElse(def, 0, seen, f) {
+			out = append(out, ifelses(def, 0, f))
+		} else {
+			s := f.Init(def, 0)
+			out = append(out, ifElses{Val: &s})
+		}
 	}
 	return out
 }
 
-// return an if else block for the definition level
-func ifelse(def int, f fields.Field) ifElses {
-	opts := optionals(def, f)
-	var out ifElses
-	for i, o := range opts {
-		p := f.Parent(o + 1)
-		if i == 0 {
-			n := strings.Join(p.FieldNames, ".")
-			cond := fmt.Sprintf("x.%s == nil", n)
-			out.If.Cond = cond
-			out.If.Val = fmt.Sprintf("x.%s = %s", n, removeAssigment(structs.Init(def, 0, 0, f)))
-			if len(opts) == 1 && def == f.MaxDef() {
-				ch := f.Child(len(f.FieldNames) - 1)
-				out.Else = &ifElse{
-					Val: fmt.Sprintf("x.%s = %s", strings.Join(f.FieldNames, "."), removeAssigment(structs.Init(def, 0, 0, ch))),
-				}
-			}
-		} else if i+1 == f.MaxDef() {
-			ch := f.Child(len(f.FieldNames) - 1)
-			out.Else = &ifElse{
-				Val: fmt.Sprintf("x.%s = %s", strings.Join(f.FieldNames, "."), removeAssigment(structs.Init(def, 0, 0, ch))),
-			}
+type ifElseCase struct {
+	f fields.Field
+	p fields.Field
+}
+
+type ifElseCases []ifElseCase
+
+func (i ifElseCases) ifElses(def, rep, md int) ifElses {
+	out := ifElses{
+		If: ifElse{
+			Cond: fmt.Sprintf("x.%s == nil", strings.Join(i[0].p.FieldNames, ".")),
+			Val:  i[0].f.Init(def, rep),
+		},
+	}
+
+	var leftovers []ifElseCase
+	if def == md {
+		out.Else = &ifElse{
+			Val: i[len(i)-1].f.Init(def, rep),
+		}
+		if len(i) > 1 {
+			leftovers = i[1 : len(i)-1]
+		}
+
+	} else if len(i) > 1 {
+		leftovers = i[1:]
+	}
+
+	for _, iec := range leftovers {
+		out.ElseIf = append(out.ElseIf, ifElse{
+			Cond: fmt.Sprintf("x.%s == nil", strings.Join(iec.p.FieldNames, ".")),
+			Val:  iec.f.Init(def, rep),
+		})
+	}
+
+	return out
+}
+
+// ifelses returns an if else block for the given definition level
+func ifelses(def, rep int, orig fields.Field) ifElses {
+	opts := optionals(def, orig)
+	var seen []fields.RepetitionType
+
+	di := int(orig.DefIndex(def))
+
+	for _, rt := range orig.RepetitionTypes[:di+1] {
+		if rt == fields.Required {
+			seen = append(seen, fields.Repeated)
 		} else {
-			n := strings.Join(p.FieldNames, ".")
-			cond := fmt.Sprintf("x.%s == nil", n)
-			ch := f.Child(o)
-			out.ElseIf = append(out.ElseIf, ifElse{
-				Cond: cond,
-				Val:  fmt.Sprintf("x.%s = %s", n, removeAssigment(structs.Init(def-i, 0, 0, ch))),
-			})
+			break
 		}
 	}
 
-	return out
-}
+	var cases ifElseCases
+	for _, o := range opts {
+		f := orig.Copy()
+		if len(orig.Seen) <= len(seen) {
+			f.Seen = append(seen[:0:0], seen...)
+		}
+		cases = append(cases, ifElseCase{f: f, p: f.Parent(o + 1)})
+		seen = append(seen, fields.Repeated)
+	}
 
-func removeAssigment(s string) string {
-	return strings.Replace(s[strings.Index(s, "= ")+1:], "nVals", "0", 1)
+	return cases.ifElses(def, rep, int(orig.MaxDef()))
 }
 
 func optionals(def int, f fields.Field) []int {
 	var out []int
-	for i, rt := range f.RepetitionTypes {
+	di := f.DefIndex(def)
+	for i, rt := range f.RepetitionTypes[:di+1] {
 		if rt == fields.Optional {
 			out = append(out, i)
-			if len(out) == def {
-				return out
-			}
 		}
 	}
+
+	if def == int(f.MaxDef()) && len(f.RepetitionTypes) > di+1 && f.RepetitionTypes[di+1] == fields.Required {
+		out = append(out, out[len(out)-1])
+	} else if def == int(f.MaxDef()) && len(out) == 1 {
+		out = append(out, out[len(out)-1])
+	}
+
 	return out
 }
