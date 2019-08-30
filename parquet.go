@@ -151,7 +151,7 @@ func (m *Metadata) RowGroups() []RowGroup {
 	return rgs
 }
 
-// WritePageHeader is called when no more data is written to a column chunk
+// WritePageHeader is called in order to finish writing to a column chunk.
 func (m *Metadata) WritePageHeader(w io.Writer, pth []string, dataLen, compressedLen, defCount, count int, defLen, repLen int64, comp sch.CompressionCodec, stats Stats) error {
 	ph := &sch.PageHeader{
 		Type:                 sch.PageType_DATA_PAGE,
@@ -381,6 +381,8 @@ func PageHeader(r io.Reader) (*sch.PageHeader, error) {
 	return pg, err
 }
 
+// PageHeader reads all the page headers without reading the actual
+// data.  It is used by parquetgen to print the page headers.
 func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, error) {
 	var pageHeaders []sch.PageHeader
 	for _, rg := range footer.RowGroups {
@@ -395,6 +397,8 @@ func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, e
 	return pageHeaders, nil
 }
 
+// PageHeadersAtOffset seeks to the given offset, then reads the PageHeader
+// without reading the data.
 func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) {
 	var out []sch.PageHeader
 	var nRead int64
@@ -431,16 +435,19 @@ func PageHeadersAtOffset(r io.ReadSeeker, o, n int64) ([]sch.PageHeader, error) 
 // FieldFunc is used to set some of the metadata for each column
 type FieldFunc func(*sch.SchemaElement)
 
+// RepetitionRequired...
 func RepetitionRequired(se *sch.SchemaElement) {
 	t := sch.FieldRepetitionType_REQUIRED
 	se.RepetitionType = &t
 }
 
+// RepetitionOptional...
 func RepetitionOptional(se *sch.SchemaElement) {
 	t := sch.FieldRepetitionType_OPTIONAL
 	se.RepetitionType = &t
 }
 
+// RepetitionRepeated...
 func RepetitionRepeated(se *sch.SchemaElement) {
 	t := sch.FieldRepetitionType_REPEATED
 	se.RepetitionType = &t
@@ -448,11 +455,13 @@ func RepetitionRepeated(se *sch.SchemaElement) {
 
 var fieldFuncs = []FieldFunc{RepetitionRequired, RepetitionOptional, RepetitionRepeated}
 
+// Int32Type is a fieldFunc
 func Int32Type(se *sch.SchemaElement) {
 	t := sch.Type_INT32
 	se.Type = &t
 }
 
+// Uint32Type is a fieldFunc
 func Uint32Type(se *sch.SchemaElement) {
 	t := sch.Type_INT32
 	se.Type = &t
@@ -460,6 +469,13 @@ func Uint32Type(se *sch.SchemaElement) {
 	se.ConvertedType = &ct
 }
 
+// Int64Type is a fieldFunc
+func Int64Type(se *sch.SchemaElement) {
+	t := sch.Type_INT64
+	se.Type = &t
+}
+
+// Uint64Type is a fieldFunc
 func Uint64Type(se *sch.SchemaElement) {
 	t := sch.Type_INT64
 	se.Type = &t
@@ -467,26 +483,25 @@ func Uint64Type(se *sch.SchemaElement) {
 	se.ConvertedType = &ct
 }
 
-func Int64Type(se *sch.SchemaElement) {
-	t := sch.Type_INT64
-	se.Type = &t
-}
-
+// Float32Type is a fieldFunc
 func Float32Type(se *sch.SchemaElement) {
 	t := sch.Type_FLOAT
 	se.Type = &t
 }
 
+// Float64Type is a fieldFunc
 func Float64Type(se *sch.SchemaElement) {
 	t := sch.Type_DOUBLE
 	se.Type = &t
 }
 
+// BoolType is a fieldFunc
 func BoolType(se *sch.SchemaElement) {
 	t := sch.Type_BOOLEAN
 	se.Type = &t
 }
 
+// StringType is a fieldFunc
 func StringType(se *sch.SchemaElement) {
 	t := sch.Type_BYTE_ARRAY
 	se.Type = &t

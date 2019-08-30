@@ -11,6 +11,7 @@ const (
 
 type RepetitionTypes []RepetitionType
 
+// Def returns the repetition type for the definition level
 func (r RepetitionTypes) Def(def int) RepetitionType {
 	var out RepetitionType
 	var count int
@@ -26,6 +27,7 @@ func (r RepetitionTypes) Def(def int) RepetitionType {
 	return out
 }
 
+// MaxDef returns the largest definition level
 func (r RepetitionTypes) MaxDef() uint8 {
 	var out uint8
 	for _, rt := range r {
@@ -36,6 +38,7 @@ func (r RepetitionTypes) MaxDef() uint8 {
 	return out
 }
 
+// MaxDef returns the largest repetition level
 func (r RepetitionTypes) MaxRep() uint8 {
 	var out uint8
 	for _, rt := range r {
@@ -46,6 +49,7 @@ func (r RepetitionTypes) MaxRep() uint8 {
 	return out
 }
 
+// Repeated figures out if there is a repeated field
 func (r RepetitionTypes) Repeated() bool {
 	for _, rt := range r {
 		if rt == Repeated {
@@ -55,6 +59,7 @@ func (r RepetitionTypes) Repeated() bool {
 	return false
 }
 
+// Optional figures out if there is an optional field
 func (r RepetitionTypes) Optional() bool {
 	for _, rt := range r {
 		if rt == Optional {
@@ -64,6 +69,7 @@ func (r RepetitionTypes) Optional() bool {
 	return false
 }
 
+// Required figures out if there are no optional or repeated fields
 func (r RepetitionTypes) Required() bool {
 	for _, rt := range r {
 		if rt != Required {
@@ -73,6 +79,8 @@ func (r RepetitionTypes) Required() bool {
 	return true
 }
 
+// NRepeated figures out if the sub-field at position i
+// is repeated.
 func (r RepetitionTypes) NRepeated(i int) bool {
 	var count int
 	for _, rt := range r {

@@ -87,6 +87,8 @@ type RepCase struct {
 	Rep  int
 }
 
+// RepCases returns a RepCase slice based on the field types and
+// what sub-fields have already been seen.
 func (f Field) RepCases(seen RepetitionTypes) []RepCase {
 	mr := int(f.MaxRep())
 	if mr == int(seen.MaxRep()) {
@@ -100,7 +102,9 @@ func (f Field) RepCases(seen RepetitionTypes) []RepCase {
 	return out
 }
 
-func (f Field) NilField(i int) (string, RepetitionType, int, int) {
+// NilField finds the nth field that is optional and returns some
+// information about it.
+func (f Field) NilField(n int) (string, RepetitionType, int, int) {
 	var fields []string
 	var count int
 	var j, reps int
@@ -114,7 +118,7 @@ func (f Field) NilField(i int) (string, RepetitionType, int, int) {
 			count++
 			reps++
 		}
-		if count > i {
+		if count > n {
 			break
 		}
 	}
@@ -126,22 +130,6 @@ func (f Field) Child(i int) Field {
 		RepetitionTypes: f.RepetitionTypes[i:],
 		FieldNames:      f.FieldNames[i:],
 		FieldTypes:      f.FieldTypes[i:],
-	}
-}
-
-func (f Field) DefChild(def int) Field {
-	i := f.DefIndex(def)
-	if i >= len(f.FieldNames) {
-		return Field{
-			FieldNames:      nil,
-			FieldTypes:      nil,
-			RepetitionTypes: nil,
-		}
-	}
-	return Field{
-		FieldNames:      f.FieldNames[i:],
-		FieldTypes:      f.FieldTypes[i:],
-		RepetitionTypes: f.RepetitionTypes[i:],
 	}
 }
 

@@ -382,3 +382,49 @@ func TestChild(t *testing.T) {
 	}
 	assert.Equal(t, ch, f.Child(1))
 }
+
+func TestRepCases(t *testing.T) {
+	testCases := []struct {
+		f        fields.Field
+		seen     []fields.RepetitionType
+		expected []fields.RepCase
+	}{
+		{
+			f:        fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
+			expected: []fields.RepCase{fields.RepCase{Case: "case 0:", Rep: 0}, fields.RepCase{Case: "case 1:", Rep: 1}, fields.RepCase{Case: "case 2:", Rep: 2}},
+		},
+		{
+			f:        fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
+			seen:     []fields.RepetitionType{fields.Repeated, fields.Repeated},
+			expected: []fields.RepCase{fields.RepCase{Case: "default:", Rep: 0}},
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.f.RepCases(tc.seen))
+		})
+	}
+}
+
+func TestNilField(t *testing.T) {
+	f := fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}}
+	name, rt, i, reps := f.NilField(1)
+	assert.Equal(t, "Names.Languages", name)
+	assert.Equal(t, fields.Repeated, rt)
+	assert.Equal(t, 1, i)
+	assert.Equal(t, 2, reps)
+}
+
+func TestField(t *testing.T) {
+	f := fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}}
+	assert.True(t, f.Repeated())
+	assert.True(t, f.Optional())
+	assert.False(t, f.Required())
+}
+
+func TestRepetitionTypes(t *testing.T) {
+	rts := fields.RepetitionTypes([]fields.RepetitionType{fields.Repeated, fields.Optional})
+	assert.Equal(t, rts.Def(1), fields.Repeated)
+	assert.Equal(t, rts.Def(2), fields.Optional)
+}

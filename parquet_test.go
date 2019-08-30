@@ -483,6 +483,40 @@ func TestParquet(t *testing.T) {
 	}
 }
 
+func TestPageHeaders(t *testing.T) {
+	var buf bytes.Buffer
+	w, err := NewParquetWriter(&buf, MaxPageSize(2))
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	docs := [][]Person{
+		{{}, {}, {}, {}},
+		{{}, {}, {}, {}},
+	}
+	for _, rowgroup := range docs {
+		for _, p := range rowgroup {
+			w.Add(p)
+		}
+		assert.NoError(t, w.Write())
+	}
+
+	assert.NoError(t, w.Close())
+
+	rd := bytes.NewReader(buf.Bytes())
+	footer, err := parquet.ReadMetaData(rd)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	pageHeaders, err := parquet.PageHeaders(footer, rd)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, 72, len(pageHeaders))
+}
+
 func TestStats(t *testing.T) {
 	type stats struct {
 		min      []byte

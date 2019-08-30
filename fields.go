@@ -56,6 +56,7 @@ func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	return err
 }
 
+// DoRead reads the actual raw data.
 func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, error) {
 	var nRead int
 	var out []byte
@@ -79,23 +80,25 @@ func (f *RequiredField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 	return bytes.NewBuffer(out), sizes, nil
 }
 
+// Name returns the column name of this field
 func (f *RequiredField) Name() string {
 	return strings.Join(f.pth, ".")
 }
 
+// Path returns the path of this field
 func (f *RequiredField) Path() []string {
 	return f.pth
 }
 
-func (f *RequiredField) Key() string {
-	return strings.Join(f.pth, ".")
-}
-
+// MaxLevel holds the maximum definition and
+// repeptition level for a given field.
 type MaxLevel struct {
 	Def uint8
 	Rep uint8
 }
 
+// OptionalField is any exported field in a
+// struct that is a pointer.
 type OptionalField struct {
 	Defs           []uint8
 	Reps           []uint8
@@ -115,6 +118,7 @@ func getRepetitionTypes(in []int) fields.RepetitionTypes {
 	return fields.RepetitionTypes(out)
 }
 
+// NewOptionalField...
 func NewOptionalField(pth []string, types []int, opts ...func(*OptionalField)) OptionalField {
 	rts := getRepetitionTypes(types)
 	f := OptionalField{
@@ -241,12 +245,9 @@ func (f *OptionalField) Name() string {
 	return strings.Join(f.pth, ".")
 }
 
+// Path returns the path of this field
 func (f *OptionalField) Path() []string {
 	return f.pth
-}
-
-func (f *OptionalField) Key() string {
-	return strings.Join(f.pth, ".")
 }
 
 // writeCounter keeps track of the number of bytes written
@@ -264,9 +265,8 @@ func (w *writeCounter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-// writeCounter keeps track of the number of bytes written
-// it is used for calls to binary.Write, which does not
-// return the number of bytes written.
+// readCounter keeps track of the number of bytes written
+// it is used for calls to binary.Write.
 type readCounter struct {
 	n int64
 	r io.Reader

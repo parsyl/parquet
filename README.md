@@ -37,7 +37,7 @@ Next, add a go:generate comment somewhere (in this example all code lives
 in main.go):
 
 ```go
-//go:generate parquetgen -input main.go -type Person -package main
+// go:generate parquetgen -input main.go -type Person -package main
 ```
 
 Generate the code for the reader and writer:
@@ -104,7 +104,7 @@ of rows in a page before a new one is created) and sets the page data compressio
 to snappy:
 
 ```go
-    w, err := NewParquetWriter(&buf, MaxPageSize(10000), Snappy)
+w, err := NewParquetWriter(&buf, MaxPageSize(10000), Snappy)
 ```
 
 See [this](./examples/people) for a complete example of how to generate the code

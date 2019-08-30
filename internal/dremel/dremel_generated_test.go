@@ -504,14 +504,13 @@ type Field interface {
 	Scan(r *Document)
 	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
-	Key() string
 	Levels() ([]uint8, []uint8)
 }
 
 func getFields(ff []Field) map[string]Field {
 	m := make(map[string]Field, len(ff))
 	for _, f := range ff {
-		m[f.Key()] = f
+		m[f.Name()] = f
 	}
 	return m
 }
