@@ -150,15 +150,9 @@ func TestWrite(t *testing.T) {
 	def := defs[0]
 	switch def {
 	case 1:
-		if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{}
-		}
+		x.Friend.Hobby = &Item{}
 	case 2:
-		if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{Name: pstring(vals[0])}
-		} else {
-			x.Friend.Hobby.Name = pstring(vals[0])
-		}
+		x.Friend.Hobby = &Item{Name: pstring(vals[0])}
 		return 1, 1
 	}
 
@@ -206,7 +200,7 @@ func TestWrite(t *testing.T) {
 		{
 			name: "nested 3 deep all optional and seen by optional field",
 			fields: []fields.Field{
-				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
+				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional}},
 				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name"}, FieldTypes: []string{"Entity", "Item", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional}},
 			},
 			result: `func writeFriendHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
@@ -219,16 +213,14 @@ func TestWrite(t *testing.T) {
 	case 2:
 		if x.Friend == nil {
 			x.Friend = &Entity{Hobby: &Item{}}
-		} else if x.Friend.Hobby == nil {
+		} else {
 			x.Friend.Hobby = &Item{}
 		}
 	case 3:
 		if x.Friend == nil {
 			x.Friend = &Entity{Hobby: &Item{Name: pstring(vals[0])}}
-		} else if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{Name: pstring(vals[0])}
 		} else {
-			x.Friend.Hobby.Name = pstring(vals[0])
+			x.Friend.Hobby = &Item{Name: pstring(vals[0])}
 		}
 		return 1, 1
 	}
@@ -272,26 +264,20 @@ func TestWrite(t *testing.T) {
 	case 2:
 		if x.Friend == nil {
 			x.Friend = &Entity{Hobby: &Item{}}
-		} else if x.Friend.Hobby == nil {
+		} else {
 			x.Friend.Hobby = &Item{}
 		}
 	case 3:
 		if x.Friend == nil {
 			x.Friend = &Entity{Hobby: &Item{Name: &Name{}}}
-		} else if x.Friend.Hobby == nil {
+		} else {
 			x.Friend.Hobby = &Item{Name: &Name{}}
-		} else if x.Friend.Hobby.Name == nil {
-			x.Friend.Hobby.Name = &Name{}
 		}
 	case 4:
 		if x.Friend == nil {
 			x.Friend = &Entity{Hobby: &Item{Name: &Name{First: pstring(vals[0])}}}
-		} else if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[0])}}
-		} else if x.Friend.Hobby.Name == nil {
-			x.Friend.Hobby.Name = &Name{First: pstring(vals[0])}
 		} else {
-			x.Friend.Hobby.Name.First = pstring(vals[0])
+			x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[0])}}
 		}
 		return 1, 1
 	}
@@ -318,7 +304,7 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "four deep mixed and seen by optional field",
+			name: "four deep mixed and seen by a required sub-field",
 			fields: []fields.Field{
 				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional}},
 				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Optional, fields.Optional}},
@@ -327,23 +313,11 @@ func TestWrite(t *testing.T) {
 	def := defs[0]
 	switch def {
 	case 1:
-		if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{}
-		}
+		x.Friend.Hobby = &Item{}
 	case 2:
-		if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{Name: &Name{}}
-		} else if x.Friend.Hobby.Name == nil {
-			x.Friend.Hobby.Name = &Name{}
-		}
+		x.Friend.Hobby = &Item{Name: &Name{}}
 	case 3:
-		if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[0])}}
-		} else if x.Friend.Hobby.Name == nil {
-			x.Friend.Hobby.Name = &Name{First: pstring(vals[0])}
-		} else {
-			x.Friend.Hobby.Name.First = pstring(vals[0])
-		}
+		x.Friend.Hobby = &Item{Name: &Name{First: pstring(vals[0])}}
 		return 1, 1
 	}
 
@@ -369,7 +343,7 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "four deep mixed v2 and seen by optional fields",
+			name: "four deep mixed v2 and seen by an optional field",
 			fields: []fields.Field{
 				{FieldNames: []string{"Friend", "Rank"}, FieldTypes: []string{"Entity", "int"}, RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 				{Type: "Person", TypeName: "*string", FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Required}},
@@ -384,18 +358,14 @@ func TestWrite(t *testing.T) {
 	case 2:
 		if x.Friend == nil {
 			x.Friend = &Entity{Hobby: &Item{}}
-		} else if x.Friend.Hobby == nil {
+		} else {
 			x.Friend.Hobby = &Item{}
 		}
 	case 3:
 		if x.Friend == nil {
 			x.Friend = &Entity{Hobby: &Item{Name: &Name{First: vals[0]}}}
-		} else if x.Friend.Hobby == nil {
-			x.Friend.Hobby = &Item{Name: &Name{First: vals[0]}}
-		} else if x.Friend.Hobby.Name == nil {
-			x.Friend.Hobby.Name = &Name{First: vals[0]}
 		} else {
-			x.Friend.Hobby.Name.First = vals[0]
+			x.Friend.Hobby = &Item{Name: &Name{First: vals[0]}}
 		}
 		return 1, 1
 	}
@@ -660,7 +630,6 @@ func TestWrite(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			s := dremel.Write(len(tc.fields)-1, tc.fields)
 			gocode, err := format.Source([]byte(s))
-			//fmt.Println(string(gocode))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))
 		})

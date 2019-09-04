@@ -31,13 +31,6 @@ func TestFields(t *testing.T) {
 		{
 			field:    fields.Field{TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			def:      2,
-			rep:      0,
-			seen:     []fields.RepetitionType{fields.Optional},
-			expected: "x.Link = &Link{Backward: []int64{vals[nVals]}}",
-		},
-		{
-			field:    fields.Field{TypeName: "int64", FieldNames: []string{"Link", "Backward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
-			def:      2,
 			rep:      1,
 			expected: "x.Link.Backward = append(x.Link.Backward, vals[nVals])",
 		},
@@ -242,12 +235,6 @@ func TestFields(t *testing.T) {
 		{
 			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Required}},
 			def:      2,
-			seen:     []fields.RepetitionType{fields.Optional},
-			expected: "x.Friend = &Entity{Hobby: &Item{}}",
-		},
-		{
-			field:    fields.Field{FieldNames: []string{"Friend", "Hobby", "Name", "First"}, FieldTypes: []string{"Entity", "Item", "Name", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Optional, fields.Optional, fields.Required}},
-			def:      2,
 			expected: "x.Friend = &Entity{Hobby: &Item{}}",
 		},
 		{
@@ -288,8 +275,8 @@ func TestFields(t *testing.T) {
 		{
 			field:    fields.Field{FieldNames: []string{"Link", "Forward"}, FieldTypes: []string{"Link", "int64"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated}},
 			def:      2,
-			seen:     []fields.RepetitionType{fields.Optional},
-			expected: "x.Link = &Link{Forward: []int64{vals[nVals]}}",
+			seen:     []fields.RepetitionType{fields.Repeated},
+			expected: "x.Link.Forward = append(x.Link.Forward, vals[nVals])",
 		},
 		{
 			field:    fields.Field{FieldNames: []string{"LuckyNumbers"}, FieldTypes: []string{"int64"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated}},
@@ -302,6 +289,35 @@ func TestFields(t *testing.T) {
 			def:      1,
 			rep:      1,
 			expected: "x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])",
+		},
+		{
+			field:    fields.Field{FieldNames: []string{"A", "B", "C", "D", "E", "F"}, FieldTypes: []string{"A", "B", "C", "D", "E", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Required, fields.Repeated, fields.Required, fields.Optional}},
+			def:      3,
+			expected: "x.A.B = &B{C: C{D: []D{{E: E{F: pstring(vals[nVals])}}}}}",
+		},
+		{
+			field:    fields.Field{FieldNames: []string{"A", "B", "C", "D", "E", "F"}, FieldTypes: []string{"A", "B", "C", "D", "E", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Required, fields.Repeated, fields.Required, fields.Optional}},
+			def:      3,
+			seen:     []fields.RepetitionType{fields.Repeated},
+			expected: "x.A.B = &B{C: C{D: []D{{E: E{F: pstring(vals[nVals])}}}}}",
+		},
+		{
+			field:    fields.Field{FieldNames: []string{"A", "B", "C", "D", "E", "F"}, FieldTypes: []string{"A", "B", "C", "D", "E", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Required, fields.Repeated, fields.Required, fields.Optional}},
+			def:      3,
+			seen:     []fields.RepetitionType{fields.Repeated, fields.Repeated},
+			expected: "x.A.B.C.D = []D{{E: E{F: pstring(vals[nVals])}}}",
+		},
+		{
+			field:    fields.Field{FieldNames: []string{"A", "B", "C", "D", "E", "F"}, FieldTypes: []string{"A", "B", "C", "D", "E", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Required, fields.Repeated, fields.Required, fields.Optional}},
+			def:      3,
+			seen:     []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Repeated},
+			expected: "x.A.B.C.D = []D{{E: E{F: pstring(vals[nVals])}}}",
+		},
+		{
+			field:    fields.Field{FieldNames: []string{"A", "B", "C", "D", "E", "F"}, FieldTypes: []string{"A", "B", "C", "D", "E", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Required, fields.Optional, fields.Required, fields.Repeated, fields.Required, fields.Optional}},
+			def:      3,
+			seen:     []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Repeated, fields.Repeated},
+			expected: "x.A.B.C.D[ind[0]].E.F = pstring(vals[nVals])",
 		},
 	}
 

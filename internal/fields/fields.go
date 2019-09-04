@@ -268,6 +268,15 @@ func (f Field) start(def, rep int) int {
 		seen = seen[:di+1]
 	}
 
+	if len(f.RepetitionTypes)-1 > di {
+		for _, rt := range f.RepetitionTypes[di+1:] {
+			if rt >= Optional {
+				break
+			}
+			di++
+		}
+	}
+
 	if rep == 0 {
 		rep = int(seen.MaxRep()) + 1
 	}
@@ -283,21 +292,12 @@ func (f Field) start(def, rep int) int {
 			reps++
 		}
 
-		if rt == Optional && (!seen.Repeated() || len(seen) <= i) {
-			break
-		}
-
 		if reps == rep {
 			break
 		}
-	}
 
-	if len(seen) == def && f.RepetitionTypes[di] == Optional && def == int(f.MaxDef()) && i < len(f.RepetitionTypes)-1 {
-		for _, rt := range f.RepetitionTypes[i+1:] {
-			if rt == Optional || rt == Repeated {
-				break
-			}
-			i++
+		if rt >= Optional && i >= len(seen) {
+			break
 		}
 	}
 

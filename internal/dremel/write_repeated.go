@@ -134,7 +134,7 @@ func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) str
 		rep = def
 	}
 
-	if useIfElse(def, rep, seen, f) {
+	if useIfElse(def, rep, append(seen[:0:0], seen...), f) {
 		ie := ifelses(def, rep, f)
 		var buf bytes.Buffer
 		if err := ifTpl.Execute(&buf, ie); err != nil {
@@ -153,12 +153,16 @@ func useIfElse(def, rep int, seen fields.RepetitionTypes, f fields.Field) bool {
 	}
 
 	i := f.DefIndex(def)
-	p := f.Parent(i + 1)
-	if !p.Optional() || seen.Repeated() {
+
+	if i+1 > len(seen) && f.RepetitionTypes[:len(seen)].Required() {
 		return false
 	}
 
-	if def == f.MaxDef() && rep > 0 {
+	if len(seen) > i+1 {
+		seen = seen[:i+1]
+	}
+
+	if seen.Repeated() || (def == f.MaxDef() && rep > 0) {
 		return false
 	}
 
