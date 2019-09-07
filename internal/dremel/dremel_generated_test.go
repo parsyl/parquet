@@ -613,7 +613,7 @@ func (p *ParquetReader) readRowGroup() error {
 	p.rowGroupCount = rg.Rows
 	p.rowGroupCursor = 0
 	for _, col := range rg.Columns() {
-		name := strings.ToLower(strings.Join(col.MetaData.PathInSchema, "."))
+		name := strings.Join(col.MetaData.PathInSchema, ".")
 		f, ok := p.fields[name]
 		if !ok {
 			return fmt.Errorf("unknown field: %s", name)

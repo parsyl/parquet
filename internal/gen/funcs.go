@@ -74,7 +74,7 @@ var (
 			}
 			return out
 		},
-		"columnName":    func(f fields.Field) string { return strings.ToLower(strings.Join(f.FieldNames, ".")) },
+		"columnName":    func(f fields.Field) string { return strings.Join(f.ColumnNames, ".") },
 		"writeFunc":     dremel.Write,
 		"readFunc":      dremel.Read,
 		"writeFuncName": func(f fields.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")) },

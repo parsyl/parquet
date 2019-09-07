@@ -516,7 +516,7 @@ func TestWrite(t *testing.T) {
 		{
 			name: "writeFriendsID",
 			fields: []fields.Field{
-				{Type: "Person", FieldNames: []string{"Friends", "ID"}, FieldTypes: []string{"Being", "int32"}, TypeName: "int32", FieldType: "Int32OptionalField", ParquetType: "Int32Type", ColumnName: "id", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{2, 0}},
+				{Type: "Person", FieldNames: []string{"Friends", "ID"}, FieldTypes: []string{"Being", "int32"}, TypeName: "int32", FieldType: "Int32OptionalField", ParquetType: "Int32Type", Category: "numericOptional", RepetitionTypes: []fields.RepetitionType{2, 0}},
 			},
 			result: `func writeFriendsID(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int

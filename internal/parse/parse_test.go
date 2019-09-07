@@ -120,21 +120,21 @@ type Slice4 struct {
 }
 
 type Hobby2 struct {
-	Names []string
+	Names []string `parquet:"names"`
 }
 
 type Slice5 struct {
-	ID    int32 `parquet:"id"`
-	Hobby Hobby2
+	ID    int32  `parquet:"id"`
+	Hobby Hobby2 `parquet:"hobby"`
 }
 
 type Slice6 struct {
-	ID      int32
-	Hobbies []Hobby2
+	ID      int32    `parquet:"id"`
+	Hobbies []Hobby2 `parquet:"hobbies"`
 }
 
 type Slice7 struct {
-	Thing *Slice6
+	Thing *Slice6 `parquet:"thing"`
 }
 
 type Link struct {

@@ -17,7 +17,7 @@ const letters = "abcdefghijklmnopqrstuvwxyz"
 
 type field struct {
 	Field     fields.Field
-	tagName   string
+	tagNames  []string
 	fieldName string
 	fieldType string
 	omit      bool
@@ -96,6 +96,7 @@ func getOut(i int, f field, fields map[string][]field, errs []error, out []field
 					fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
 					fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
 					fld.Field.FieldTypes = append(f.Field.FieldTypes, fld.Field.FieldTypes...)
+					fld.Field.ColumnNames = append(f.Field.ColumnNames, fld.Field.ColumnNames...)
 				}
 				i, out, errs = getOut(i, fld, fields, errs, out)
 			}
@@ -142,11 +143,6 @@ func getFields(fullTyp string, fields []field, m map[string][]field) []flds.Fiel
 		}
 
 		f.Field.Type = fullTyp
-		if f.tagName != "" {
-			f.Field.ColumnName = f.tagName
-		} else {
-			f.Field.ColumnName = strings.Join(f.Field.FieldNames, ".")
-		}
 		out = append(out, f.Field)
 	}
 	return out
@@ -215,18 +211,22 @@ func getField(name string, x ast.Node) field {
 		return true
 	})
 
+	if tag == "" {
+		tag = name
+	}
+
 	fn, cat, pt := lookupTypeAndCategory(typ, optional, repeated)
 	return field{
 		Field: flds.Field{
 			FieldNames:  []string{name},
 			FieldTypes:  []string{typ},
+			ColumnNames: []string{tag},
 			TypeName:    getTypeName(typ, optional),
 			FieldType:   fn,
 			ParquetType: pt,
 			Category:    cat},
 		fieldName: name,
 		fieldType: typ,
-		tagName:   tag,
 		omit:      tag == "-",
 		optional:  optional,
 		repeated:  repeated,

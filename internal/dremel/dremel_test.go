@@ -112,22 +112,22 @@ func TestDremel(t *testing.T) {
 }
 
 type Link struct {
-	Backward []int64
-	Forward  []int64
+	Backward []int64 `parquet:"backward"`
+	Forward  []int64 `parquet:"forward"`
 }
 
 type Language struct {
-	Code    string
-	Country *string
+	Code    string  `parquet:"code"`
+	Country *string `parquet:"country"`
 }
 
 type Name struct {
-	Languages []Language
-	URL       *string
+	Languages []Language `parquet:"languages"`
+	URL       *string    `parquet:"url"`
 }
 
 type Document struct {
-	DocID int64
-	Link  *Link
-	Names []Name
+	DocID int64  `parquet:"docid"`
+	Link  *Link  `parquet:"link"`
+	Names []Name `parquet:"names"`
 }

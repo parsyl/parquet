@@ -11,12 +11,12 @@ type Field struct {
 	Type            string
 	RepetitionTypes RepetitionTypes
 	FieldNames      []string
+	ColumnNames     []string
 	FieldTypes      []string
 	Seen            RepetitionTypes
 	TypeName        string
 	FieldType       string
 	ParquetType     string
-	ColumnName      string
 	Category        string
 }
 
@@ -249,9 +249,9 @@ func (f Field) parent(start int) string {
 }
 
 func (f Field) Path() string {
-	out := make([]string, len(f.FieldNames))
-	for i, n := range f.FieldNames {
-		out[i] = fmt.Sprintf(`"%s"`, strings.ToLower(n))
+	out := make([]string, len(f.ColumnNames))
+	for i, n := range f.ColumnNames {
+		out[i] = fmt.Sprintf(`"%s"`, n)
 	}
 	return strings.Join(out, ", ")
 }

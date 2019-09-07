@@ -60,7 +60,7 @@ func Fields(compression compression) []Field {
 		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, []int{1, 1}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readFriendsID, writeFriendsID, []string{"friends", "id"}, []int{2, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readFriendsAge, writeFriendsAge, []string{"friends", "age"}, []int{2, 1}, optionalFieldCompression(compression)),
-		NewBoolField(readSleepy, writeSleepy, []string{"sleepy"}, fieldCompression(compression)),
+		NewBoolField(readSleepy, writeSleepy, []string{"Sleepy"}, fieldCompression(compression)),
 	}
 }
 
@@ -661,7 +661,7 @@ func (p *ParquetReader) readRowGroup() error {
 	p.rowGroupCount = rg.Rows
 	p.rowGroupCursor = 0
 	for _, col := range rg.Columns() {
-		name := strings.ToLower(strings.Join(col.MetaData.PathInSchema, "."))
+		name := strings.Join(col.MetaData.PathInSchema, ".")
 		f, ok := p.fields[name]
 		if !ok {
 			return fmt.Errorf("unknown field: %s", name)

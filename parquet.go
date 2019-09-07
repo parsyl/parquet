@@ -230,7 +230,7 @@ func (m *Metadata) Footer(w io.Writer) error {
 		}
 
 		for _, col := range mrg.fields.fields {
-			ch, ok := mrg.columns[strings.ToLower(strings.Join(col.Path, "."))]
+			ch, ok := mrg.columns[strings.Join(col.Path, ".")]
 			if !ok {
 				continue
 			}
@@ -307,7 +307,7 @@ func schemaElements(fields []Field) schema {
 	for _, f := range fields {
 		var z int32
 		se := sch.SchemaElement{
-			Name:       strings.ToLower(f.Name),
+			Name:       f.Name,
 			TypeLength: &z,
 			Scale:      &z,
 			Precision:  &z,
@@ -316,7 +316,7 @@ func schemaElements(fields []Field) schema {
 
 		f.Type(&se)
 		f.RepetitionType(&se)
-		m[strings.ToLower(strings.Join(f.Path, "."))] = se
+		m[strings.Join(f.Path, ".")] = se
 	}
 
 	return schema{lookup: m, fields: fields}
@@ -331,7 +331,7 @@ func (m *Metadata) Pages() (map[string][]Page, error) {
 	for _, rg := range m.metadata.RowGroups {
 		for _, ch := range rg.Columns {
 			pth := ch.MetaData.PathInSchema
-			_, ok := m.schema.lookup[strings.ToLower(strings.Join(pth, "."))]
+			_, ok := m.schema.lookup[strings.Join(pth, ".")]
 			if !ok {
 				return nil, fmt.Errorf("could not find schema for %v", pth)
 			}
@@ -342,7 +342,7 @@ func (m *Metadata) Pages() (map[string][]Page, error) {
 				Size:   int(ch.MetaData.TotalCompressedSize),
 				Codec:  ch.MetaData.Codec,
 			}
-			k := strings.ToLower(strings.Join(pth, "."))
+			k := strings.Join(pth, ".")
 			out[k] = append(out[k], pg)
 		}
 	}
