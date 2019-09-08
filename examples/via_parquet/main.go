@@ -26,8 +26,4 @@ func main() {
 		r.Scan(&p)
 		enc.Encode(p)
 	}
-
-	if err := r.Error(); err != nil {
-		log.Fatal(err)
-	}
 }

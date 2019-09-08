@@ -53,7 +53,7 @@ func field(elem *sch.SchemaElement) string {
 	if elem.RepetitionType != nil && *elem.RepetitionType == sch.FieldRepetitionType_OPTIONAL {
 		ptr = "*"
 	}
-	return fmt.Sprintf("%s %s%s", n, ptr, t)
+	return fmt.Sprintf("%s %s%s `parquet:\"%s\"`", n, ptr, t, elem.Name)
 }
 
 func getType(t string) string {
