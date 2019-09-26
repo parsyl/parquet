@@ -14,6 +14,8 @@ const (
 	mask2 = uint64(0x80)
 )
 
+// RLE holds metadata that is used while reading
+// and writing run length encoded data.
 type RLE struct {
 	// TODO: make out a buffer?
 	out           *writeBuffer
@@ -27,6 +29,8 @@ type RLE struct {
 	headerPointer int
 }
 
+// New creates an RLE struct based on the maximum bitwidth (width) of
+// the data that is to be encoded/decoded.
 func New(width int32, size int) (*RLE, error) {
 	if width > 4 {
 		return nil, fmt.Errorf("bitwidth %d is greater than 4 (highest supported)", width)
@@ -40,6 +44,7 @@ func New(width int32, size int) (*RLE, error) {
 	}, nil
 }
 
+// Write encodes 'value' to run length encoded data.
 func (r *RLE) Write(value uint8) {
 	if value == r.prev {
 		r.repeatCount++
@@ -129,6 +134,7 @@ func (r *RLE) leb128(value int) []byte {
 	return append(out, byte(value&0x7F))
 }
 
+// Bytes the raw run length encoded data.
 func (r *RLE) Bytes() []byte {
 	if r.repeatCount >= 8 {
 		r.writeRLERun()

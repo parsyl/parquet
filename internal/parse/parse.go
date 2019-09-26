@@ -27,8 +27,12 @@ type field struct {
 	err       error
 }
 
+// Result holds the fields and errors that are generated
+// by reading a go struct.
 type Result struct {
+	// Fields are the fields that will be written to and read from a parquet file.
 	Fields []flds.Field
+	// Errors is a list of errors that occured while parsing a struct.
 	Errors []error
 }
 

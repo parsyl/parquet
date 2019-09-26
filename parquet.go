@@ -211,6 +211,8 @@ func columnType(col string, fields schema) (sch.Type, error) {
 	return *f.Type, nil
 }
 
+// Rows return the total number of rows that are being written
+// in to a parquet file.
 func (m *Metadata) Rows() int64 {
 	return m.metadata.NumRows
 }
@@ -384,7 +386,7 @@ func PageHeader(r io.Reader) (*sch.PageHeader, error) {
 	return pg, err
 }
 
-// PageHeader reads all the page headers without reading the actual
+// PageHeaders reads all the page headers without reading the actual
 // data.  It is used by parquetgen to print the page headers.
 func PageHeaders(footer *sch.FileMetaData, r io.ReadSeeker) ([]sch.PageHeader, error) {
 	var pageHeaders []sch.PageHeader

@@ -1,5 +1,7 @@
 package fields
 
+// RepetitionType is an enum of the possible
+// parquet repetition types
 type RepetitionType int
 
 const (
@@ -9,6 +11,8 @@ const (
 	Repeated RepetitionType = 2
 )
 
+// RepetitionTypes provides several functions used by parquetgen's
+// go templates to generate code.
 type RepetitionTypes []RepetitionType
 
 // Def returns the repetition type for the definition level
@@ -38,7 +42,7 @@ func (r RepetitionTypes) MaxDef() uint8 {
 	return out
 }
 
-// MaxDef returns the largest repetition level
+// MaxRep returns the largest repetition level
 func (r RepetitionTypes) MaxRep() uint8 {
 	var out uint8
 	for _, rt := range r {

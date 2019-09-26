@@ -26,6 +26,8 @@ var (
 	}
 )
 
+// FromStruct generates a parquet reader and writer based on the struct
+// of type 'typ' that is defined in the go file at 'pth'.
 func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
 	result, err := parse.Fields(typ, pth)
 	if err != nil {
@@ -99,6 +101,8 @@ func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
 	f.Close()
 }
 
+// FromParquet generates a go struct, a reader, and a writer based
+// on the parquet file at 'parq'
 func FromParquet(parq, pth, outPth, typ, pkg, imp string, ignore bool) {
 	pf, err := os.Open(parq)
 	if err != nil {

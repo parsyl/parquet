@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// Field holds metadata that is required by parquetgen in order
+// to generate code.
 type Field struct {
 	Type            string
 	RepetitionTypes RepetitionTypes
@@ -49,6 +51,8 @@ func Seen(i int, flds []Field) []RepetitionType {
 	return []RepetitionType(out)
 }
 
+// DefIndex calculates the index of the
+// nested field with the given definition level.
 func (f Field) DefIndex(def int) int {
 	var count int
 	for j, o := range f.RepetitionTypes {
@@ -62,6 +66,8 @@ func (f Field) DefIndex(def int) int {
 	return def
 }
 
+// MaxDef cacluates the largest possible definition
+// level for the nested field.
 func (f Field) MaxDef() int {
 	var out int
 	for _, o := range f.RepetitionTypes {
@@ -72,6 +78,8 @@ func (f Field) MaxDef() int {
 	return out
 }
 
+// MaxRep cacluates the largest possible repetition
+// level for the nested field.
 func (f Field) MaxRep() int {
 	var out int
 	for _, o := range f.RepetitionTypes {
@@ -82,9 +90,12 @@ func (f Field) MaxRep() int {
 	return out
 }
 
+// RepCase is used by parquetgen to generate code.
 type RepCase struct {
+	// Case is the code for a switch case (for example: case 0:)
 	Case string
-	Rep  int
+	// Rep is the repetition level that is handled by the switch case.
+	Rep int
 }
 
 // RepCases returns a RepCase slice based on the field types and
@@ -125,6 +136,7 @@ func (f Field) NilField(n int) (string, RepetitionType, int, int) {
 	return strings.Join(fields, "."), o, j, reps
 }
 
+// Child returns a sub-field based on i
 func (f Field) Child(i int) Field {
 	return Field{
 		RepetitionTypes: f.RepetitionTypes[i:],
@@ -133,6 +145,7 @@ func (f Field) Child(i int) Field {
 	}
 }
 
+// Child returns a parent field based on i
 func (f Field) Parent(i int) Field {
 	return Field{
 		RepetitionTypes: f.RepetitionTypes[:i],
@@ -141,6 +154,7 @@ func (f Field) Parent(i int) Field {
 	}
 }
 
+// Copy returns a deep copy of the field
 func (f Field) Copy() Field {
 	return Field{
 		RepetitionTypes: append(f.RepetitionTypes[:0:0], f.RepetitionTypes...),
@@ -150,18 +164,22 @@ func (f Field) Copy() Field {
 	}
 }
 
+// Repeated wraps RepetitionTypes.Repeated()
 func (f Field) Repeated() bool {
 	return f.RepetitionTypes.Repeated()
 }
 
+// Optional wraps RepetitionTypes.Optional()
 func (f Field) Optional() bool {
 	return f.RepetitionTypes.Optional()
 }
 
+// Required wraps RepetitionTypes.Required()
 func (f Field) Required() bool {
 	return f.RepetitionTypes.Required()
 }
 
+// Init
 func (f Field) Init(def, rep int) string {
 	md := f.MaxDef()
 	if rep > 0 {
@@ -248,6 +266,7 @@ func (f Field) parent(start int) string {
 	return strings.Join(names, ".")
 }
 
+// Path
 func (f Field) Path() string {
 	out := make([]string, len(f.ColumnNames))
 	for i, n := range f.ColumnNames {
@@ -354,12 +373,15 @@ func (f field) init(flds []field) string {
 	return f2.init(flds2)
 }
 
+// Slice is called by parquetgen's go templates to determine
+// if the field is repeated or not.
 func (f field) Slice() bool {
 	return (f.RT == Repeated && f.i != f.start) ||
 		(f.RT == Repeated && f.rep == 0 && f.i == f.start && !f.seen.NRepeated(f.i+1) && !f.Primitive()) ||
 		(f.RT == Repeated && f.rep == 0 && f.Primitive() && f.i == 0)
 }
 
+// Primitive is called in order to determine if the field is primitive or not.
 func (f field) Primitive() bool {
 	return primitiveTypes[f.Type]
 }
