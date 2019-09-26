@@ -32,7 +32,7 @@ type field struct {
 type Result struct {
 	// Fields are the fields that will be written to and read from a parquet file.
 	Fields []flds.Field
-	// Errors is a list of errors that occured while parsing a struct.
+	// Errors is a list of errors that occurred while parsing a struct.
 	Errors []error
 }
 
