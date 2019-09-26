@@ -145,7 +145,7 @@ func (f Field) Child(i int) Field {
 	}
 }
 
-// Child returns a parent field based on i
+// Parent returns a parent field based on i
 func (f Field) Parent(i int) Field {
 	return Field{
 		RepetitionTypes: f.RepetitionTypes[:i],
@@ -179,7 +179,8 @@ func (f Field) Required() bool {
 	return f.RepetitionTypes.Required()
 }
 
-// Init
+// Init is called by parquetgen's templates to generate the code
+// that writes to a struct's field (for example: x.Friend.Hobby = &Item{})
 func (f Field) Init(def, rep int) string {
 	md := f.MaxDef()
 	if rep > 0 {
@@ -266,7 +267,7 @@ func (f Field) parent(start int) string {
 	return strings.Join(names, ".")
 }
 
-// Path
+// Path creates gocode for initializing a string slice in a go template
 func (f Field) Path() string {
 	out := make([]string, len(f.ColumnNames))
 	for i, n := range f.ColumnNames {

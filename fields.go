@@ -21,7 +21,7 @@ type RequiredField struct {
 	compression sch.CompressionCodec
 }
 
-// NewRequiredField creates a new required field.
+// NewRequiredField creates a required field.
 func NewRequiredField(pth []string, opts ...func(*RequiredField)) RequiredField {
 	r := RequiredField{
 		pth:         pth,
@@ -118,7 +118,7 @@ func getRepetitionTypes(in []int) fields.RepetitionTypes {
 	return fields.RepetitionTypes(out)
 }
 
-// NewOptionalField...
+// NewOptionalField creates an optional field
 func NewOptionalField(pth []string, types []int, opts ...func(*OptionalField)) OptionalField {
 	rts := getRepetitionTypes(types)
 	f := OptionalField{

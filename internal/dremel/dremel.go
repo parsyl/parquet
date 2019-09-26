@@ -23,7 +23,7 @@ func Write(i int, fields []fields.Field) string {
 	return writeRequired(f)
 }
 
-// Write generates the code for reading a struct
+// Read generates the code for reading a struct
 // and using the data to write to a parquet file.
 func Read(f fields.Field) string {
 	if f.Repeated() {
