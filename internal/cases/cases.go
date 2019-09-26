@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Camel transforms snake case to camel case.
 func Camel(s string) string {
 	return camel(ids(s))
 }

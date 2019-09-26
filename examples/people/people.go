@@ -69,15 +69,15 @@ func newPerson(i int) Person {
 		}
 	}
 
-	// nFriends := rand.Int31n(4)
-	// friends := make([]Being, nFriends)
-	// for i := range friends {
-	// 	d := rand.Int31n(100)
-	// 	friends[i] = Being{
-	// 		ID:  int32(rand.Int()),
-	// 		Age: &d,
-	// 	}
-	// }
+	nFriends := rand.Int31n(4)
+	friends := make([]Being, nFriends)
+	for i := range friends {
+		d := rand.Int31n(100)
+		friends[i] = Being{
+			ID:  int32(rand.Int()),
+			Age: &d,
+		}
+	}
 
 	return Person{
 		Being: Being{
@@ -93,6 +93,6 @@ func newPerson(i int) Person {
 		Birthday:    uint32(i * 1000),
 		Anniversary: anv,
 		Hobby:       hobby,
-		//Friends:     friends,
+		Friends:     friends,
 	}
 }
