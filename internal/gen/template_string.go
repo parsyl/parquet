@@ -19,7 +19,7 @@ func NewStringField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}
 }
 
 func (f *StringField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {

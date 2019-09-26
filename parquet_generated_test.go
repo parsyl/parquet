@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/parsyl/parquet"
+	sch "github.com/parsyl/parquet/schema"
 
 	"math"
 	"sort"
@@ -730,7 +731,7 @@ func NewInt32Field(read func(r Person) int32, write func(r *Person, vals []int32
 }
 
 func (f *Int32Field) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *Int32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -792,7 +793,7 @@ func NewInt32OptionalField(read func(r Person) ([]int32, []uint8, []uint8), writ
 }
 
 func (f *Int32OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int32Type, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int32Type, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -860,7 +861,7 @@ func NewInt64Field(read func(r Person) int64, write func(r *Person, vals []int64
 }
 
 func (f *Int64Field) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *Int64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -922,7 +923,7 @@ func NewInt64OptionalField(read func(r Person) ([]int64, []uint8, []uint8), writ
 }
 
 func (f *Int64OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Int64Type, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int64Type, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -990,7 +991,7 @@ func NewStringOptionalField(read func(r Person) ([]string, []uint8, []uint8), wr
 }
 
 func (f *StringOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *StringOptionalField) Add(r Person) {
@@ -1070,7 +1071,7 @@ func NewFloat32Field(read func(r Person) float32, write func(r *Person, vals []f
 }
 
 func (f *Float32Field) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Float32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *Float32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1132,7 +1133,7 @@ func NewFloat64Field(read func(r Person) float64, write func(r *Person, vals []f
 }
 
 func (f *Float64Field) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Float64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *Float64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1194,7 +1195,7 @@ func NewFloat32OptionalField(read func(r Person) ([]float32, []uint8, []uint8), 
 }
 
 func (f *Float32OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Float32Type, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float32Type, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -1262,7 +1263,7 @@ func NewBoolOptionalField(read func(r Person) ([]bool, []uint8, []uint8), write 
 }
 
 func (f *BoolOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.BoolType, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: BoolType, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *BoolOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1333,7 +1334,7 @@ func NewUint32Field(read func(r Person) uint32, write func(r *Person, vals []uin
 }
 
 func (f *Uint32Field) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Uint32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Uint32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *Uint32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
@@ -1395,7 +1396,7 @@ func NewUint64OptionalField(read func(r Person) ([]uint64, []uint8, []uint8), wr
 }
 
 func (f *Uint64OptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.Uint64Type, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Uint64Type, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -1463,7 +1464,7 @@ func NewStringField(read func(r Person) string, write func(r *Person, vals []str
 }
 
 func (f *StringField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.StringType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -1536,7 +1537,7 @@ func NewBoolField(read func(r Person) bool, write func(r *Person, vals []bool), 
 }
 
 func (f *BoolField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: BoolType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 func (f *BoolField) Write(w io.Writer, meta *parquet.Metadata) error {
@@ -2221,4 +2222,48 @@ func maxDef(types []int) uint8 {
 		}
 	}
 	return out
+}
+
+func Int32Type(se *sch.SchemaElement) {
+	t := sch.Type_INT32
+	se.Type = &t
+}
+
+func Uint32Type(se *sch.SchemaElement) {
+	t := sch.Type_INT32
+	se.Type = &t
+	ct := sch.ConvertedType_UINT_32
+	se.ConvertedType = &ct
+}
+
+func Int64Type(se *sch.SchemaElement) {
+	t := sch.Type_INT64
+	se.Type = &t
+}
+
+func Uint64Type(se *sch.SchemaElement) {
+	t := sch.Type_INT64
+	se.Type = &t
+	ct := sch.ConvertedType_UINT_64
+	se.ConvertedType = &ct
+}
+
+func Float32Type(se *sch.SchemaElement) {
+	t := sch.Type_FLOAT
+	se.Type = &t
+}
+
+func Float64Type(se *sch.SchemaElement) {
+	t := sch.Type_DOUBLE
+	se.Type = &t
+}
+
+func BoolType(se *sch.SchemaElement) {
+	t := sch.Type_BOOLEAN
+	se.Type = &t
+}
+
+func StringType(se *sch.SchemaElement) {
+	t := sch.Type_BYTE_ARRAY
+	se.Type = &t
 }

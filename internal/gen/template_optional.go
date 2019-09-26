@@ -22,7 +22,7 @@ func New{{.FieldType}}(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uin
 }
 
 func (f *{{.FieldType}}) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.{{.ParquetType}}, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: {{.ParquetType}}, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {

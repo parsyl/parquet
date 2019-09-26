@@ -17,7 +17,7 @@ func NewBoolField(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}},
 }
 
 func (f *BoolField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.BoolType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: BoolType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
 }
 
 

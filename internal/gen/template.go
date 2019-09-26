@@ -14,6 +14,7 @@ import (
 	"encoding/binary"
 
 	"github.com/parsyl/parquet"
+	sch "github.com/parsyl/parquet/schema"
 	{{.Import}}
 	{{range imports .Fields}}{{.}}
 	{{end}}
@@ -439,5 +440,49 @@ func maxDef(types []int) uint8 {
 		}
 	}
 	return out
+}
+
+func Int32Type(se *sch.SchemaElement) {
+	t := sch.Type_INT32
+	se.Type = &t
+}
+
+func Uint32Type(se *sch.SchemaElement) {
+	t := sch.Type_INT32
+	se.Type = &t
+	ct := sch.ConvertedType_UINT_32
+	se.ConvertedType = &ct
+}
+
+func Int64Type(se *sch.SchemaElement) {
+	t := sch.Type_INT64
+	se.Type = &t
+}
+
+func Uint64Type(se *sch.SchemaElement) {
+	t := sch.Type_INT64
+	se.Type = &t
+	ct := sch.ConvertedType_UINT_64
+	se.ConvertedType = &ct
+}
+
+func Float32Type(se *sch.SchemaElement) {
+	t := sch.Type_FLOAT
+	se.Type = &t
+}
+
+func Float64Type(se *sch.SchemaElement) {
+	t := sch.Type_DOUBLE
+	se.Type = &t
+}
+
+func BoolType(se *sch.SchemaElement) {
+	t := sch.Type_BOOLEAN
+	se.Type = &t
+}
+
+func StringType(se *sch.SchemaElement) {
+	t := sch.Type_BYTE_ARRAY
+	se.Type = &t
 }
 `

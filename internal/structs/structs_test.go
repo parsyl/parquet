@@ -24,9 +24,7 @@ func TestStruct(t *testing.T) {
 				{Name: "root", NumChildren: pint32(1)},
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 			},
-			expected: `type Root struct {
-	Id int32
-}`,
+			expected: "type Root struct {\n	Id int32 `parquet:\"id\"`\n}",
 		},
 		{
 			name: "single nested field",
@@ -35,13 +33,7 @@ func TestStruct(t *testing.T) {
 				{Name: "hobby", RepetitionType: prt(sch.FieldRepetitionType_REQUIRED), NumChildren: pint32(1)},
 				{Name: "name", Type: pt(sch.Type_BYTE_ARRAY), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
 			},
-			expected: `type Root struct {
-	Hobby Hobby
-}
-
-type Hobby struct {
-	Name *string
-}`,
+			expected: "type Root struct {\n	Hobby Hobby `parquet:\"hobby\"`\n}\n\ntype Hobby struct {\n	Name *string `parquet:\"name\"`\n}",
 		},
 		{
 			name: "nested 3 deep",
@@ -54,20 +46,7 @@ type Hobby struct {
 				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 			},
-			expected: `type Root struct {
-	Hobby *Hobby
-	Id    int32
-}
-
-type Hobby struct {
-	Name       *Name
-	Difficulty *int32
-}
-
-type Name struct {
-	First *string
-	Last  string
-}`,
+			expected: "type Root struct {\n	Hobby *Hobby `parquet:\"hobby\"`\n	Id    int32  `parquet:\"id\"`\n}\n\ntype Hobby struct {\n	Name       *Name  `parquet:\"name\"`\n	Difficulty *int32 `parquet:\"difficulty\"`\n}\n\ntype Name struct {\n	First *string `parquet:\"first\"`\n	Last  string  `parquet:\"last\"`\n}",
 		},
 		{
 			name: "nested 3 deep v2",
@@ -80,20 +59,7 @@ type Name struct {
 				{Name: "difficulty", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_REQUIRED)},
 				{Name: "id", Type: pt(sch.Type_INT32), RepetitionType: prt(sch.FieldRepetitionType_OPTIONAL)},
 			},
-			expected: `type Root struct {
-	Hobby Hobby
-	Id    *int32
-}
-
-type Hobby struct {
-	Name       *Name
-	Difficulty int32
-}
-
-type Name struct {
-	First *string
-	Last  string
-}`,
+			expected: "type Root struct {\n	Hobby Hobby  `parquet:\"hobby\"`\n	Id    *int32 `parquet:\"id\"`\n}\n\ntype Hobby struct {\n	Name       *Name `parquet:\"name\"`\n	Difficulty int32 `parquet:\"difficulty\"`\n}\n\ntype Name struct {\n	First *string `parquet:\"first\"`\n	Last  string  `parquet:\"last\"`\n}",
 		},
 	}
 

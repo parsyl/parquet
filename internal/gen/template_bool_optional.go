@@ -18,7 +18,7 @@ func NewBoolOptionalField(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []
 }
 
 func (f *BoolOptionalField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: parquet.BoolType, RepetitionType: f.RepetitionType, Types: f.Types}
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: BoolType, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
 func (f *BoolOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
