@@ -76,7 +76,7 @@ type byt struct {
 var (
 	funcs = template.FuncMap{
 		"pack": func(width int) [][]byt {
-			bs := [][]byt{[]byt{}}
+			bs := [][]byt{{}}
 			var x int
 			and := 1<<uint(width) - 1
 			for i := 0; i < 8; i++ {

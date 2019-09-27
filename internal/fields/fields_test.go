@@ -407,12 +407,12 @@ func TestRepCases(t *testing.T) {
 	}{
 		{
 			f:        fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
-			expected: []fields.RepCase{fields.RepCase{Case: "case 0:", Rep: 0}, fields.RepCase{Case: "case 1:", Rep: 1}, fields.RepCase{Case: "case 2:", Rep: 2}},
+			expected: []fields.RepCase{{Case: "case 0:", Rep: 0}, {Case: "case 1:", Rep: 1}, {Case: "case 2:", Rep: 2}},
 		},
 		{
 			f:        fields.Field{FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
 			seen:     []fields.RepetitionType{fields.Repeated, fields.Repeated},
-			expected: []fields.RepCase{fields.RepCase{Case: "default:", Rep: 0}},
+			expected: []fields.RepCase{{Case: "default:", Rep: 0}},
 		},
 	}
 
