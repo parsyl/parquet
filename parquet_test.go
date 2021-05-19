@@ -42,7 +42,9 @@ func TestParquet(t *testing.T) {
 		{
 			name: "single nested person",
 			input: [][]Person{
-				{{Hobby: &Hobby{Name: "napping", Difficulty: pint32(10)}}},
+				{
+					{Hobby: &Hobby{Name: "napping", Difficulty: pint32(10), Skills: []Skill{{Name: "meditation", Difficulty: "very"}}}},
+				},
 			},
 		},
 		{
@@ -514,7 +516,7 @@ func TestPageHeaders(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, 72, len(pageHeaders))
+	assert.Equal(t, 80, len(pageHeaders))
 }
 
 func TestStats(t *testing.T) {
@@ -973,9 +975,15 @@ type Being struct {
 	Age *int32 `parquet:"age"`
 }
 
-type Hobby struct {
+type Skill struct {
 	Name       string `parquet:"name"`
-	Difficulty *int32 `parquet:"difficulty"`
+	Difficulty string `parquet:"difficulty"`
+}
+
+type Hobby struct {
+	Name       string  `parquet:"name"`
+	Difficulty *int32  `parquet:"difficulty"`
+	Skills     []Skill `parquet:"skills"`
 }
 
 type Person struct {

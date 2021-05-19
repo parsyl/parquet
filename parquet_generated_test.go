@@ -60,6 +60,8 @@ func Fields(compression compression) []Field {
 		NewBoolField(readHungry, writeHungry, []string{"hungry"}, fieldCompression(compression)),
 		NewStringOptionalField(readHobbyName, writeHobbyName, []string{"hobby", "name"}, []int{1, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, []int{1, 1}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readHobbySkillsName, writeHobbySkillsName, []string{"hobby", "skills", "name"}, []int{1, 2, 0}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readHobbySkillsDifficulty, writeHobbySkillsDifficulty, []string{"hobby", "skills", "difficulty"}, []int{1, 2, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readFriendsID, writeFriendsID, []string{"friends", "id"}, []int{2, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readFriendsAge, writeFriendsAge, []string{"friends", "age"}, []int{2, 1}, optionalFieldCompression(compression)),
 		NewBoolField(readSleepy, writeSleepy, []string{"Sleepy"}, fieldCompression(compression)),
@@ -290,6 +292,126 @@ func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int
 	}
 
 	return 0, 1
+}
+
+func readHobbySkillsName(x Person) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Hobby == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Hobby.Skills) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Hobby.Skills {
+				if i0 == 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0.Name)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeHobbySkillsName(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			if x.Hobby == nil {
+				x.Hobby = &Hobby{}
+			}
+		case 2:
+			switch rep {
+			case 0:
+				if x.Hobby == nil {
+					x.Hobby = &Hobby{Skills: []Skill{{Name: vals[nVals]}}}
+				} else {
+					x.Hobby.Skills = []Skill{{Name: vals[nVals]}}
+				}
+			case 1:
+				x.Hobby.Skills = append(x.Hobby.Skills, Skill{Name: vals[nVals]})
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readHobbySkillsDifficulty(x Person) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Hobby == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Hobby.Skills) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Hobby.Skills {
+				if i0 == 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0.Difficulty)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeHobbySkillsDifficulty(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0:
+				x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
+			case 1:
+				x.Hobby.Skills = append(x.Hobby.Skills, Skill{Difficulty: vals[nVals]})
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
 }
 
 func readFriendsID(x Person) ([]int32, []uint8, []uint8) {

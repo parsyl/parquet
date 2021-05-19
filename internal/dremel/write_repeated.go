@@ -176,7 +176,12 @@ func writeCases(f fields.Field, seen fields.RepetitionTypes) []int {
 		start = 1 + len(seen)
 	}
 
-	for def := start; def <= f.MaxDef(); def++ {
+	maxDef := f.MaxDef()
+	if start > maxDef {
+		start = maxDef //hack!  figure out why start is > maxDef
+	}
+
+	for def := start; def <= maxDef; def++ {
 		dfs = append(dfs, def)
 	}
 	return dfs
