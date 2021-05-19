@@ -25,6 +25,7 @@ type compression int
 const (
 	compressionUncompressed compression = 0
 	compressionSnappy       compression = 1
+	compressionGzip         compression = 2
 	compressionUnknown      compression = -1
 )
 
@@ -64,6 +65,8 @@ func fieldCompression(c compression) func(*parquet.RequiredField) {
 		return parquet.RequiredFieldUncompressed
 	case compressionSnappy:
 		return parquet.RequiredFieldSnappy
+	case compressionGzip:
+		return parquet.RequiredFieldGzip
 	default:
 		return parquet.RequiredFieldUncompressed
 	}
@@ -75,6 +78,8 @@ func optionalFieldCompression(c compression) func(*parquet.OptionalField) {
 		return parquet.OptionalFieldUncompressed
 	case compressionSnappy:
 		return parquet.OptionalFieldSnappy
+	case compressionGzip:
+		return parquet.OptionalFieldGzip
 	default:
 		return parquet.OptionalFieldUncompressed
 	}
@@ -137,6 +142,11 @@ func Uncompressed(p *ParquetWriter) error {
 
 func Snappy(p *ParquetWriter) error {
 	p.compression = compressionSnappy
+	return nil
+}
+
+func Gzip(p *ParquetWriter) error {
+	p.compression = compressionGzip
 	return nil
 }
 

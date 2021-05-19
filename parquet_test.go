@@ -435,7 +435,7 @@ func TestParquet(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		for j, comp := range []string{"uncompressed", "snappy"} {
+		for j, comp := range []string{"uncompressed", "snappy", "gzip"} {
 			t.Run(fmt.Sprintf("%02d %s %s", 2*i+j, tc.name, comp), func(t *testing.T) {
 				if tc.pageSize == 0 {
 					tc.pageSize = 100
@@ -760,6 +760,7 @@ func getPageHeaders(r io.ReadSeeker, name string, footer *sch.FileMetaData) ([]s
 var compressionTest = map[string]func(*ParquetWriter) error{
 	"uncompressed": Uncompressed,
 	"snappy":       Snappy,
+	"gzip":         Gzip,
 }
 
 func getLen(peeps [][]Person) int {
