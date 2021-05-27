@@ -43,7 +43,16 @@ func TestParquet(t *testing.T) {
 			name: "single nested person",
 			input: [][]Person{
 				{
-					{Hobby: &Hobby{Name: "napping", Difficulty: pint32(10), Skills: []Skill{{Name: "meditation", Difficulty: "very"}}}},
+					{
+						Hobby: &Hobby{
+							Name:       "napping",
+							Difficulty: pint32(10),
+							Skills: []Skill{
+								{Name: "meditation", Difficulty: "very"},
+								{Name: "calmness", Difficulty: "so-so"},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -971,8 +980,9 @@ func writeFloat64(f float64) []byte {
 }
 
 type Being struct {
-	ID  int32  `parquet:"id"`
-	Age *int32 `parquet:"age"`
+	ID   int32  `parquet:"id"`
+	Name string `parquet:"name"`
+	Age  *int32 `parquet:"age"`
 }
 
 type Skill struct {

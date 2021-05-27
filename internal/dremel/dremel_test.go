@@ -5,19 +5,19 @@ import (
 	"log"
 	"testing"
 
+	"github.com/parsyl/parquet/internal/dremel/testcases/doc"
+	"github.com/parsyl/parquet/internal/dremel/testcases/person"
 	"github.com/stretchr/testify/assert"
 )
 
-//go:generate parquetgen -input dremel_test.go -type Document -package dremel_test -output dremel_generated_test.go
-
 var (
-	dremelDocs = []Document{
+	dremelDocs = []doc.Document{
 		{
 			DocID: 10,
-			Link:  &Link{Forward: []int64{20, 40, 60}},
-			Names: []Name{
+			Link:  &doc.Link{Forward: []int64{20, 40, 60}},
+			Names: []doc.Name{
 				{
-					Languages: []Language{
+					Languages: []doc.Language{
 						{Code: "en-us", Country: pstring("us")},
 						{Code: "en"},
 					},
@@ -27,7 +27,7 @@ var (
 					URL: pstring("http://B"),
 				},
 				{
-					Languages: []Language{
+					Languages: []doc.Language{
 						{Code: "en-gb", Country: pstring("gb")},
 					},
 				},
@@ -35,8 +35,8 @@ var (
 		},
 		{
 			DocID: 20,
-			Link:  &Link{Backward: []int64{10, 30}, Forward: []int64{80}},
-			Names: []Name{{URL: pstring("http://C")}},
+			Link:  &doc.Link{Backward: []int64{10, 30}, Forward: []int64{80}},
+			Names: []doc.Name{{URL: pstring("http://C")}},
 		},
 	}
 )
@@ -45,7 +45,7 @@ var (
 // results in the correct definition and repetition levels.
 func TestLevels(t *testing.T) {
 	var buf bytes.Buffer
-	pw, err := NewParquetWriter(&buf)
+	pw, err := doc.NewParquetWriter(&buf)
 	if err != nil {
 		assert.NoError(t, err)
 	}
@@ -60,12 +60,12 @@ func TestLevels(t *testing.T) {
 
 	pw.Close()
 
-	pr, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+	pr, err := doc.NewParquetReader(bytes.NewReader(buf.Bytes()))
 	if err != nil {
 		assert.NoError(t, err)
 	}
 
-	expected := []Levels{
+	expected := []doc.Levels{
 		{Name: "docid"},
 		{Name: "link.backward", Defs: []uint8{1, 2, 2}, Reps: []uint8{0, 0, 1}},
 		{Name: "link.forward", Defs: []uint8{2, 2, 2, 2}, Reps: []uint8{0, 1, 1, 0}},
@@ -77,11 +77,60 @@ func TestLevels(t *testing.T) {
 	assert.Equal(t, expected, pr.Levels())
 }
 
+var (
+	people = []person.Person{
+		{
+			Name: "peep",
+			Hobby: &person.Hobby{
+				Name:       "napping",
+				Difficulty: pint32(10),
+				Skills: []person.Skill{
+					{Name: "meditation", Difficulty: "very"},
+					{Name: "calmness", Difficulty: "so-so"},
+				},
+			},
+		},
+	}
+)
+
+func TestPersonLevels(t *testing.T) {
+	var buf bytes.Buffer
+	pw, err := person.NewParquetWriter(&buf)
+	if err != nil {
+		assert.NoError(t, err)
+	}
+
+	for _, p := range people {
+		pw.Add(p)
+	}
+
+	if err := pw.Write(); err != nil {
+		assert.NoError(t, err)
+	}
+
+	pw.Close()
+
+	pr, err := person.NewParquetReader(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		assert.NoError(t, err)
+	}
+
+	expected := []person.Levels{
+		{Name: "name"},
+		{Name: "hobby.name", Defs: []uint8{1}},
+		{Name: "hobby.difficulty", Defs: []uint8{2}},
+		{Name: "hobby.skills.name", Defs: []uint8{2, 2}, Reps: []uint8{0, 1}},
+		{Name: "hobby.skills.difficulty", Defs: []uint8{2, 2}, Reps: []uint8{0, 1}},
+	}
+
+	assert.Equal(t, expected, pr.Levels())
+}
+
 // TestDremel uses the example from the dremel paper and writes then
 // reads from a parquet file to make sure nested fields work correctly.
 func TestDremel(t *testing.T) {
 	var buf bytes.Buffer
-	pw, err := NewParquetWriter(&buf)
+	pw, err := doc.NewParquetWriter(&buf)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,14 +145,14 @@ func TestDremel(t *testing.T) {
 
 	pw.Close()
 
-	pr, err := NewParquetReader(bytes.NewReader(buf.Bytes()))
+	pr, err := doc.NewParquetReader(bytes.NewReader(buf.Bytes()))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var out []Document
+	var out []doc.Document
 	for pr.Next() {
-		var d Document
+		var d doc.Document
 		pr.Scan(&d)
 		out = append(out, d)
 	}
@@ -111,23 +160,10 @@ func TestDremel(t *testing.T) {
 	assert.Equal(t, dremelDocs, out)
 }
 
-type Link struct {
-	Backward []int64 `parquet:"backward"`
-	Forward  []int64 `parquet:"forward"`
+func pstring(s string) *string {
+	return &s
 }
 
-type Language struct {
-	Code    string  `parquet:"code"`
-	Country *string `parquet:"country"`
-}
-
-type Name struct {
-	Languages []Language `parquet:"languages"`
-	URL       *string    `parquet:"url"`
-}
-
-type Document struct {
-	DocID int64  `parquet:"docid"`
-	Link  *Link  `parquet:"link"`
-	Names []Name `parquet:"names"`
+func pint32(i int32) *int32 {
+	return &i
 }
