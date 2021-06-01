@@ -19,6 +19,6 @@ type Name struct {
 
 type Document struct {
 	DocID int64  `parquet:"docid"`
-	Link  *Link  `parquet:"link"`
+	Links *Link  `parquet:"link"`
 	Names []Name `parquet:"names"`
 }

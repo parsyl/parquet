@@ -14,7 +14,9 @@ var (
 	dremelDocs = []doc.Document{
 		{
 			DocID: 10,
-			Link:  &doc.Link{Forward: []int64{20, 40, 60}},
+			Links: &doc.Link{
+				Forward: []int64{20, 40, 60},
+			},
 			Names: []doc.Name{
 				{
 					Languages: []doc.Language{
@@ -35,8 +37,15 @@ var (
 		},
 		{
 			DocID: 20,
-			Link:  &doc.Link{Backward: []int64{10, 30}, Forward: []int64{80}},
-			Names: []doc.Name{{URL: pstring("http://C")}},
+			Links: &doc.Link{
+				Backward: []int64{10, 30},
+				Forward:  []int64{80},
+			},
+			Names: []doc.Name{
+				{
+					URL: pstring("http://C"),
+				},
+			},
 		},
 	}
 )

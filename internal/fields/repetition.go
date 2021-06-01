@@ -99,15 +99,6 @@ func (r RepetitionTypes) NRepeated(i int) bool {
 	return false
 }
 
-func reverse(in []field) []field {
-	flds := append(in[:0:0], in...)
-	for i := len(flds)/2 - 1; i >= 0; i-- {
-		opp := len(flds) - 1 - i
-		flds[i], flds[opp] = flds[opp], flds[i]
-	}
-	return flds
-}
-
 type rts []RepetitionType
 
 func (r rts) add(i int, rts []RepetitionType) rts {

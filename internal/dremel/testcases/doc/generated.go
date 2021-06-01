@@ -46,8 +46,8 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt64Field(readDocID, writeDocID, []string{"docid"}, fieldCompression(compression)),
-		NewInt64OptionalField(readLinkBackward, writeLinkBackward, []string{"link", "backward"}, []int{1, 2}, optionalFieldCompression(compression)),
-		NewInt64OptionalField(readLinkForward, writeLinkForward, []string{"link", "forward"}, []int{1, 2}, optionalFieldCompression(compression)),
+		NewInt64OptionalField(readLinksBackward, writeLinksBackward, []string{"link", "backward"}, []int{1, 2}, optionalFieldCompression(compression)),
+		NewInt64OptionalField(readLinksForward, writeLinksForward, []string{"link", "forward"}, []int{1, 2}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readNamesLanguagesCode, writeNamesLanguagesCode, []string{"names", "languages", "code"}, []int{2, 2, 0}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readNamesLanguagesCountry, writeNamesLanguagesCountry, []string{"names", "languages", "country"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readNamesURL, writeNamesURL, []string{"names", "url"}, []int{2, 1}, optionalFieldCompression(compression)),
@@ -62,20 +62,20 @@ func writeDocID(x *Document, vals []int64) {
 	x.DocID = vals[0]
 }
 
-func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
+func readLinksBackward(x Document) ([]int64, []uint8, []uint8) {
 	var vals []int64
 	var defs, reps []uint8
 	var lastRep uint8
 
-	if x.Link == nil {
+	if x.Links == nil {
 		defs = append(defs, 0)
 		reps = append(reps, lastRep)
 	} else {
-		if len(x.Link.Backward) == 0 {
+		if len(x.Links.Backward) == 0 {
 			defs = append(defs, 1)
 			reps = append(reps, lastRep)
 		} else {
-			for i0, x0 := range x.Link.Backward {
+			for i0, x0 := range x.Links.Backward {
 				if i0 == 1 {
 					lastRep = 1
 				}
@@ -89,7 +89,7 @@ func readLinkBackward(x Document) ([]int64, []uint8, []uint8) {
 	return vals, defs, reps
 }
 
-func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+func writeLinksBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)
 
@@ -105,13 +105,13 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 
 		switch def {
 		case 1:
-			x.Link = &Link{}
+			x.Links = &Link{}
 		case 2:
 			switch rep {
 			case 0:
-				x.Link = &Link{Backward: []int64{vals[nVals]}}
+				x.Links = &Link{Backward: []int64{vals[nVals]}}
 			case 1:
-				x.Link.Backward = append(x.Link.Backward, vals[nVals])
+				x.Links.Backward = append(x.Links.Backward, vals[nVals])
 			}
 			nVals++
 		}
@@ -120,20 +120,20 @@ func writeLinkBackward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 	return nVals, nLevels
 }
 
-func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
+func readLinksForward(x Document) ([]int64, []uint8, []uint8) {
 	var vals []int64
 	var defs, reps []uint8
 	var lastRep uint8
 
-	if x.Link == nil {
+	if x.Links == nil {
 		defs = append(defs, 0)
 		reps = append(reps, lastRep)
 	} else {
-		if len(x.Link.Forward) == 0 {
+		if len(x.Links.Forward) == 0 {
 			defs = append(defs, 1)
 			reps = append(reps, lastRep)
 		} else {
-			for i0, x0 := range x.Link.Forward {
+			for i0, x0 := range x.Links.Forward {
 				if i0 == 1 {
 					lastRep = 1
 				}
@@ -147,7 +147,7 @@ func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
 	return vals, defs, reps
 }
 
-func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+func writeLinksForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)
 
@@ -164,8 +164,14 @@ func writeLinkForward(x *Document, vals []int64, defs, reps []uint8) (int, int) 
 		switch def {
 		case 2:
 			switch rep {
+			case 0:
+				if x.Links == nil {
+					x.Links = &Link{Forward: []int64{vals[nVals]}}
+				} else {
+					x.Links.Forward = append(x.Links.Forward, vals[nVals])
+				}
 			default:
-				x.Link.Forward = append(x.Link.Forward, vals[nVals])
+				x.Links.Forward = append(x.Links.Forward, vals[nVals])
 			}
 			nVals++
 		}

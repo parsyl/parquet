@@ -29,7 +29,7 @@ var (
 			return "fieldCompression"
 		},
 		"funcName": func(f fields.Field) string {
-			return strings.Join(f.FieldNames, "")
+			return strings.Join(f.FieldNames(), "")
 		},
 		"join": func(names []string) string {
 			return strings.Join(names, ".")
@@ -74,11 +74,11 @@ var (
 			}
 			return out
 		},
-		"columnName":    func(f fields.Field) string { return strings.Join(f.ColumnNames, ".") },
+		"columnName":    func(f fields.Field) string { return strings.Join(f.ColumnNames(), ".") },
 		"writeFunc":     dremel.Write,
 		"readFunc":      dremel.Read,
-		"writeFuncName": func(f fields.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")) },
-		"readFuncName":  func(f fields.Field) string { return fmt.Sprintf("read%s", strings.Join(f.FieldNames, "")) },
+		"writeFuncName": func(f fields.Field) string { return fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")) },
+		"readFuncName":  func(f fields.Field) string { return fmt.Sprintf("read%s", strings.Join(f.FieldNames(), "")) },
 		"parquetType": func(f fields.Field) string {
 			if f.Optional() {
 				return "parquet.OptionalField"

@@ -187,7 +187,7 @@ func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
 	return fields, nil
 }
 
-func getField(name string, x ast.Node) field {
+func getField(name string, x ast.Node, parent *flds.Field) field {
 	var typ, tag string
 	var optional, repeated bool
 	ast.Inspect(x, func(n ast.Node) bool {
@@ -220,15 +220,24 @@ func getField(name string, x ast.Node) field {
 	}
 
 	fn, cat, pt := lookupTypeAndCategory(typ, optional, repeated)
+
+	f := flds.Field{
+		FieldName:   name,
+		FieldType:   typ,
+		ColumnName:  tag,
+		TypeName:    getTypeName(typ, optional),
+		Type:        fn,
+		ParquetType: pt,
+		Category:    cat,
+		Parent:      parent,
+	}
+
+	if parent != nil {
+		parent.Children = append(parent.Children, f)
+	}
+
 	return field{
-		Field: flds.Field{
-			FieldNames:  []string{name},
-			FieldTypes:  []string{typ},
-			ColumnNames: []string{tag},
-			TypeName:    getTypeName(typ, optional),
-			FieldType:   fn,
-			ParquetType: pt,
-			Category:    cat},
+		Field:     f,
 		fieldName: name,
 		fieldType: typ,
 		omit:      tag == "-",

@@ -624,6 +624,41 @@ func TestWrite(t *testing.T) {
 	return nVals, nLevels
 }`,
 		},
+		{
+			name: "nested 2 deep",
+			fields: []fields.Field{
+				{FieldNames: []string{"Hobby", "Skills", "Name"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated, fields.Required}},
+				{Type: "Person", TypeName: "string", FieldNames: []string{"Hobby", "Skills", "Difficulty"}, FieldTypes: []string{"Hobby", "Skill", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Optional, fields.Repeated, fields.Required}},
+			},
+			result: `func writeHobbySkillsDifficulty(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0:
+				x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
+			case 1:
+				x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}`,
+		},
 	}
 
 	for i, tc := range testCases {

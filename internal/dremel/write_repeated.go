@@ -113,6 +113,7 @@ func writeRequired(f fields.Field) string {
 func writeRepeated(i int, flds []fields.Field) string {
 	f := flds[i]
 	f.Seen = fields.Seen(i, flds)
+	fmt.Println("seen", f.Seen)
 
 	wi := writeRepeatedInput{
 		Field: f,
@@ -170,7 +171,7 @@ func useIfElse(def, rep int, seen fields.RepetitionTypes, f fields.Field) bool {
 }
 
 func writeCases(f fields.Field, seen fields.RepetitionTypes) []int {
-	var dfs []int
+	var defs []int
 	start := 1
 	if seen.Repeated() {
 		start = 1 + len(seen)
@@ -182,9 +183,9 @@ func writeCases(f fields.Field, seen fields.RepetitionTypes) []int {
 	}
 
 	for def := start; def <= maxDef; def++ {
-		dfs = append(dfs, def)
+		defs = append(defs, def)
 	}
-	return dfs
+	return defs
 }
 
 func nilField(i int, f fields.Field) string {
