@@ -18,6 +18,7 @@ type Field struct {
 	ParquetType    string
 	Category       string
 	Parent         *Field
+	Embedded       bool
 	Children       []Field
 }
 

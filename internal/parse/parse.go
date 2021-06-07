@@ -31,7 +31,7 @@ type field struct {
 // by reading a go struct.
 type Result struct {
 	// Fields are the fields that will be written to and read from a parquet file.
-	Fields []flds.Field
+	Parent flds.Field
 	// Errors is a list of errors that occurred while parsing a struct.
 	Errors []error
 }
@@ -50,7 +50,6 @@ func Fields(typ, pth string) (*Result, error) {
 	}
 
 	f := &finder{n: map[string]ast.Node{}}
-
 	ast.Walk(visitorFunc(f.findTypes), file)
 
 	if f.n == nil {
@@ -62,66 +61,132 @@ func Fields(typ, pth string) (*Result, error) {
 		return nil, err
 	}
 
-	var out []field
 	var errs []error
-	var i int
 
-	for _, f := range fields[typ] {
-		i, out, errs = getOut(i, f, fields, errs, out)
+	parent, ok := fields[typ]
+	if !ok {
+		return nil, fmt.Errorf("could not find %s", typ)
 	}
 
+	getChildren(&parent, fields, errs)
+
 	return &Result{
-		Fields: getFields(fullTyp, out, fields),
+		Parent: parent,
 		Errors: errs,
 	}, nil
 }
 
-func getOut(i int, f field, fields map[string][]field, errs []error, out []field) (int, []field, []error) {
-	ff, ok := fields[f.fieldType]
-	var o flds.RepetitionType = flds.Required
-	if strings.Contains(f.Field.TypeName, "*") {
-		o = flds.Optional
-	} else if f.repeated || strings.Contains(f.Field.TypeName, "[]") {
-		o = flds.Repeated
+func getChildren(parent *flds.Field, fields map[string]flds.Field, errs []error) {
+	var children []flds.Field
+	p, ok := fields[parent.FieldType]
+	fmt.Printf("getChildren %s: %+v\n", parent.FieldType, p)
+	if !ok {
+		errs = append(errs, fmt.Errorf("could not find %s", parent.Type))
+		return
 	}
-	if ok {
-		for _, fld := range ff {
-			if fld.embedded {
-				x, more, moreerrs := getOut(0, fld, fields, nil, nil)
-				i += x
-				out = append(out, more...)
-				errs = append(errs, moreerrs...)
-			} else {
-				if (!fld.optional && (o == flds.Optional || f.optional)) || (!fld.repeated && (o == flds.Repeated || f.repeated)) {
-					fld = makeOptional(fld)
-				}
 
-				if !f.embedded {
-					fld.Field.RepetitionTypes = append(append(f.Field.RepetitionTypes[:0:0], f.Field.RepetitionTypes...), o) //make a copy
-					fld.Field.FieldNames = append(f.Field.FieldNames, fld.Field.FieldNames...)
-					fld.Field.FieldTypes = append(f.Field.FieldTypes, fld.Field.FieldTypes...)
-					fld.Field.ColumnNames = append(f.Field.ColumnNames, fld.Field.ColumnNames...)
-				}
-				i, out, errs = getOut(i, fld, fields, errs, out)
-			}
+	for _, child := range p.Children {
+		if child.Primitive() {
+			children = append(children, child)
+			continue
 		}
-		return i, out, errs
-	} else if f.err == nil {
-		_, ok := types[f.fieldType]
-		if ok {
-			f.Field.RepetitionTypes = append(f.Field.RepetitionTypes, o)
-			out = append(out, f)
-			i++
+
+		f, ok := fields[child.FieldType]
+		if !ok {
+			errs = append(errs, fmt.Errorf("could not find %s", child.Type))
+			continue
+		}
+
+		getChildren(&child, fields, errs)
+
+		f.FieldName = child.FieldName
+		f.TypeName = child.TypeName
+		f.ColumnName = child.ColumnName
+		f.Children = child.Children
+		f.RepetitionType = child.RepetitionType
+
+		fmt.Printf("adding child: %+v\n", child)
+
+		if child.Embedded {
+			for _, ch := range f.Children {
+				children = append(children, ch)
+			}
 		} else {
-			errs = append(errs, fmt.Errorf("unsupported type: %s", f.fieldName))
+			children = append(children, f)
 		}
 	}
-	return i, out, errs
+	parent.Children = children
+}
+
+func isPrivate(x *ast.Field) bool {
+	var s string
+	if len(x.Names) == 0 {
+		s = fmt.Sprintf("%s", x.Type)
+	} else {
+		s = fmt.Sprintf("%s", x.Names[0])
+	}
+	return strings.Contains(letters, string(s[0]))
+}
+
+func doGetFields(n map[string]ast.Node) (map[string]fields.Field, error) {
+	fields := map[string]flds.Field{}
+	for k, n := range n {
+		x, ok := n.(*ast.TypeSpec)
+		if !ok {
+			continue
+		}
+
+		fmt.Printf("parent? (%s): %+v\n", k, x)
+		parent := flds.Field{
+			Type:       x.Name.Name,
+			TypeName:   x.Name.Name,
+			ColumnName: x.Name.Name,
+			FieldName:  x.Name.Name,
+			FieldType:  x.Name.Name,
+		}
+
+		ast.Inspect(n, func(n ast.Node) bool {
+			if n == nil {
+				return false
+			}
+
+			switch x := n.(type) {
+			case *ast.Field:
+				fmt.Printf("child?: %+v, type: %v\n", n, x.Type)
+				if len(x.Names) == 1 && !isPrivate(x) {
+					fmt.Println("a")
+					f, skip := getField(x.Names[0].Name, x, nil)
+					if !skip {
+						parent.Children = append(parent.Children, f)
+					}
+				} else if len(x.Names) == 0 && !isPrivate(x) {
+					fmt.Println("b")
+					f, skip := getField(fmt.Sprintf("%s", x.Type), x, nil)
+					f.Embedded = true
+					if !skip {
+						parent.Children = append(parent.Children, f)
+					}
+				}
+			case *ast.ArrayType:
+				fmt.Printf("array child: %+v\n", x)
+				// s := fields[k]
+				// f := s[len(s)-1]
+				// f.repeated = true
+				// s[len(s)-1] = f
+				//fields[k] = s
+			}
+			return true
+		})
+
+		fields[k] = parent
+	}
+
+	return fields, nil
 }
 
 func makeOptional(f field) field {
 	f.optional = true
-	fn, cat, pt := lookupTypeAndCategory(strings.Replace(strings.Replace(f.Field.TypeName, "*", "", 1), "[]", "", 1), true, true)
+	fn, cat, pt, _ := lookupTypeAndCategory(strings.Replace(strings.Replace(f.Field.TypeName, "*", "", 1), "[]", "", 1), true, true)
 	f.Field.FieldType = fn
 	f.Field.ParquetType = pt
 	f.Field.Category = cat
@@ -152,42 +217,7 @@ func getFields(fullTyp string, fields []field, m map[string][]field) []flds.Fiel
 	return out
 }
 
-func isPrivate(x *ast.Field) bool {
-	var s string
-	if len(x.Names) == 0 {
-		s = fmt.Sprintf("%s", x.Type)
-	} else {
-		s = fmt.Sprintf("%s", x.Names[0])
-	}
-	return strings.Contains(letters, string(s[0]))
-}
-
-func doGetFields(n map[string]ast.Node) (map[string][]field, error) {
-	fields := map[string][]field{}
-	for k, n := range n {
-		ast.Inspect(n, func(n ast.Node) bool {
-			switch x := n.(type) {
-			case *ast.Field:
-				if len(x.Names) == 1 && !isPrivate(x) {
-					f := getField(x.Names[0].Name, x)
-					fields[k] = append(fields[k], f)
-				} else if len(x.Names) == 0 && !isPrivate(x) {
-					fields[k] = append(fields[k], field{embedded: true, fieldType: fmt.Sprintf("%s", x.Type), Field: flds.Field{TypeName: fmt.Sprintf("%s", x.Type)}})
-				}
-			case *ast.ArrayType:
-				s := fields[k]
-				f := s[len(s)-1]
-				f.repeated = true
-				s[len(s)-1] = f
-				fields[k] = s
-			}
-			return true
-		})
-	}
-	return fields, nil
-}
-
-func getField(name string, x ast.Node, parent *flds.Field) field {
+func getField(name string, x ast.Node, parent *flds.Field) (flds.Field, bool) {
 	var typ, tag string
 	var optional, repeated bool
 	ast.Inspect(x, func(n ast.Node) bool {
@@ -219,31 +249,25 @@ func getField(name string, x ast.Node, parent *flds.Field) field {
 		tag = name
 	}
 
-	fn, cat, pt := lookupTypeAndCategory(typ, optional, repeated)
+	_, cat, pt, _ := lookupTypeAndCategory(typ, optional, repeated)
 
-	f := flds.Field{
-		FieldName:   name,
-		FieldType:   typ,
-		ColumnName:  tag,
-		TypeName:    getTypeName(typ, optional),
-		Type:        fn,
-		ParquetType: pt,
-		Category:    cat,
-		Parent:      parent,
+	rt := fields.Required
+	if repeated {
+		rt = fields.Repeated
+	} else if optional {
+		rt = fields.Optional
 	}
 
-	if parent != nil {
-		parent.Children = append(parent.Children, f)
-	}
-
-	return field{
-		Field:     f,
-		fieldName: name,
-		fieldType: typ,
-		omit:      tag == "-",
-		optional:  optional,
-		repeated:  repeated,
-	}
+	return flds.Field{
+		FieldName:  name,
+		FieldType:  typ,
+		ColumnName: tag,
+		TypeName:   getTypeName(typ, optional),
+		//Type:           fn,
+		ParquetType:    pt,
+		Category:       cat,
+		RepetitionType: rt,
+	}, tag == "-"
 }
 
 func parseTag(t string) string {
@@ -263,16 +287,16 @@ func getTypeName(s string, optional bool) string {
 	return fmt.Sprintf("%s%s", star, s)
 }
 
-func lookupTypeAndCategory(name string, optional, repeated bool) (string, string, string) {
+func lookupTypeAndCategory(name string, optional, repeated bool) (string, string, string, bool) {
 	var op string
 	if optional || repeated {
 		op = "Optional"
 	}
 	f, ok := types[name]
 	if !ok {
-		return "", "", ""
+		return "", "", "", false
 	}
-	return fmt.Sprintf(f.name, op, "Field"), fmt.Sprintf(f.category, op), fmt.Sprintf(f.name, "", "Type")
+	return fmt.Sprintf(f.name, op, "Field"), fmt.Sprintf(f.category, op), fmt.Sprintf(f.name, "", "Type"), true
 }
 
 type fieldType struct {
@@ -314,6 +338,7 @@ func (f *finder) findTypes(n ast.Node) ast.Visitor {
 			return visitorFunc(f.findTypes)
 		}
 	case *ast.TypeSpec:
+		//fmt.Printf("node: %+v\n", n)
 		f.n[n.Name.Name] = n
 		return visitorFunc(f.findTypes)
 	}
