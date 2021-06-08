@@ -13,7 +13,7 @@ import (
 func Write(i int, fields []fields.Field) string {
 	f := fields[i]
 	if f.Repeated() {
-		return writeRepeated(i, fields)
+		return writeRepeated(f)
 	}
 
 	if f.Optional() {

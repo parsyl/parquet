@@ -77,12 +77,10 @@ func (i ifElses) UseIf() bool {
 
 func writeOptional(i int, flds []fields.Field) string {
 	f := flds[i]
-	s := fields.Seen(i, flds)
-	f.Seen = s
 	wi := writeInput{
 		Field:    f,
-		FuncName: strings.Join(f.FieldNames, ""),
-		Cases:    writeOptionalCases(f, s),
+		FuncName: strings.Join(f.FieldNames(), ""),
+		Cases:    writeOptionalCases(f),
 	}
 
 	var buf bytes.Buffer
@@ -93,10 +91,10 @@ func writeOptional(i int, flds []fields.Field) string {
 	return string(buf.Bytes())
 }
 
-func writeOptionalCases(f fields.Field, seen fields.RepetitionTypes) []ifElses {
+func writeOptionalCases(f fields.Field) []ifElses {
 	var out []ifElses
-	for def := 1; def <= defs(f); def++ {
-		if useIfElse(def, 0, seen, f) {
+	for def := 1; def <= f.MaxDef(); def++ {
+		if useIfElse(def, 0, f) {
 			out = append(out, ifelses(def, 0, f))
 		} else {
 			s := f.Init(def, 0)
@@ -108,20 +106,20 @@ func writeOptionalCases(f fields.Field, seen fields.RepetitionTypes) []ifElses {
 
 type ifElseCase struct {
 	f fields.Field
-	p fields.Field
+	p *fields.Field
 }
 
 // ifelses returns an if else block for the given definition and repetition level
-func ifelses(def, rep int, orig fields.Field) ifElses {
-	opts := optionals(def, orig)
+func ifelses(def, rep int, f fields.Field) ifElses {
+	opts := optionals(def, f)
 	var cases ifElseCases
 	for _, o := range opts {
-		f := orig.Copy()
-		f.Seen = seens(o)
+		//f := orig.Copy()
+		//f.Seen = seens(o)
 		cases = append(cases, ifElseCase{f: f, p: f.Parent(o + 1)})
 	}
 
-	return cases.ifElses(def, rep, int(orig.MaxDef()))
+	return cases.ifElses(def, rep, int(f.MaxDef()))
 }
 
 func seens(i int) fields.RepetitionTypes {
@@ -154,7 +152,7 @@ func (i ifElseCases) ifElses(def, rep, md int) ifElses {
 
 	for _, iec := range leftovers {
 		out.ElseIf = append(out.ElseIf, ifElse{
-			Cond: fmt.Sprintf("x.%s == nil", strings.Join(iec.p.FieldNames, ".")),
+			Cond: fmt.Sprintf("x.%s == nil", strings.Join(iec.p.FieldName, ".")),
 			Val:  iec.f.Init(def, rep),
 		})
 	}

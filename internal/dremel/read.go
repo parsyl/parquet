@@ -10,12 +10,12 @@ import (
 func readRequired(f fields.Field) string {
 	return fmt.Sprintf(`func read%s(x %s) %s {
 	return x.%s
-}`, strings.Join(f.FieldNames, ""), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
+}`, strings.Join(f.FieldNames(), ""), f.Type, f.TypeName, strings.Join(f.FieldNames(), "."))
 }
 
 func readOptional(f fields.Field) string {
 	var out string
-	n := defs(f)
+	n := f.MaxDef()
 	for def := 0; def < n; def++ {
 		out += fmt.Sprintf(`case x.%s == nil:
 		return nil, []uint8{%d}, nil
@@ -23,7 +23,8 @@ func readOptional(f fields.Field) string {
 	}
 
 	var ptr string
-	if f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Optional {
+	rts := f.RepetitionTypes()
+	if rts[len(rts)-1] == fields.Optional {
 		ptr = "*"
 	}
 	out += fmt.Sprintf(`	default:
@@ -33,7 +34,7 @@ func readOptional(f fields.Field) string {
 	switch {
 	%s
 	}
-}`, strings.Join(f.FieldNames, ""), f.Type, cleanTypeName(f.TypeName), out)
+}`, strings.Join(f.FieldNames(), ""), f.Type, cleanTypeName(f.TypeName), out)
 }
 
 func cleanTypeName(s string) string {

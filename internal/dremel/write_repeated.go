@@ -33,7 +33,7 @@ func init() {
 		"getRep": func(def int, f fields.Field) int {
 			var rep int
 			//defindex indead of def?
-			for _, rt := range f.RepetitionTypes[:f.DefIndex(def)] {
+			for _, rt := range f.RepetitionTypes()[:f.DefIndex(def)] {
 				if rt == fields.Repeated {
 					rep++
 				}
@@ -100,26 +100,20 @@ func init() {
 type writeRepeatedInput struct {
 	Field fields.Field
 	Defs  []int
-	Seen  []fields.RepetitionType
 	Func  string
 }
 
 func writeRequired(f fields.Field) string {
 	return fmt.Sprintf(`func %s(x *%s, vals []%s) {
 	x.%s = vals[0]
-}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")), f.Type, f.TypeName, strings.Join(f.FieldNames, "."))
+}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")), f.Type, f.TypeName, strings.Join(f.FieldNames(), "."))
 }
 
-func writeRepeated(i int, flds []fields.Field) string {
-	f := flds[i]
-	f.Seen = fields.Seen(i, flds)
-	fmt.Println("seen", f.Seen)
-
+func writeRepeated(f fields.Field) string {
 	wi := writeRepeatedInput{
 		Field: f,
-		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames, "")),
-		Defs:  writeCases(f, f.Seen),
-		Seen:  f.Seen,
+		Func:  fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")),
+		Defs:  writeCases(f),
 	}
 
 	var buf bytes.Buffer
@@ -129,13 +123,13 @@ func writeRepeated(i int, flds []fields.Field) string {
 
 func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) string {
 	md := int(f.MaxDef())
-	rt := f.RepetitionTypes.Def(def)
+	rt := f.RepetitionTypes().Def(def)
 
 	if def < md && rep == 0 && rt == fields.Repeated {
 		rep = def
 	}
 
-	if useIfElse(def, rep, append(seen[:0:0], seen...), f) {
+	if useIfElse(def, rep, f) {
 		ie := ifelses(def, rep, f)
 		var buf bytes.Buffer
 		if err := ifTpl.Execute(&buf, ie); err != nil {
@@ -144,38 +138,19 @@ func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) str
 		return string(buf.Bytes())
 	}
 
-	f.Seen = seen
 	return f.Init(def, rep)
 }
 
-func useIfElse(def, rep int, seen fields.RepetitionTypes, f fields.Field) bool {
-	if len(seen) == 0 {
-		return false
-	}
-
-	i := f.DefIndex(def)
-
-	if i+1 > len(seen) && f.RepetitionTypes[:len(seen)].Required() {
-		return false
-	}
-
-	if len(seen) > i+1 {
-		seen = seen[:i+1]
-	}
-
-	if seen.Repeated() || (def == f.MaxDef() && rep > 0) {
-		return false
-	}
-
-	return true
+func useIfElse(def, rep int, f fields.Field) bool {
+	return f.NthChild == 0
 }
 
-func writeCases(f fields.Field, seen fields.RepetitionTypes) []int {
+func writeCases(f fields.Field) []int {
 	var defs []int
 	start := 1
-	if seen.Repeated() {
-		start = 1 + len(seen)
-	}
+	// if seen.Repeated() {
+	// 	start = 1 + len(seen)
+	// }
 
 	maxDef := f.MaxDef()
 	if start > maxDef {
@@ -191,8 +166,8 @@ func writeCases(f fields.Field, seen fields.RepetitionTypes) []int {
 func nilField(i int, f fields.Field) string {
 	var flds []string
 	var count int
-	for j, o := range f.RepetitionTypes {
-		flds = append(flds, f.FieldNames[j])
+	for j, o := range f.RepetitionTypes() {
+		flds = append(flds, f.FieldNames()[j])
 		if o == fields.Optional {
 			count++
 		}
@@ -201,15 +176,4 @@ func nilField(i int, f fields.Field) string {
 		}
 	}
 	return strings.Join(flds, ".")
-}
-
-// count the number of fields in the path that can be optional
-func defs(f fields.Field) int {
-	var out int
-	for _, o := range f.RepetitionTypes {
-		if o == fields.Optional || o == fields.Repeated {
-			out++
-		}
-	}
-	return out
 }

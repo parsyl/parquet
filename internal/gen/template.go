@@ -53,7 +53,7 @@ func Fields(compression compression) []Field {
 	}
 }
 
-{{range $i, $field := .Fields}}{{readFunc $field}}
+{{range $i, $field := .Parent.Fields}}{{readFunc $field}}
 
 {{writeFunc $i $.Fields}}
 

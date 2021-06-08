@@ -69,7 +69,7 @@ func readRepeated(f fields.Field) string {
 
 	return vals, defs, reps	
 }`,
-		strings.Join(f.FieldNames, ""),
+		strings.Join(f.FieldNames(), ""),
 		f.Type,
 		cleanTypeName(f.TypeName),
 		cleanTypeName(f.TypeName),
@@ -79,12 +79,13 @@ func readRepeated(f fields.Field) string {
 
 func doReadRepeated(f fields.Field, i int, varName string) string {
 	if i == f.MaxDef() {
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] == fields.Optional {
+		rts := f.RepetitionTypes()
+		if rts[len(rts)-1] == fields.Optional {
 			varName = fmt.Sprintf("*%s", varName)
 		}
-		if f.RepetitionTypes[len(f.RepetitionTypes)-1] != fields.Repeated {
-			n := lastRepeated(f.RepetitionTypes)
-			varName = strings.Join(append([]string{varName}, f.FieldNames[n+1:]...), ".")
+		if rts[len(rts)-1] != fields.Repeated {
+			n := lastRepeated(rts)
+			varName = strings.Join(append([]string{varName}, f.FieldNames()[n+1:]...), ".")
 		}
 		return fmt.Sprintf(`defs = append(defs, %d)
 reps = append(reps, lastRep)
@@ -103,14 +104,14 @@ vals = append(vals, %s)`, i, varName)
 
 	if rt == fields.Repeated {
 		if reps > 1 {
-			rc.Field = f.FieldNames[n]
+			rc.Field = f.FieldNames()[n]
 		}
 		nextVar = fmt.Sprintf("x%d", reps-1)
 		readRepeatedRepeatedTpl.Execute(&buf, rc)
 	} else {
 		nextVar = varName
 		if reps > 0 {
-			rc.Field = strings.Join(f.FieldNames[i:], ".")
+			rc.Field = strings.Join(f.FieldNames()[i:], ".")
 		}
 		readRepeatedOptionalTpl.Execute(&buf, rc)
 	}
