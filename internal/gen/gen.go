@@ -46,7 +46,7 @@ func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
 		Package: pkg,
 		Type:    typ,
 		Import:  getImport(imp),
-		Fields:  result.Fields,
+		Parent:  result.Parent,
 	}
 
 	tmpl := template.New("output").Funcs(funcs)
@@ -156,7 +156,7 @@ type input struct {
 	Package string
 	Type    string
 	Import  string
-	Fields  []fields.Field
+	Parent  fields.Field
 }
 
 func getFieldType(se *sch.SchemaElement) string {

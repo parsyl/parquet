@@ -20,12 +20,33 @@ type Field struct {
 	Parent         *Field
 	Embedded       bool
 	Children       []Field
+	NthChild       int
 }
 
 type input struct {
 	Parent string
 	Val    string
 	Append bool
+}
+
+func (f Field) Fields() []Field {
+	return f.fields(0)
+}
+
+func (f Field) fields(i int) []Field {
+	var out []Field
+	for j, fld := range f.Children {
+		fld.NthChild = j
+		if i > 0 {
+			fld.Parent = &f
+		}
+		if fld.Primitive() {
+			out = append(out, fld)
+		} else {
+			out = append(out, fld.fields(i+1)...)
+		}
+	}
+	return out
 }
 
 func (f Field) chain() []Field {
@@ -186,7 +207,7 @@ func (f Field) Required() bool {
 // that writes to a struct's field
 //
 // example:   x.Friend.Hobby = &Item{}
-func (f Field) Init(def, rep, nthChild int) string {
+func (f Field) Init(def, rep int) string {
 	maxDef := f.MaxDef()
 	maxRep := f.MaxRep()
 	var defs, reps int
@@ -212,14 +233,14 @@ func (f Field) Init(def, rep, nthChild int) string {
 		case Optional:
 			left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.FieldName))
 		case Repeated:
-			if (rep > 0 && reps < rep) || (nthChild > 0 && !fld.Primitive()) {
+			if (rep > 0 && reps < rep) || (f.NthChild > 0 && !fld.Primitive()) {
 				left = fmt.Sprintf(left, fmt.Sprintf(".%s[ind[%d]]%%s", fld.FieldName, reps-1))
 			} else {
 				left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.FieldName))
 			}
 		}
 
-		if (defs >= def || ((rep == 0 && fld.RepetitionType != Required) || (rep > 0 && reps == rep))) && nthChild == 0 {
+		if (defs >= def || ((rep == 0 && fld.RepetitionType != Required) || (rep > 0 && reps == rep))) && f.NthChild == 0 {
 			break
 		}
 	}
@@ -242,7 +263,7 @@ func (f Field) Init(def, rep, nthChild int) string {
 					right = fmt.Sprintf(right, fmt.Sprintf("{%s: vals[nVals]}%%s", fld.FieldName))
 				} else if fld.Parent.RepetitionType == Repeated {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[nVals]%%s", fld.FieldName))
-				} else if nthChild > 0 {
+				} else if f.NthChild > 0 {
 					right = fmt.Sprintf(right, "vals[0]%s")
 				} else {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[0]%%s", fld.FieldName))
@@ -256,13 +277,13 @@ func (f Field) Init(def, rep, nthChild int) string {
 			}
 		case Optional:
 			if fld.Primitive() {
-				if nthChild == 0 && fld.Parent.Optional() && !fld.Parent.Repeated() {
+				if f.NthChild == 0 && fld.Parent.Optional() && !fld.Parent.Repeated() {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: p%s(vals[0])%%s", fld.FieldName, fld.FieldType))
 				} else if fld.Parent.RepetitionType == Repeated {
 					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[nVals])%%s", fld.FieldType))
-				} else if fld.Parent.Repeated() && nthChild == 0 {
+				} else if fld.Parent.Repeated() && f.NthChild == 0 {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: p%s(vals[nVals])%%s", fld.FieldName, fld.FieldType))
-				} else if fld.Parent.Repeated() && nthChild > 0 {
+				} else if fld.Parent.Repeated() && f.NthChild > 0 {
 					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[nVals])%%s", fld.FieldType))
 				} else {
 					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[0])%%s", fld.FieldType))
@@ -308,7 +329,6 @@ func (f Field) Init(def, rep, nthChild int) string {
 	}
 
 	right = fmt.Sprintf(right, "")
-	fmt.Printf("x%s = %s\n", left, right)
 	return fmt.Sprintf("x%s = %s", left, right)
 }
 

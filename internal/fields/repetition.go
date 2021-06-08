@@ -11,6 +11,17 @@ const (
 	Repeated RepetitionType = 2
 )
 
+func (r RepetitionType) Prefix() string {
+	switch r {
+	case Optional:
+		return "*"
+	case Repeated:
+		return "[]"
+	default:
+		return ""
+	}
+}
+
 // RepetitionTypes provides several functions used by parquetgen's
 // go templates to generate code.
 type RepetitionTypes []RepetitionType
