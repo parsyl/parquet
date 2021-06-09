@@ -73,7 +73,6 @@ func TestInit(t *testing.T) {
 			def:      2,
 			expected: "x.Links = &Link{Backward: []int64{vals[nVals]}}",
 		},
-
 		{
 			fields: []fields.Field{
 				{FieldName: "Links", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
@@ -233,6 +232,40 @@ func TestInit(t *testing.T) {
 			def:      3,
 			rep:      3,
 			expected: "x.Thing.Names[ind[0]].Languages[ind[1]].Codes = append(x.Thing.Names[ind[0]].Languages[ind[1]].Codes, vals[nVals])",
+		},
+		{
+			fields: []fields.Field{
+				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Required, Children: []fields.Field{
+						{FieldName: "Name", FieldType: "string", TypeName: "*string", RepetitionType: fields.Optional},
+					}},
+				}},
+			},
+			def:      2,
+			expected: "x.Friend = &Entity{Hobby: Item{Name: pstring(vals[0])}}",
+		},
+		{
+			fields: []fields.Field{
+				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{FieldName: "Name", FieldType: "string", TypeName: "*string", RepetitionType: fields.Optional},
+					}},
+				}},
+			},
+			def:      3,
+			expected: "x.Friend = &Entity{Hobby: &Item{Name: pstring(vals[0])}}",
+		},
+		{
+			fields: []fields.Field{
+				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{FieldType: "int", TypeName: "*int", FieldName: "Rank", RepetitionType: fields.Optional},
+					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{FieldName: "Name", FieldType: "string", TypeName: "*string", RepetitionType: fields.Optional},
+					}},
+				}},
+			},
+			def:      3,
+			expected: "x.Friend.Hobby = &Item{Name: pstring(vals[0])}",
 		},
 		{
 			fields: []fields.Field{
@@ -468,6 +501,7 @@ func TestInit(t *testing.T) {
 			fields := fields.Field{Children: tc.fields}.Fields()
 			field := fields[len(fields)-1]
 			s := field.Init(tc.def, tc.rep)
+			fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, string(gocode))

@@ -20,11 +20,11 @@ func init() {
 	}
 
 	var err error
-	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Field.Type}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
+	writeTpl, err = template.New("output").Funcs(funcs).Parse(`func write{{.FuncName}}(x *{{.Field.StructType}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
 	def := defs[0]
-	switch def { {{range $i, $case := .Cases}}{{$def:=plusOne $i}}
-	case {{$def}}:
-	{{$defIndex := $.Field.DefIndex $def}}{{if $case.UseIf}}{{template "ifelse" $case}}{{else}}{{$case.Val}}{{end}}{{if eq $def $.MaxDef}}
+	switch def { {{range $i, $case := .Cases}}
+	case {{$case.Def}}:
+	{{$case.Val}}{{if $case.MaxDef}}
 	return 1, 1{{end}}{{end}}
 	}
 
@@ -64,7 +64,10 @@ type ifElse struct {
 	Val  string
 }
 
+// todo:  rename to defCase
 type ifElses struct {
+	Def    int
+	MaxDef bool
 	If     ifElse
 	ElseIf []ifElse
 	Else   *ifElse
@@ -75,8 +78,7 @@ func (i ifElses) UseIf() bool {
 	return i.Val == nil
 }
 
-func writeOptional(i int, flds []fields.Field) string {
-	f := flds[i]
+func writeOptional(f fields.Field) string {
 	wi := writeInput{
 		Field:    f,
 		FuncName: strings.Join(f.FieldNames(), ""),
@@ -93,68 +95,45 @@ func writeOptional(i int, flds []fields.Field) string {
 
 func writeOptionalCases(f fields.Field) []ifElses {
 	var out []ifElses
-	for def := 1; def <= f.MaxDef(); def++ {
-		if useIfElse(def, 0, f) {
-			out = append(out, ifelses(def, 0, f))
-		} else {
+	md := f.MaxDef()
+	for def := 1; def <= md; def++ {
+		if f.NthChild == 0 || def == md {
 			s := f.Init(def, 0)
-			out = append(out, ifElses{Val: &s})
+			out = append(out, ifElses{Def: def, Val: &s, MaxDef: def == md})
 		}
 	}
 	return out
 }
 
-type ifElseCase struct {
-	f fields.Field
-	p *fields.Field
-}
-
 // ifelses returns an if else block for the given definition and repetition level
-func ifelses(def, rep int, f fields.Field) ifElses {
-	opts := optionals(def, f)
-	var cases ifElseCases
-	for _, o := range opts {
-		//f := orig.Copy()
-		//f.Seen = seens(o)
-		cases = append(cases, ifElseCase{f: f, p: f.Parent(o + 1)})
+func ifelses(def, rep int, fld fields.Field) ifElses {
+	var flds []fields.Field
+	for _, f := range fld.Chain() {
+		if f.Optional() && f.NthChild == 0 {
+			flds = append(flds, f)
+		}
 	}
 
-	return cases.ifElses(def, rep, int(f.MaxDef()))
-}
-
-func seens(i int) fields.RepetitionTypes {
-	out := make([]fields.RepetitionType, i)
-	for i := range out {
-		out[i] = fields.Repeated
-	}
-	return fields.RepetitionTypes(out)
-}
-
-type ifElseCases []ifElseCase
-
-func (i ifElseCases) ifElses(def, rep, md int) ifElses {
 	out := ifElses{
 		If: ifElse{
-			Cond: fmt.Sprintf("x.%s == nil", strings.Join(i[0].p.FieldNames, ".")),
-			Val:  i[0].f.Init(def, rep),
+			Cond: fmt.Sprintf("x.%s == nil", strings.Join(flds[0].FieldNames(), ".")),
+			Val:  flds[0].Init(def, rep),
 		},
 	}
 
-	var leftovers []ifElseCase
-	if len(i) > 1 {
+	if len(flds) > 1 {
 		out.Else = &ifElse{
-			Val: i[len(i)-1].f.Init(def, rep),
-		}
-		if len(i) > 2 {
-			leftovers = i[1 : len(i)-1]
+			Val: flds[len(flds)-1].Init(def, rep),
 		}
 	}
 
-	for _, iec := range leftovers {
-		out.ElseIf = append(out.ElseIf, ifElse{
-			Cond: fmt.Sprintf("x.%s == nil", strings.Join(iec.p.FieldName, ".")),
-			Val:  iec.f.Init(def, rep),
-		})
+	if len(flds) > 2 {
+		for _, f := range flds[1 : len(flds)-2] {
+			out.ElseIf = append(out.ElseIf, ifElse{
+				Cond: fmt.Sprintf("x.%s == nil", strings.Join(f.FieldNames(), ".")),
+				Val:  f.Init(def, rep),
+			})
+		}
 	}
 
 	return out
@@ -164,21 +143,21 @@ func (i ifElseCases) ifElses(def, rep, md int) ifElses {
 // each optional field.
 func optionals(def int, f fields.Field) []int {
 	var out []int
-	di := f.DefIndex(def)
-	seen := append(f.Seen[:0:0], f.Seen...)
+	// di := f.DefIndex(def)
+	// seen := append(f.Seen[:0:0], f.Seen...)
 
-	if len(seen) > di+1 {
-		seen = seen[:di+1]
-	}
+	// if len(seen) > di+1 {
+	// 	seen = seen[:di+1]
+	// }
 
-	for i, rt := range f.RepetitionTypes[:di+1] {
-		if rt >= fields.Optional {
-			out = append(out, i)
-		}
-		if i > len(seen)-1 && rt >= fields.Optional {
-			break
-		}
-	}
+	// for i, rt := range f.RepetitionTypes[:di+1] {
+	// 	if rt >= fields.Optional {
+	// 		out = append(out, i)
+	// 	}
+	// 	if i > len(seen)-1 && rt >= fields.Optional {
+	// 		break
+	// 	}
+	// }
 
 	return out
 }

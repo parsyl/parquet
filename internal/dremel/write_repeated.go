@@ -53,7 +53,7 @@ func init() {
 		log.Fatalf("unable to create templates: %s", err)
 	}
 
-	writeRepeatedTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.Type}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
+	writeRepeatedTpl, err = template.New("output").Funcs(funcs).Parse(`func {{.Func}}(x *{{.Field.StructType}}, vals []{{removeStar .Field.TypeName}}, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, {{.Field.MaxRep}})
 
@@ -106,7 +106,7 @@ type writeRepeatedInput struct {
 func writeRequired(f fields.Field) string {
 	return fmt.Sprintf(`func %s(x *%s, vals []%s) {
 	x.%s = vals[0]
-}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")), f.Type, f.TypeName, strings.Join(f.FieldNames(), "."))
+}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")), f.StructType(), f.TypeName, strings.Join(f.FieldNames(), "."))
 }
 
 func writeRepeated(f fields.Field) string {
@@ -142,25 +142,11 @@ func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) str
 }
 
 func useIfElse(def, rep int, f fields.Field) bool {
-	return f.NthChild == 0
+	return f.NthChild == 0 && f.Parent.Parent != nil && f.Optional()
 }
 
 func writeCases(f fields.Field) []int {
-	var defs []int
-	start := 1
-	// if seen.Repeated() {
-	// 	start = 1 + len(seen)
-	// }
-
-	maxDef := f.MaxDef()
-	if start > maxDef {
-		start = maxDef //hack!  figure out why start is > maxDef
-	}
-
-	for def := start; def <= maxDef; def++ {
-		defs = append(defs, def)
-	}
-	return defs
+	return nil
 }
 
 func nilField(i int, f fields.Field) string {

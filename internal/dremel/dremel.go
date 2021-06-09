@@ -10,14 +10,13 @@ import (
 
 // Write generates the code for initializing a struct
 // with data from a parquet file.
-func Write(i int, fields []fields.Field) string {
-	f := fields[i]
+func Write(f fields.Field) string {
 	if f.Repeated() {
 		return writeRepeated(f)
 	}
 
 	if f.Optional() {
-		return writeOptional(i, fields)
+		return writeOptional(f)
 	}
 
 	return writeRequired(f)

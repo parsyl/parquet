@@ -29,6 +29,14 @@ type input struct {
 	Append bool
 }
 
+func (f Field) StructType() string {
+	var typ string
+	for fld := f.Parent; fld != nil; fld = fld.Parent {
+		typ = fld.Type
+	}
+	return typ
+}
+
 func (f Field) Fields() []Field {
 	return f.fields(0)
 }
@@ -37,9 +45,7 @@ func (f Field) fields(i int) []Field {
 	var out []Field
 	for j, fld := range f.Children {
 		fld.NthChild = j
-		if i > 0 {
-			fld.Parent = &f
-		}
+		fld.Parent = &f
 		if fld.Primitive() {
 			out = append(out, fld)
 		} else {
@@ -49,7 +55,7 @@ func (f Field) fields(i int) []Field {
 	return out
 }
 
-func (f Field) chain() []Field {
+func (f Field) Chain() []Field {
 	out := []Field{f}
 	for fld := f.Parent; fld != nil; fld = fld.Parent {
 		out = append(out, *fld)
@@ -66,31 +72,37 @@ func reverse(out []Field) []Field {
 
 func (f Field) FieldNames() []string {
 	var out []string
-	for _, fld := range reverse(f.chain()) {
-		out = append(out, fld.FieldName)
+	for _, fld := range reverse(f.Chain()) {
+		if fld.FieldName != "" {
+			out = append(out, fld.FieldName)
+		}
 	}
 	return out
 }
 
 func (f Field) FieldTypes() []string {
 	var out []string
-	for _, fld := range reverse(f.chain()) {
-		out = append(out, fld.FieldType)
+	for _, fld := range reverse(f.Chain()) {
+		if fld.FieldType != "" {
+			out = append(out, fld.FieldType)
+		}
 	}
 	return out
 }
 
 func (f Field) ColumnNames() []string {
 	var out []string
-	for _, fld := range reverse(f.chain()) {
-		out = append(out, fld.ColumnName)
+	for _, fld := range reverse(f.Chain()) {
+		if fld.ColumnName != "" {
+			out = append(out, fld.ColumnName)
+		}
 	}
 	return out
 }
 
 func (f Field) RepetitionTypes() RepetitionTypes {
 	var out []RepetitionType
-	for _, fld := range reverse(f.chain()) {
+	for _, fld := range reverse(f.Chain()) {
 		out = append(out, fld.RepetitionType)
 	}
 	return out
@@ -100,7 +112,7 @@ func (f Field) RepetitionTypes() RepetitionTypes {
 // nested field with the given definition level.
 func (f Field) DefIndex(def int) int {
 	var count, i int
-	for _, fld := range reverse(f.chain()) {
+	for _, fld := range reverse(f.Chain()) {
 		if fld.RepetitionType == Optional || fld.RepetitionType == Repeated {
 			count++
 		}
@@ -116,7 +128,7 @@ func (f Field) DefIndex(def int) int {
 // level for the nested field.
 func (f Field) MaxDef() int {
 	var out int
-	for _, fld := range reverse(f.chain()) {
+	for _, fld := range reverse(f.Chain()) {
 		if fld.RepetitionType == Optional || fld.RepetitionType == Repeated {
 			out++
 		}
@@ -128,7 +140,7 @@ func (f Field) MaxDef() int {
 // level for the nested field.
 func (f Field) MaxRep() int {
 	var out int
-	for _, fld := range reverse(f.chain()) {
+	for _, fld := range reverse(f.Chain()) {
 		if fld.RepetitionType == Repeated {
 			out++
 		}
@@ -185,7 +197,7 @@ func (f Field) NilField(n int) (string, RepetitionType, int, int) {
 
 // Child returns a sub-field based on i
 func (f Field) Child(i int) Field {
-	return reverse(f.chain())[i]
+	return reverse(f.Chain())[i]
 }
 
 // Repeated wraps RepetitionTypes.Repeated()
@@ -203,6 +215,32 @@ func (f Field) Required() bool {
 	return f.RepetitionTypes().Required()
 }
 
+func (f Field) rightComplete(fld Field, i, def, rep, maxDef, maxRep, defs, reps int) bool {
+	//(defs >= def || ((rep == 0 && fld.RepetitionType == Repeated) || (rep > 0 && reps == rep))) && f.NthChild == 0
+	fmt.Println("right complete", fld, i, def, rep, maxDef, maxRep, defs, reps)
+	if fld.NthChild > 0 {
+		return true
+	}
+
+	if def == defs && fld.RepetitionType != Required && fld.NthChild == 0 {
+		return true
+	}
+
+	if def == maxDef && fld.RepetitionType != Required && fld.NthChild == 0 {
+		return true
+	}
+
+	if rep > 0 && reps == rep {
+		return true
+	}
+
+	if rep == 0 && fld.RepetitionType != Required && (fld.RepetitionType == Repeated || f.RepetitionType == Repeated) {
+		return true
+	}
+
+	return false
+}
+
 // Init is called by parquetgen's templates to generate the code
 // that writes to a struct's field
 //
@@ -215,10 +253,14 @@ func (f Field) Init(def, rep int) string {
 
 	left, right := "%s", "%s"
 
-	chain := reverse(f.chain())
+	chain := reverse(f.Chain())
 
 	var i int
 	for i, fld = range chain {
+		if fld.Parent == nil {
+			continue
+		}
+
 		if fld.RepetitionType == Optional || fld.RepetitionType == Repeated {
 			defs++
 		}
@@ -240,9 +282,10 @@ func (f Field) Init(def, rep int) string {
 			}
 		}
 
-		if (defs >= def || ((rep == 0 && fld.RepetitionType != Required) || (rep > 0 && reps == rep))) && f.NthChild == 0 {
+		if f.rightComplete(fld, i, def, rep, maxDef, maxRep, defs, reps) {
 			break
 		}
+
 	}
 
 	left = fmt.Sprintf(left, "")
@@ -270,9 +313,9 @@ func (f Field) Init(def, rep int) string {
 				}
 			} else {
 				if fld.Parent.RepetitionType == Repeated && rep < maxRep {
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: %s{%%s}}", fld.FieldType, fld.FieldName))
+					right = fmt.Sprintf(right, fmt.Sprintf("{%s: %s{%%s}}", fld.FieldName, fld.FieldType))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: %s{%%s}", fld.FieldType, fld.FieldName))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: %s{%%s}", fld.FieldName, fld.FieldType))
 				}
 			}
 		case Optional:
@@ -297,9 +340,9 @@ func (f Field) Init(def, rep int) string {
 			}
 		case Repeated:
 			if fld.Primitive() {
-				if rep == 0 && fld.Parent != nil && fld.Parent.RepetitionType == Repeated {
+				if rep == 0 && fld.Parent.RepetitionType == Repeated {
 					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{vals[nVals]}}%%s", fld.FieldName, fld.FieldType))
-				} else if fld.Parent == nil && rep == 0 {
+				} else if fld.Parent.Parent == nil && rep == 0 {
 					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{vals[nVals]}%%s", fld.FieldType))
 				} else if rep == 0 {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{vals[nVals]}%%s", fld.FieldName, fld.FieldType))

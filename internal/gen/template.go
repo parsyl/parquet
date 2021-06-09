@@ -16,7 +16,7 @@ import (
 	"github.com/parsyl/parquet"
 	sch "github.com/parsyl/parquet/schema"
 	{{.Import}}
-	{{range imports .Fields}}{{.}}
+	{{range imports .Parent.Fields}}{{.}}
 	{{end}}
 )
 
@@ -48,14 +48,14 @@ type ParquetWriter struct {
 }
 
 func Fields(compression compression) []Field {
-	return []Field{ {{range .Fields}}
+	return []Field{ {{range .Parent.Fields}}
 		{{template "newField" .}}{{end}}
 	}
 }
 
 {{range $i, $field := .Parent.Fields}}{{readFunc $field}}
 
-{{writeFunc $i $.Fields}}
+{{writeFunc $field}}
 
 {{end}}
 
@@ -377,7 +377,7 @@ func (p *ParquetReader) Scan(x *{{.Type}}) {
 	}
 }
 
-{{range dedupe .Fields}}
+{{range dedupe .Parent.Fields}}
 {{if eq .Category "numeric"}}
 {{ template "numericField" .}}
 {{end}}
@@ -398,7 +398,7 @@ func (p *ParquetReader) Scan(x *{{.Type}}) {
 {{end}}
 {{end}}
 
-{{range dedupe .Fields}}
+{{range dedupe .Parent.Fields}}
 {{if eq .Category "numeric"}}
 {{ template "requiredStats" .}}
 {{end}}

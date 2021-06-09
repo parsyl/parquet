@@ -85,7 +85,7 @@ func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
 
 	gocode, err := format.Source(buf.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, string(buf.Bytes()))
 	}
 
 	f, err := os.Create(outPth)
