@@ -21,6 +21,7 @@ type Field struct {
 	Embedded       bool
 	Children       []Field
 	NthChild       int
+	defined        bool
 }
 
 type input struct {
@@ -216,25 +217,20 @@ func (f Field) Required() bool {
 }
 
 func (f Field) rightComplete(fld Field, i, def, rep, maxDef, maxRep, defs, reps int) bool {
-	//(defs >= def || ((rep == 0 && fld.RepetitionType == Repeated) || (rep > 0 && reps == rep))) && f.NthChild == 0
-	fmt.Println("right complete", fld, i, def, rep, maxDef, maxRep, defs, reps)
-	if fld.NthChild > 0 {
+	if fld.RepetitionType == Optional && rep == 0 && !fld.defined {
 		return true
 	}
 
-	if def == defs && fld.RepetitionType != Required && fld.NthChild == 0 {
+	if fld.RepetitionType == Repeated && rep > 0 && reps == rep && f.NthChild == 0 {
 		return true
 	}
 
-	if def == maxDef && fld.RepetitionType != Required && fld.NthChild == 0 {
+	if defs == maxDef && fld.RepetitionType != Required && f.NthChild == 0 {
 		return true
 	}
 
-	if rep > 0 && reps == rep {
-		return true
-	}
-
-	if rep == 0 && fld.RepetitionType != Required && (fld.RepetitionType == Repeated || f.RepetitionType == Repeated) {
+	//if rep == 0 && fld.RepetitionType != Required && (fld.RepetitionType == Repeated || f.RepetitionType == Repeated) {
+	if rep == 0 && fld.RepetitionType == Repeated && !fld.defined {
 		return true
 	}
 
@@ -253,10 +249,20 @@ func (f Field) Init(def, rep int) string {
 
 	left, right := "%s", "%s"
 
-	chain := reverse(f.Chain())
+	chain := f.Chain()
+	var defined bool
+	for i, fld := range chain {
+		fld.defined = defined
+		chain[i] = fld
+		if fld.Parent != nil && fld.NthChild > 0 {
+			defined = true
+		}
+	}
+
+	chain = reverse(chain)
 
 	var i int
-	for i, fld = range chain {
+	for _, fld = range chain {
 		if fld.Parent == nil {
 			continue
 		}
@@ -283,9 +289,11 @@ func (f Field) Init(def, rep int) string {
 		}
 
 		if f.rightComplete(fld, i, def, rep, maxDef, maxRep, defs, reps) {
+			i++
 			break
 		}
 
+		i++
 	}
 
 	left = fmt.Sprintf(left, "")
