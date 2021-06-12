@@ -31,8 +31,8 @@ func TestFields(t *testing.T) {
 			typ:  "Being",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+					{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
 				},
 			},
 		},
@@ -41,8 +41,8 @@ func TestFields(t *testing.T) {
 			typ:  "Private",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+					{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
 				},
 			},
 		},
@@ -51,11 +51,11 @@ func TestFields(t *testing.T) {
 			typ:  "Nested",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{Type: "Being", TypeName: "Being", FieldName: "Being", FieldType: "Being", ColumnName: "Being", RepetitionType: fields.Required, Children: []fields.Field{
-						{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-						{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Name: "Being", Type: "Being", ColumnName: "Being", RepetitionType: fields.Required, Children: []fields.Field{
+						{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+						{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
 					}},
-					{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
 				},
 			},
 			errors: []error{},
@@ -65,11 +65,11 @@ func TestFields(t *testing.T) {
 			typ:  "Nested2",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{Type: "Being", TypeName: "Being", FieldName: "Info", FieldType: "Being", ColumnName: "Info", RepetitionType: fields.Required, Children: []fields.Field{
-						{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-						{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "Being", Name: "Info", ColumnName: "Info", RepetitionType: fields.Required, Children: []fields.Field{
+						{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+						{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
 					}},
-					{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
 				},
 			},
 			errors: []error{},
@@ -79,15 +79,13 @@ func TestFields(t *testing.T) {
 			typ:  "DoubleNested",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{
-						Type: "Nested", FieldName: "Nested", FieldType: "Nested", ColumnName: "Nested", TypeName: "Nested",
-						Children: []fields.Field{
-							{Type: "Being", TypeName: "Being", FieldName: "Being", FieldType: "Being", ColumnName: "Being", RepetitionType: fields.Required, Children: []fields.Field{
-								{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-								{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
-							}},
-							{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
-						},
+					{Type: "Nested", Name: "Nested", ColumnName: "Nested", Children: []fields.Field{
+						{Type: "Being", Name: "Being", ColumnName: "Being", RepetitionType: fields.Required, Children: []fields.Field{
+							{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+							{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
+						}},
+						{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
+					},
 					},
 				},
 			},
@@ -98,15 +96,13 @@ func TestFields(t *testing.T) {
 			typ:  "OptionalDoubleNested",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{
-						Type: "OptionalNested", FieldName: "OptionalNested", FieldType: "OptionalNested", ColumnName: "OptionalNested", TypeName: "OptionalNested",
-						Children: []fields.Field{
-							{Type: "Being", TypeName: "*Being", FieldName: "Being", FieldType: "Being", ColumnName: "Being", RepetitionType: fields.Optional, Children: []fields.Field{
-								{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-								{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
-							}},
-							{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
-						},
+					{Type: "OptionalNested", Name: "OptionalNested", ColumnName: "OptionalNested", Children: []fields.Field{
+						{Type: "Being", Name: "Being", ColumnName: "Being", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+							{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
+						}},
+						{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
+					},
 					},
 				},
 			},
@@ -117,11 +113,11 @@ func TestFields(t *testing.T) {
 			typ:  "OptionalNested",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{Type: "Being", TypeName: "*Being", FieldName: "Being", FieldType: "Being", ColumnName: "Being", RepetitionType: fields.Optional, Children: []fields.Field{
-						{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-						{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "Being", Name: "Being", ColumnName: "Being", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+						{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
 					}},
-					{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
 				},
 			},
 			errors: []error{},
@@ -131,10 +127,10 @@ func TestFields(t *testing.T) {
 			typ:  "OptionalNested2",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{Type: "Thing", TypeName: "*Thing", FieldName: "Being", FieldType: "Thing", ColumnName: "Being", RepetitionType: fields.Optional, Children: []fields.Field{
-						{ParquetType: "StringType", TypeName: "string", FieldName: "Name", FieldType: "string", ColumnName: "Name", Category: "string", RepetitionType: fields.Required},
+					{Type: "Thing", Name: "Being", ColumnName: "Being", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Type: "string", Name: "Name", ColumnName: "Name", RepetitionType: fields.Required},
 					}},
-					{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
 				},
 			},
 			errors: []error{},
@@ -145,8 +141,8 @@ func TestFields(t *testing.T) {
 			errors: []error{fmt.Errorf("unsupported type &{time Time}")},
 			expected: fields.Field{
 				Children: []fields.Field{
-					{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+					{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
 				},
 			},
 		},
@@ -155,10 +151,10 @@ func TestFields(t *testing.T) {
 			typ:  "SupportedAndUnsupported",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{ParquetType: "Int64Type", TypeName: "int64", FieldName: "Happiness", FieldType: "int64", ColumnName: "Happiness", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
-					{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "int64", Name: "Happiness", ColumnName: "Happiness", RepetitionType: fields.Required},
+					{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+					{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
+					{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
 				},
 			},
 			errors: []error{
@@ -171,16 +167,16 @@ func TestFields(t *testing.T) {
 			typ:  "Person",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
-					{ParquetType: "Int64Type", TypeName: "int64", FieldName: "Happiness", FieldType: "int64", ColumnName: "Happiness", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int64Type", TypeName: "*int64", FieldName: "Sadness", FieldType: "int64", ColumnName: "Sadness", Category: "numericOptional", RepetitionType: fields.Optional},
-					{ParquetType: "StringType", TypeName: "string", FieldName: "Code", FieldType: "string", ColumnName: "Code", Category: "string", RepetitionType: fields.Required},
-					{ParquetType: "Float32Type", TypeName: "float32", FieldType: "float32", FieldName: "Funkiness", ColumnName: "Funkiness", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Float32Type", TypeName: "*float32", FieldType: "float32", FieldName: "Lameness", ColumnName: "Lameness", Category: "numericOptional", RepetitionType: fields.Optional},
-					{ParquetType: "BoolType", TypeName: "*bool", FieldType: "bool", FieldName: "Keen", ColumnName: "Keen", Category: "boolOptional", RepetitionType: fields.Optional},
-					{ParquetType: "Uint32Type", TypeName: "uint32", FieldType: "uint32", FieldName: "Birthday", ColumnName: "Birthday", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+					{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
+					{Type: "int64", Name: "Happiness", ColumnName: "Happiness", RepetitionType: fields.Required},
+					{Type: "int64", Name: "Sadness", ColumnName: "Sadness", RepetitionType: fields.Optional},
+					{Type: "string", Name: "Code", ColumnName: "Code", RepetitionType: fields.Required},
+					{Type: "float32", Name: "Funkiness", ColumnName: "Funkiness", RepetitionType: fields.Required},
+					{Type: "float32", Name: "Lameness", ColumnName: "Lameness", RepetitionType: fields.Optional},
+					{Type: "bool", Name: "Keen", ColumnName: "Keen", RepetitionType: fields.Optional},
+					{Type: "uint32", Name: "Birthday", ColumnName: "Birthday", RepetitionType: fields.Required},
+					{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
 				},
 			},
 		},
@@ -189,16 +185,16 @@ func TestFields(t *testing.T) {
 			typ:  "NewOrderPerson",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{ParquetType: "Int64Type", TypeName: "int64", FieldName: "Happiness", FieldType: "int64", ColumnName: "Happiness", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int64Type", TypeName: "*int64", FieldName: "Sadness", FieldType: "int64", ColumnName: "Sadness", Category: "numericOptional", RepetitionType: fields.Optional},
-					{ParquetType: "StringType", TypeName: "string", FieldName: "Code", FieldType: "string", ColumnName: "Code", Category: "string", RepetitionType: fields.Required},
-					{ParquetType: "Float32Type", TypeName: "float32", FieldType: "float32", FieldName: "Funkiness", ColumnName: "Funkiness", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Float32Type", TypeName: "*float32", FieldType: "float32", FieldName: "Lameness", ColumnName: "Lameness", Category: "numericOptional", RepetitionType: fields.Optional},
-					{ParquetType: "BoolType", TypeName: "*bool", FieldType: "bool", FieldName: "Keen", ColumnName: "Keen", Category: "boolOptional", RepetitionType: fields.Optional},
-					{ParquetType: "Uint32Type", TypeName: "uint32", FieldType: "uint32", FieldName: "Birthday", ColumnName: "Birthday", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "ID", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
-					{ParquetType: "Uint64Type", TypeName: "*uint64", FieldName: "Anniversary", FieldType: "uint64", ColumnName: "Anniversary", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "int64", Name: "Happiness", ColumnName: "Happiness", RepetitionType: fields.Required},
+					{Type: "int64", Name: "Sadness", ColumnName: "Sadness", RepetitionType: fields.Optional},
+					{Type: "string", Name: "Code", ColumnName: "Code", RepetitionType: fields.Required},
+					{Type: "float32", Name: "Funkiness", ColumnName: "Funkiness", RepetitionType: fields.Required},
+					{Type: "float32", Name: "Lameness", ColumnName: "Lameness", RepetitionType: fields.Optional},
+					{Type: "bool", Name: "Keen", ColumnName: "Keen", RepetitionType: fields.Optional},
+					{Type: "uint32", Name: "Birthday", ColumnName: "Birthday", RepetitionType: fields.Required},
+					{Type: "int32", Name: "ID", ColumnName: "ID", RepetitionType: fields.Required},
+					{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
+					{Type: "uint64", Name: "Anniversary", ColumnName: "Anniversary", RepetitionType: fields.Optional},
 				},
 			},
 		},
@@ -207,8 +203,8 @@ func TestFields(t *testing.T) {
 			typ:  "Tagged",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
-					{ParquetType: "StringType", TypeName: "string", FieldName: "Name", FieldType: "string", ColumnName: "name", Category: "string", RepetitionType: fields.Required},
+					{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
+					{Type: "string", Name: "Name", ColumnName: "name", RepetitionType: fields.Required},
 				},
 			},
 		},
@@ -217,7 +213,7 @@ func TestFields(t *testing.T) {
 			typ:  "IgnoreMe",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", FieldType: "int32", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
+					{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
 				},
 			},
 		},
@@ -226,7 +222,7 @@ func TestFields(t *testing.T) {
 			typ:  "Slice",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "IDs", ColumnName: "ids", Category: "numericOptional", RepetitionType: fields.Repeated},
+					{Type: "int32", Name: "IDs", ColumnName: "ids", RepetitionType: fields.Repeated},
 				},
 			},
 		},
@@ -235,8 +231,8 @@ func TestFields(t *testing.T) {
 			typ:  "Slice2",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "IDs", ColumnName: "ids", Category: "numericOptional", RepetitionType: fields.Repeated},
+					{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
+					{Type: "int32", Name: "IDs", ColumnName: "ids", RepetitionType: fields.Repeated},
 				},
 			},
 		},
@@ -245,9 +241,9 @@ func TestFields(t *testing.T) {
 			typ:  "Slice3",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "IDs", ColumnName: "ids", Category: "numericOptional", RepetitionType: fields.Repeated},
-					{ParquetType: "Int32Type", TypeName: "*int32", FieldName: "Age", FieldType: "int32", ColumnName: "Age", Category: "numericOptional", RepetitionType: fields.Optional},
+					{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
+					{Type: "int32", Name: "IDs", ColumnName: "ids", RepetitionType: fields.Repeated},
+					{Type: "int32", Name: "Age", ColumnName: "Age", RepetitionType: fields.Optional},
 				},
 			},
 		},
@@ -256,10 +252,10 @@ func TestFields(t *testing.T) {
 			typ:  "Slice4",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
-					{Type: "Hobby", TypeName: "Hobby", FieldName: "Hobbies", FieldType: "Hobby", ColumnName: "hobbies", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{ParquetType: "StringType", TypeName: "string", FieldName: "Name", FieldType: "string", ColumnName: "Name", Category: "string", RepetitionType: fields.Required},
-						{ParquetType: "Int32Type", TypeName: "int32", FieldName: "Difficulty", FieldType: "int32", ColumnName: "Difficulty", Category: "numeric", RepetitionType: fields.Required},
+					{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
+					{Type: "Hobby", Name: "Hobbies", ColumnName: "hobbies", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Type: "string", Name: "Name", ColumnName: "Name", RepetitionType: fields.Required},
+						{Type: "int32", Name: "Difficulty", ColumnName: "Difficulty", RepetitionType: fields.Required},
 					}},
 				},
 			},
@@ -269,9 +265,9 @@ func TestFields(t *testing.T) {
 			typ:  "Slice5",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
-					{Type: "Hobby2", TypeName: "Hobby2", FieldName: "Hobby", FieldType: "Hobby2", ColumnName: "hobby", RepetitionType: fields.Required, Children: []fields.Field{
-						{ParquetType: "StringType", TypeName: "string", FieldName: "Names", FieldType: "string", ColumnName: "names", Category: "stringOptional", RepetitionType: fields.Repeated},
+					{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
+					{Type: "Hobby2", Name: "Hobby", ColumnName: "hobby", RepetitionType: fields.Required, Children: []fields.Field{
+						{Type: "string", Name: "Names", ColumnName: "names", RepetitionType: fields.Repeated},
 					}},
 				},
 			},
@@ -281,9 +277,9 @@ func TestFields(t *testing.T) {
 			typ:  "Slice6",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
-					{Type: "Hobby2", TypeName: "Hobby2", FieldName: "Hobbies", FieldType: "Hobby2", ColumnName: "hobbies", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{ParquetType: "StringType", TypeName: "string", FieldName: "Names", FieldType: "string", ColumnName: "names", Category: "stringOptional", RepetitionType: fields.Repeated},
+					{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
+					{Type: "Hobby2", Name: "Hobbies", ColumnName: "hobbies", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Type: "string", Name: "Names", ColumnName: "names", RepetitionType: fields.Repeated},
 					}},
 				},
 			},
@@ -293,10 +289,10 @@ func TestFields(t *testing.T) {
 			typ:  "Slice7",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{Type: "Slice6", TypeName: "*Slice6", FieldName: "Thing", FieldType: "Slice6", ColumnName: "thing", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldType: "int32", ParquetType: "Int32Type", TypeName: "int32", FieldName: "ID", ColumnName: "id", Category: "numeric", RepetitionType: fields.Required},
-						{Type: "Hobby2", TypeName: "Hobby2", FieldName: "Hobbies", FieldType: "Hobby2", ColumnName: "hobbies", RepetitionType: fields.Repeated, Children: []fields.Field{
-							{ParquetType: "StringType", TypeName: "string", FieldName: "Names", FieldType: "string", ColumnName: "names", Category: "stringOptional", RepetitionType: fields.Repeated},
+					{Type: "Slice6", Name: "Thing", ColumnName: "thing", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Type: "int32", Name: "ID", ColumnName: "id", RepetitionType: fields.Required},
+						{Type: "Hobby2", Name: "Hobbies", ColumnName: "hobbies", RepetitionType: fields.Repeated, Children: []fields.Field{
+							{Type: "string", Name: "Names", ColumnName: "names", RepetitionType: fields.Repeated},
 						}},
 					}},
 				},
@@ -307,17 +303,17 @@ func TestFields(t *testing.T) {
 			typ:  "Document",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldType: "int64", ParquetType: "Int64Type", TypeName: "int64", FieldName: "DocID", ColumnName: "DocID", Category: "numeric", RepetitionType: fields.Required},
-					{Type: "Link", TypeName: "Link", FieldName: "Links", FieldType: "Link", ColumnName: "Links", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{TypeName: "int64", ParquetType: "Int64Type", FieldName: "Backward", FieldType: "int64", ColumnName: "Backward", Category: "numericOptional", RepetitionType: fields.Repeated},
-						{TypeName: "int64", ParquetType: "Int64Type", FieldName: "Forward", FieldType: "int64", ColumnName: "Forward", Category: "numericOptional", RepetitionType: fields.Repeated},
+					{Type: "int64", Name: "DocID", ColumnName: "DocID", RepetitionType: fields.Required},
+					{Type: "Link", Name: "Links", ColumnName: "Links", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Type: "int64", Name: "Backward", ColumnName: "Backward", RepetitionType: fields.Repeated},
+						{Type: "int64", Name: "Forward", ColumnName: "Forward", RepetitionType: fields.Repeated},
 					}},
-					{Type: "Name", TypeName: "Name", FieldName: "Names", FieldType: "Name", ColumnName: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{Type: "Language", TypeName: "Language", FieldName: "Languages", FieldType: "Language", ColumnName: "Languages", RepetitionType: fields.Repeated, Children: []fields.Field{
-							{TypeName: "string", ParquetType: "StringType", FieldName: "Code", FieldType: "string", ColumnName: "Code", Category: "string", RepetitionType: fields.Required},
-							{TypeName: "*string", ParquetType: "StringType", FieldName: "Country", FieldType: "string", ColumnName: "Country", Category: "stringOptional", RepetitionType: fields.Optional},
+					{Type: "Name", Name: "Names", ColumnName: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Type: "Language", Name: "Languages", ColumnName: "Languages", RepetitionType: fields.Repeated, Children: []fields.Field{
+							{Type: "string", Name: "Code", ColumnName: "Code", RepetitionType: fields.Required},
+							{Type: "string", Name: "Country", ColumnName: "Country", RepetitionType: fields.Optional},
 						}},
-						{TypeName: "*string", ParquetType: "StringType", FieldName: "URL", FieldType: "string", ColumnName: "URL", Category: "stringOptional", RepetitionType: fields.Optional},
+						{Type: "string", Name: "URL", ColumnName: "URL", RepetitionType: fields.Optional},
 					}},
 				},
 			},
@@ -327,10 +323,10 @@ func TestFields(t *testing.T) {
 			typ:  "A",
 			expected: fields.Field{
 				Children: []fields.Field{
-					{FieldName: "D", FieldType: "int32", TypeName: "int32", ParquetType: "Int32Type", ColumnName: "D", Category: "numeric", RepetitionType: fields.Required},
-					{FieldName: "C", FieldType: "string", TypeName: "string", ParquetType: "StringType", ColumnName: "C", Category: "string", RepetitionType: fields.Required},
-					{FieldName: "B", FieldType: "bool", TypeName: "bool", ParquetType: "BoolType", ColumnName: "B", Category: "bool", RepetitionType: fields.Required},
-					{FieldName: "Name", FieldType: "string", TypeName: "string", ParquetType: "StringType", ColumnName: "Name", Category: "string", RepetitionType: fields.Required},
+					{Name: "D", Type: "int32", ColumnName: "D", RepetitionType: fields.Required},
+					{Name: "C", Type: "string", ColumnName: "C", RepetitionType: fields.Required},
+					{Name: "B", Type: "bool", ColumnName: "B", RepetitionType: fields.Required},
+					{Name: "Name", Type: "string", ColumnName: "Name", RepetitionType: fields.Required},
 				},
 			},
 		},
@@ -340,6 +336,11 @@ func TestFields(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			out, err := parse.Fields(tc.typ, "./parse_test.go")
 			assert.Nil(t, err, tc.name)
+
+			if len(tc.errors) == 0 {
+				tc.errors = nil
+			}
+
 			if !assert.Equal(t, tc.errors, out.Errors, tc.name) {
 				return
 			}

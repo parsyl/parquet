@@ -11,6 +11,9 @@ import (
 
 	"github.com/parsyl/parquet"
 	sch "github.com/parsyl/parquet/schema"
+
+	"math"
+	"sort"
 )
 
 type compression int
@@ -41,7 +44,319 @@ type ParquetWriter struct {
 }
 
 func Fields(compression compression) []Field {
-	return []Field{}
+	return []Field{
+		Newint64(readDocID, writeDocID, []string{"docid"}, fieldCompression(compression)),
+		Newint64(readLinksBackward, writeLinksBackward, []string{"link", "backward"}, []int{1, 2}, fieldCompression(compression)),
+		Newint64(readLinksForward, writeLinksForward, []string{"link", "forward"}, []int{1, 2}, fieldCompression(compression)),
+		Newstring(readNamesLanguagesCode, writeNamesLanguagesCode, []string{"names", "languages", "code"}, []int{2, 2, 0}, fieldCompression(compression)),
+		Newstring(readNamesLanguagesCountry, writeNamesLanguagesCountry, []string{"names", "languages", "country"}, []int{2, 2, 1}, fieldCompression(compression)),
+		Newstring(readNamesURL, writeNamesURL, []string{"names", "url"}, []int{2, 1}, fieldCompression(compression)),
+	}
+}
+
+func readDocID(x Document) int64 {
+	return x.DocID
+}
+
+func writeDocID(x *Document, vals []int64) {
+	x.DocID = vals[0]
+}
+
+func readLinksBackward(x Document) ([]int64, []uint8, []uint8) {
+	var vals []int64
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Links == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Links.Backward) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Links.Backward {
+				if i0 == 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeLinksBackward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			x.Links = &Link{}
+		case 2:
+			switch rep {
+			case 0:
+				x.Links = &Link{Backward: []int64{vals[nVals]}}
+			case 1:
+				x.Links.Backward = append(x.Links.Backward, vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readLinksForward(x Document) ([]int64, []uint8, []uint8) {
+	var vals []int64
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Links == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Links.Forward) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Links.Forward {
+				if i0 == 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeLinksForward(x *Document, vals []int64, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0:
+				x.Links.Forward = []int64{vals[nVals]}
+			case 1:
+				x.Links.Forward = append(x.Links.Forward, vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Names) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Names {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			if len(x0.Languages) == 0 {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				for i1, x1 := range x0.Languages {
+					if i1 == 1 {
+						lastRep = 2
+					}
+					defs = append(defs, 2)
+					reps = append(reps, lastRep)
+					vals = append(vals, x1.Code)
+				}
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 2)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			x.Names = append(x.Names, Name{})
+		case 2:
+			switch rep {
+			case 0:
+				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
+			case 1:
+				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
+			case 2:
+				x.Names[ind[0]].Languages = append(x.Names[ind[0]].Languages, Language{Code: vals[nVals]})
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Names) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Names {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			if len(x0.Languages) == 0 {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				for i1, x1 := range x0.Languages {
+					if i1 == 1 {
+						lastRep = 2
+					}
+					if x1.Country == nil {
+						defs = append(defs, 2)
+						reps = append(reps, lastRep)
+					} else {
+						defs = append(defs, 3)
+						reps = append(reps, lastRep)
+						vals = append(vals, *x1.Country)
+					}
+				}
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 2)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 3:
+			switch rep {
+			case 0, 2:
+				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readNamesURL(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Names) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Names {
+			if i0 == 1 {
+				lastRep = 1
+			}
+			if x0.URL == nil {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, *x0.URL)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0, 1:
+				x.Names[ind[0]].URL = pstring(vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
 }
 
 func fieldCompression(c compression) func(*parquet.RequiredField) {
@@ -360,6 +675,232 @@ func (p *ParquetReader) Scan(x *Document) {
 		f := p.fields[name]
 		f.Scan(x)
 	}
+}
+
+type int64 struct {
+	vals []int64
+	parquet.RequiredField
+	read  func(r Document) int64
+	write func(r *Document, vals []int64)
+	stats *int64stats
+}
+
+func Newint64(read func(r Document) int64, write func(r *Document, vals []int64), path []string, opts ...func(*parquet.RequiredField)) *int64 {
+	return &int64{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newInt64stats(),
+	}
+}
+
+func (f *int64) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *int64) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]int64, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *int64) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *int64) Scan(r *Document) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *int64) Add(r Document) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *int64) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type StringField struct {
+	parquet.RequiredField
+	vals  []string
+	read  func(r Document) string
+	write func(r *Document, vals []string)
+	stats *stringStats
+}
+
+func NewStringField(read func(r Document) string, write func(r *Document, vals []string), path []string, opts ...func(*parquet.RequiredField)) *StringField {
+	return &StringField{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newStringStats(),
+	}
+}
+
+func (f *StringField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
+	buf := bytes.Buffer{}
+
+	for _, s := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, int32(len(s))); err != nil {
+			return err
+		}
+		buf.Write([]byte(s))
+	}
+
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *StringField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	for j := 0; j < pg.N; j++ {
+		var x int32
+		if err := binary.Read(rr, binary.LittleEndian, &x); err != nil {
+			return err
+		}
+		s := make([]byte, x)
+		if _, err := rr.Read(s); err != nil {
+			return err
+		}
+
+		f.vals = append(f.vals, string(s))
+	}
+	return nil
+}
+
+func (f *StringField) Scan(r *Document) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *StringField) Add(r Document) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *StringField) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type int64stats struct {
+	min int64
+	max int64
+}
+
+func newInt64stats() *int64stats {
+	return &int64stats{
+		min: int64(math.MaxInt64),
+	}
+}
+
+func (i *int64stats) add(val int64) {
+	if val < i.min {
+		i.min = val
+	}
+	if val > i.max {
+		i.max = val
+	}
+}
+
+func (f *int64stats) bytes(val int64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *int64stats) NullCount() *int64 {
+	return nil
+}
+
+func (f *int64stats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *int64stats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *int64stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type stringStats struct {
+	vals []string
+	min  []byte
+	max  []byte
+}
+
+func newStringStats() *stringStats {
+	return &stringStats{}
+}
+
+func (s *stringStats) add(val string) {
+	s.vals = append(s.vals, val)
+}
+
+func (s *stringStats) NullCount() *int64 {
+	return nil
+}
+
+func (s *stringStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (s *stringStats) Min() []byte {
+	if s.min == nil {
+		s.minMax()
+	}
+	return s.min
+}
+
+func (s *stringStats) Max() []byte {
+	if s.max == nil {
+		s.minMax()
+	}
+	return s.max
+}
+
+func (s *stringStats) minMax() {
+	if len(s.vals) == 0 {
+		return
+	}
+
+	tmp := make([]string, len(s.vals))
+	copy(tmp, s.vals)
+	sort.Strings(tmp)
+	s.min = []byte(tmp[0])
+	s.max = []byte(tmp[len(tmp)-1])
 }
 
 func pint32(i int32) *int32       { return &i }

@@ -17,15 +17,15 @@ func TestNilFields(t *testing.T) {
 
 	testCases := []testInput{
 		{
-			f: fields.Field{FieldName: "First", RepetitionType: fields.Optional, Parent: &fields.Field{
-				FieldName: "Name", RepetitionType: fields.Required, Parent: &fields.Field{FieldName: "Friends", RepetitionType: fields.Repeated}}},
+			f: fields.Field{Name: "First", RepetitionType: fields.Optional, Parent: &fields.Field{
+				Name: "Name", RepetitionType: fields.Required, Parent: &fields.Field{Name: "Friends", RepetitionType: fields.Repeated}}},
 			expected: []string{
 				"Friends",
 				"Friends.Name.First",
 			},
 		},
 		{
-			f: fields.Field{FieldName: "First", RepetitionType: fields.Optional, Parent: &fields.Field{FieldName: "Name", RepetitionType: fields.Required, Parent: &fields.Field{FieldName: "Friend", RepetitionType: fields.Required}}},
+			f: fields.Field{Name: "First", RepetitionType: fields.Optional, Parent: &fields.Field{Name: "Name", RepetitionType: fields.Required, Parent: &fields.Field{Name: "Friend", RepetitionType: fields.Required}}},
 			expected: []string{
 				"Friend.Name.First",
 			},
@@ -55,8 +55,8 @@ func TestInit(t *testing.T) {
 	}{
 		{
 			fields: []fields.Field{
-				{FieldName: "Links", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Backward", FieldType: "int64", RepetitionType: fields.Repeated},
+				{Name: "Links", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Backward", Type: "int64", RepetitionType: fields.Repeated},
 				}},
 			},
 			rep:      0,
@@ -65,8 +65,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Links", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Backward", FieldType: "int64", RepetitionType: fields.Repeated},
+				{Name: "Links", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Backward", Type: "int64", RepetitionType: fields.Repeated},
 				}},
 			},
 			rep:      0,
@@ -75,8 +75,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Links", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Backward", FieldType: "int64", RepetitionType: fields.Repeated},
+				{Name: "Links", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Backward", Type: "int64", RepetitionType: fields.Repeated},
 				}},
 			},
 			def:      2,
@@ -85,8 +85,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Links", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Forward", FieldType: "int64", RepetitionType: fields.Repeated},
+				{Name: "Links", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Forward", Type: "int64", RepetitionType: fields.Repeated},
 				}},
 			},
 			def:      2,
@@ -95,9 +95,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Code", FieldType: "int64", RepetitionType: fields.Required},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Code", Type: "int64", RepetitionType: fields.Required},
 					}},
 				}},
 			},
@@ -107,9 +107,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Code", FieldType: "int64", RepetitionType: fields.Required},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Code", Type: "int64", RepetitionType: fields.Required},
 					}},
 				}},
 			},
@@ -119,9 +119,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Code", FieldType: "int64", RepetitionType: fields.Required},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Code", Type: "int64", RepetitionType: fields.Required},
 					}},
 				}},
 			},
@@ -131,9 +131,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Code", FieldType: "int64", RepetitionType: fields.Required},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Code", Type: "int64", RepetitionType: fields.Required},
 					}},
 				}},
 			},
@@ -143,8 +143,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Link", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Backward", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Link", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Backward", Type: "string", RepetitionType: fields.Repeated},
 				}},
 			},
 			def:      1,
@@ -153,8 +153,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Link", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Backward", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Link", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Backward", Type: "string", RepetitionType: fields.Repeated},
 				}},
 			},
 			def:      2,
@@ -163,8 +163,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Link", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Backward", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Link", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Backward", Type: "string", RepetitionType: fields.Repeated},
 				}},
 			},
 			def:      2,
@@ -173,9 +173,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Language", FieldType: "Language", RepetitionType: fields.Required, Children: []fields.Field{
-						{FieldName: "Codes", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Language", Type: "Language", RepetitionType: fields.Required, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
 					}},
 				}},
 			},
@@ -185,9 +185,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Name", FieldType: "Name", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Codes", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Name", Type: "Name", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
 					}},
 				}},
 			},
@@ -197,9 +197,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Language", FieldType: "Language", RepetitionType: fields.Required, Children: []fields.Field{
-						{FieldName: "Codes", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Language", Type: "Language", RepetitionType: fields.Required, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
 					}},
 				}},
 			},
@@ -209,9 +209,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Name", FieldType: "Name", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Codes", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Name", Type: "Name", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
 					}},
 				}},
 			},
@@ -221,10 +221,10 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Thing", FieldType: "Thing", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-							{FieldName: "Codes", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Thing", Type: "Thing", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+							{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
 						}},
 					}},
 				}},
@@ -235,9 +235,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Required, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "string", TypeName: "*string", RepetitionType: fields.Optional},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Required, Children: []fields.Field{
+						{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 					}},
 				}},
 			},
@@ -246,9 +246,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "string", TypeName: "*string", RepetitionType: fields.Optional},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 					}},
 				}},
 			},
@@ -257,10 +257,10 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldType: "int", TypeName: "*int", FieldName: "Rank", RepetitionType: fields.Optional},
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "string", TypeName: "*string", RepetitionType: fields.Optional},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Type: "int", Name: "Rank", RepetitionType: fields.Optional},
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 					}},
 				}},
 			},
@@ -269,8 +269,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Hobby", FieldType: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Difficulty", FieldType: "int32", RepetitionType: fields.Optional},
+				{Name: "Hobby", Type: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Difficulty", Type: "int32", RepetitionType: fields.Optional},
 				}},
 			},
 			def:      1,
@@ -278,8 +278,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Hobby", FieldType: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Difficulty", FieldType: "int32", RepetitionType: fields.Optional},
+				{Name: "Hobby", Type: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Difficulty", Type: "int32", RepetitionType: fields.Optional},
 				}},
 			},
 			def:      2,
@@ -287,9 +287,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Hobby", FieldType: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
-					{FieldName: "Difficulty", FieldType: "int32", RepetitionType: fields.Optional},
+				{Name: "Hobby", Type: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Optional},
+					{Name: "Difficulty", Type: "int32", RepetitionType: fields.Optional},
 				}},
 			},
 			def:      2,
@@ -297,8 +297,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Hobby", FieldType: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Required},
+				{Name: "Hobby", Type: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Required},
 				}},
 			},
 			def:      1,
@@ -306,8 +306,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Hobby", FieldType: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Hobby", Type: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 				}},
 			},
 			def:      1,
@@ -315,8 +315,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 				}},
 			},
 			def:      1,
@@ -324,8 +324,8 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 				}},
 			},
 			def:      2,
@@ -333,9 +333,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 					}},
 				}},
 			},
@@ -344,9 +344,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 					}},
 				}},
 			},
@@ -355,10 +355,10 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Optional},
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "string", RepetitionType: fields.Optional},
 					}},
 				}},
 			},
@@ -367,9 +367,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Country", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Country", Type: "string", RepetitionType: fields.Repeated},
 					}},
 				}},
 			},
@@ -379,10 +379,10 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Zip", FieldType: "string", RepetitionType: fields.Optional},
-						{FieldName: "Country", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Zip", Type: "string", RepetitionType: fields.Optional},
+						{Name: "Country", Type: "string", RepetitionType: fields.Optional},
 					}},
 				}},
 			},
@@ -392,10 +392,10 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
-							{FieldName: "First", FieldType: "string", RepetitionType: fields.Required},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Name: "First", Type: "string", RepetitionType: fields.Required},
 						}},
 					}},
 				}},
@@ -405,10 +405,10 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
-							{FieldName: "First", FieldType: "string", RepetitionType: fields.Required},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Name: "First", Type: "string", RepetitionType: fields.Required},
 						}},
 					}},
 				}},
@@ -418,10 +418,10 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
-							{FieldName: "First", FieldType: "string", RepetitionType: fields.Required},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Name: "First", Type: "string", RepetitionType: fields.Required},
 						}},
 					}},
 				}},
@@ -431,11 +431,11 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", FieldType: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
-							{FieldName: "Suffix", FieldType: "string", RepetitionType: fields.Optional},
-							{FieldName: "First", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "Friend", Type: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", Type: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", Type: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Name: "Suffix", Type: "string", RepetitionType: fields.Optional},
+							{Name: "First", Type: "string", RepetitionType: fields.Optional},
 						}},
 					}},
 				}},
@@ -446,10 +446,10 @@ func TestInit(t *testing.T) {
 		{
 			fields: []fields.Field{
 				{
-					FieldName: "Hobby", FieldType: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Skills", FieldType: "Skill", RepetitionType: fields.Repeated, Children: []fields.Field{
-							{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Required},
-							{FieldType: "string", TypeName: "string", FieldName: "Difficulty", RepetitionType: fields.Required},
+					Name: "Hobby", Type: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Skills", Type: "Skill", RepetitionType: fields.Repeated, Children: []fields.Field{
+							{Type: "string", Name: "Name", RepetitionType: fields.Required},
+							{Type: "string", Name: "Difficulty", RepetitionType: fields.Required},
 						}},
 					},
 				},
@@ -459,9 +459,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Link", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Repeated},
-					{FieldName: "Forward", FieldType: "int64", RepetitionType: fields.Repeated},
+				{Name: "Link", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Repeated},
+					{Name: "Forward", Type: "int64", RepetitionType: fields.Repeated},
 				}},
 			},
 			rep:      1,
@@ -470,9 +470,9 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "Link", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Repeated},
-					{FieldName: "Forward", FieldType: "string", RepetitionType: fields.Repeated},
+				{Name: "Link", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Name", Type: "string", RepetitionType: fields.Repeated},
+					{Name: "Forward", Type: "string", RepetitionType: fields.Repeated},
 				}},
 			},
 			rep:      0,
@@ -481,7 +481,7 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "LuckyNumbers", FieldType: "int64", RepetitionType: fields.Repeated},
+				{Name: "LuckyNumbers", Type: "int64", RepetitionType: fields.Repeated},
 			},
 			def:      1,
 			rep:      0,
@@ -489,7 +489,7 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "LuckyNumbers", FieldType: "int64", RepetitionType: fields.Repeated},
+				{Name: "LuckyNumbers", Type: "int64", RepetitionType: fields.Repeated},
 			},
 			def:      1,
 			rep:      1,
@@ -497,12 +497,12 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "A", FieldType: "A", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "B", FieldType: "B", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "C", FieldType: "C", RepetitionType: fields.Required, Children: []fields.Field{
-							{FieldName: "D", FieldType: "D", RepetitionType: fields.Repeated, Children: []fields.Field{
-								{FieldName: "E", FieldType: "E", RepetitionType: fields.Required, Children: []fields.Field{
-									{FieldName: "F", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "A", Type: "A", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "B", Type: "B", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "C", Type: "C", RepetitionType: fields.Required, Children: []fields.Field{
+							{Name: "D", Type: "D", RepetitionType: fields.Repeated, Children: []fields.Field{
+								{Name: "E", Type: "E", RepetitionType: fields.Required, Children: []fields.Field{
+									{Name: "F", Type: "string", RepetitionType: fields.Optional},
 								}},
 							}},
 						}},
@@ -515,13 +515,13 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
-				{FieldName: "A", FieldType: "A", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "B", FieldType: "B", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "C", FieldType: "C", RepetitionType: fields.Required, Children: []fields.Field{
-							{FieldName: "D", FieldType: "D", RepetitionType: fields.Repeated, Children: []fields.Field{
-								{FieldName: "E", FieldType: "E", RepetitionType: fields.Required, Children: []fields.Field{
-									{FieldName: "x", FieldType: "string", RepetitionType: fields.Optional},
-									{FieldName: "F", FieldType: "string", RepetitionType: fields.Optional},
+				{Name: "A", Type: "A", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "B", Type: "B", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "C", Type: "C", RepetitionType: fields.Required, Children: []fields.Field{
+							{Name: "D", Type: "D", RepetitionType: fields.Repeated, Children: []fields.Field{
+								{Name: "E", Type: "E", RepetitionType: fields.Required, Children: []fields.Field{
+									{Name: "x", Type: "string", RepetitionType: fields.Optional},
+									{Name: "F", Type: "string", RepetitionType: fields.Optional},
 								}},
 							}},
 						}},

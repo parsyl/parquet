@@ -8,18 +8,13 @@ import (
 // Field holds metadata that is required by parquetgen in order
 // to generate code.
 type Field struct {
-	// Type of the top level struct
 	Type           string
-	RepetitionType RepetitionType
-	FieldName      string
+	Name           string
 	ColumnName     string
-	TypeName       string
-	FieldType      string
-	ParquetType    string
-	Category       string
+	RepetitionType RepetitionType
 	Parent         *Field
-	Embedded       bool
 	Children       []Field
+	Embedded       bool
 	NthChild       int
 	Defined        bool
 }
@@ -88,8 +83,8 @@ func Reverse(out []Field) []Field {
 func (f Field) FieldNames() []string {
 	var out []string
 	for _, fld := range Reverse(f.Chain()) {
-		if fld.FieldName != "" {
-			out = append(out, fld.FieldName)
+		if fld.Name != "" {
+			out = append(out, fld.Name)
 		}
 	}
 	return out
@@ -98,8 +93,8 @@ func (f Field) FieldNames() []string {
 func (f Field) FieldTypes() []string {
 	var out []string
 	for _, fld := range Reverse(f.Chain()) {
-		if fld.FieldType != "" {
-			out = append(out, fld.FieldType)
+		if fld.Type != "" {
+			out = append(out, fld.Type)
 		}
 	}
 	return out
@@ -305,14 +300,14 @@ func (f Field) Init(def, rep int) string {
 
 		switch fld.RepetitionType {
 		case Required:
-			left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.FieldName))
+			left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.Name))
 		case Optional:
-			left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.FieldName))
+			left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.Name))
 		case Repeated:
 			if (rep > 0 && reps < rep) || (f.NthChild > 0 && !fld.Primitive()) {
-				left = fmt.Sprintf(left, fmt.Sprintf(".%s[ind[%d]]%%s", fld.FieldName, reps-1))
+				left = fmt.Sprintf(left, fmt.Sprintf(".%s[ind[%d]]%%s", fld.Name, reps-1))
 			} else {
-				left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.FieldName))
+				left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.Name))
 			}
 		}
 
@@ -343,63 +338,63 @@ func (f Field) Init(def, rep int) string {
 				} else if (fld.Parent.Parent == nil || fld.Parent.Defined) && rep == 0 {
 					right = fmt.Sprintf(right, "vals[0]%s")
 				} else if fld.Parent.RepetitionType == Repeated && rep < maxRep { //need one more case:
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: vals[nVals]}%%s", fld.FieldName))
+					right = fmt.Sprintf(right, fmt.Sprintf("{%s: vals[nVals]}%%s", fld.Name))
 				} else if fld.Parent.RepetitionType == Repeated {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[nVals]%%s", fld.FieldName))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[nVals]%%s", fld.Name))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[0]%%s", fld.FieldName))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[0]%%s", fld.Name))
 				}
 			} else {
 				if fld.Parent.RepetitionType == Repeated && rep < maxRep {
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: %s{%%s}}", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("{%s: %s{%%s}}", fld.Name, fld.Type))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: %s{%%s}", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: %s{%%s}", fld.Name, fld.Type))
 				}
 			}
 		case Optional:
 			if fld.Primitive() {
 				if f.NthChild == 0 && fld.Parent.Optional() && !fld.Parent.Repeated() {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: p%s(vals[0])%%s", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: p%s(vals[0])%%s", fld.Name, fld.Type))
 				} else if fld.Parent.RepetitionType == Repeated {
-					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[nVals])%%s", fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[nVals])%%s", fld.Type))
 				} else if fld.Parent.Repeated() && f.NthChild == 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: p%s(vals[nVals])%%s", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: p%s(vals[nVals])%%s", fld.Name, fld.Type))
 				} else if fld.Parent.Repeated() && f.NthChild > 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[nVals])%%s", fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[nVals])%%s", fld.Type))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[0])%%s", fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("p%s(vals[0])%%s", fld.Type))
 				}
 			} else {
 				if j == 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("&%s{%%s}", fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("&%s{%%s}", fld.Type))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: &%s{%%s}", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: &%s{%%s}", fld.Name, fld.Type))
 				}
 			}
 		case Repeated:
 			if fld.Primitive() {
 				if rep == 0 && fld.Parent.RepetitionType == Repeated {
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{vals[nVals]}}%%s", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{vals[nVals]}}%%s", fld.Name, fld.Type))
 				} else if (fld.Parent.Parent == nil || fld.Parent.Defined) && rep == 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{vals[nVals]}%%s", fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{vals[nVals]}%%s", fld.Type))
 				} else if rep == 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{vals[nVals]}%%s", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{vals[nVals]}%%s", fld.Name, fld.Type))
 				} else if reps == rep {
 					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, vals[nVals])%%s", left))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("[%s: []%s{vals[nVals]}]%%s", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("[%s: []%s{vals[nVals]}]%%s", fld.Name, fld.Type))
 				}
 			} else {
 				if rep == 0 && j == 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{%%s}", fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{%%s}", fld.Type))
 				} else if rep == 0 && reps == maxRep && fld.Parent != nil && fld.Parent.RepetitionType == Repeated {
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{%%s}}", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{%%s}}", fld.Name, fld.Type))
 				} else if rep == 0 && reps == maxRep {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{%%s}", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{%%s}", fld.Name, fld.Type))
 				} else if reps == rep {
-					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, %s{%%s})", left, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, %s{%%s})", left, fld.Type))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{%%s}", fld.FieldName, fld.FieldType))
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{%%s}", fld.Name, fld.Type))
 				}
 			}
 		}
@@ -424,17 +419,57 @@ func (f Field) Path() string {
 }
 
 // Primitive is called in order to determine if the field is primitive or not.
+
 func (f Field) Primitive() bool {
-	return primitiveTypes[f.FieldType]
+	_, ok := primitiveTypes[f.Type]
+	return ok
 }
 
-var primitiveTypes = map[string]bool{
-	"bool":    true,
-	"int32":   true,
-	"uint32":  true,
-	"int64":   true,
-	"uint64":  true,
-	"float32": true,
-	"float64": true,
-	"string":  true,
+func (f Field) FieldName() string {
+	var op string
+	if f.RepetitionType == Optional || f.RepetitionType == Repeated {
+		op = "Optional"
+	}
+
+	ft := primitiveTypes[f.Type]
+	return fmt.Sprintf(ft.name, op)
+}
+
+func (f Field) ParquetType() string {
+	ft := primitiveTypes[f.Type]
+	return fmt.Sprintf(ft.name, "", "Type")
+}
+
+func (f Field) Category() string {
+	var op string
+	if f.RepetitionType == Optional || f.RepetitionType == Repeated {
+		op = "Optional"
+	}
+
+	ft := primitiveTypes[f.Type]
+	return fmt.Sprintf(ft.category, op, "Field")
+}
+
+func (f Field) TypeName(s string, optional bool) string {
+	var star string
+	if f.RepetitionType == Optional {
+		star = "*"
+	}
+	return fmt.Sprintf("%s%s", star, f.Type)
+}
+
+type fieldType struct {
+	name     string
+	category string
+}
+
+var primitiveTypes = map[string]fieldType{
+	"int32":   {"Int32%s%s", "numeric%s"},
+	"uint32":  {"Uint32%s%s", "numeric%s"},
+	"int64":   {"Int64%s%s", "numeric%s"},
+	"uint64":  {"Uint64%s%s", "numeric%s"},
+	"float32": {"Float32%s%s", "numeric%s"},
+	"float64": {"Float64%s%s", "numeric%s"},
+	"bool":    {"Bool%s%s", "bool%s"},
+	"string":  {"String%s%s", "string%s"},
 }

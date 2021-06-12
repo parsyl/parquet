@@ -45,32 +45,32 @@ type ParquetWriter struct {
 
 func Fields(compression compression) []Field {
 	return []Field{
-		Newstring(readPersonName, writePersonName, []string{"Person", "name"}, fieldCompression(compression)),
-		Newstring(readPersonHobbyName, writePersonHobbyName, []string{"Person", "hobby", "name"}, []int{1, 0}, fieldCompression(compression)),
-		Newint32(readPersonHobbyDifficulty, writePersonHobbyDifficulty, []string{"Person", "hobby", "difficulty"}, []int{1, 1}, fieldCompression(compression)),
-		Newstring(readPersonHobbySkillsName, writePersonHobbySkillsName, []string{"Person", "hobby", "skills", "name"}, []int{1, 2, 0}, fieldCompression(compression)),
-		Newstring(readPersonHobbySkillsDifficulty, writePersonHobbySkillsDifficulty, []string{"Person", "hobby", "skills", "difficulty"}, []int{1, 2, 0}, fieldCompression(compression)),
+		Newstring(readName, writeName, []string{"name"}, fieldCompression(compression)),
+		Newstring(readHobbyName, writeHobbyName, []string{"hobby", "name"}, []int{1, 0}, fieldCompression(compression)),
+		Newint32(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, []int{1, 1}, fieldCompression(compression)),
+		Newstring(readHobbySkillsName, writeHobbySkillsName, []string{"hobby", "skills", "name"}, []int{1, 2, 0}, fieldCompression(compression)),
+		Newstring(readHobbySkillsDifficulty, writeHobbySkillsDifficulty, []string{"hobby", "skills", "difficulty"}, []int{1, 2, 0}, fieldCompression(compression)),
 	}
 }
 
-func readPersonName(x Person) string {
-	return x.Person.Name
+func readName(x Person) string {
+	return x.Name
 }
 
-func writePersonName(x *Person, vals []string) {
-	x.Person.Name = vals[0]
+func writeName(x *Person, vals []string) {
+	x.Name = vals[0]
 }
 
-func readPersonHobbyName(x Person) ([]string, []uint8, []uint8) {
+func readHobbyName(x Person) ([]string, []uint8, []uint8) {
 	switch {
-	case x.Person == nil:
+	case x.Hobby == nil:
 		return nil, []uint8{0}, nil
 	default:
-		return []string{x.Person.Hobby}, []uint8{1}, nil
+		return []string{x.Hobby.Name}, []uint8{1}, nil
 	}
 }
 
-func writePersonHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
+func writeHobbyName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
 	case 1:
@@ -81,18 +81,18 @@ func writePersonHobbyName(x *Person, vals []string, defs, reps []uint8) (int, in
 	return 0, 1
 }
 
-func readPersonHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
+func readHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
 	switch {
-	case x.Person == nil:
+	case x.Hobby == nil:
 		return nil, []uint8{0}, nil
-	case x.Person.Hobby == nil:
+	case x.Hobby.Difficulty == nil:
 		return nil, []uint8{1}, nil
 	default:
-		return []int32{*x.Person.Hobby}, []uint8{2}, nil
+		return []int32{*x.Hobby.Difficulty}, []uint8{2}, nil
 	}
 }
 
-func writePersonHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
+func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
 	case 2:
@@ -103,26 +103,26 @@ func writePersonHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (in
 	return 0, 1
 }
 
-func readPersonHobbySkillsName(x Person) ([]string, []uint8, []uint8) {
+func readHobbySkillsName(x Person) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
 	var lastRep uint8
 
-	if x.Person == nil {
+	if x.Hobby == nil {
 		defs = append(defs, 0)
 		reps = append(reps, lastRep)
 	} else {
-		if len(x.Person.Hobby) == 0 {
+		if len(x.Hobby.Skills) == 0 {
 			defs = append(defs, 1)
 			reps = append(reps, lastRep)
 		} else {
-			for i0, x0 := range x.Person.Hobby {
+			for i0, x0 := range x.Hobby.Skills {
 				if i0 == 1 {
 					lastRep = 1
 				}
 				defs = append(defs, 2)
 				reps = append(reps, lastRep)
-				vals = append(vals, x0.Skills.Name)
+				vals = append(vals, x0.Name)
 			}
 		}
 	}
@@ -130,7 +130,7 @@ func readPersonHobbySkillsName(x Person) ([]string, []uint8, []uint8) {
 	return vals, defs, reps
 }
 
-func writePersonHobbySkillsName(x *Person, vals []string, defs, reps []uint8) (int, int) {
+func writeHobbySkillsName(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)
 
@@ -159,26 +159,26 @@ func writePersonHobbySkillsName(x *Person, vals []string, defs, reps []uint8) (i
 	return nVals, nLevels
 }
 
-func readPersonHobbySkillsDifficulty(x Person) ([]string, []uint8, []uint8) {
+func readHobbySkillsDifficulty(x Person) ([]string, []uint8, []uint8) {
 	var vals []string
 	var defs, reps []uint8
 	var lastRep uint8
 
-	if x.Person == nil {
+	if x.Hobby == nil {
 		defs = append(defs, 0)
 		reps = append(reps, lastRep)
 	} else {
-		if len(x.Person.Hobby) == 0 {
+		if len(x.Hobby.Skills) == 0 {
 			defs = append(defs, 1)
 			reps = append(reps, lastRep)
 		} else {
-			for i0, x0 := range x.Person.Hobby {
+			for i0, x0 := range x.Hobby.Skills {
 				if i0 == 1 {
 					lastRep = 1
 				}
 				defs = append(defs, 2)
 				reps = append(reps, lastRep)
-				vals = append(vals, x0.Skills.Difficulty)
+				vals = append(vals, x0.Difficulty)
 			}
 		}
 	}
@@ -186,7 +186,7 @@ func readPersonHobbySkillsDifficulty(x Person) ([]string, []uint8, []uint8) {
 	return vals, defs, reps
 }
 
-func writePersonHobbySkillsDifficulty(x *Person, vals []string, defs, reps []uint8) (int, int) {
+func writeHobbySkillsDifficulty(x *Person, vals []string, defs, reps []uint8) (int, int) {
 	var nVals, nLevels int
 	ind := make(indices, 1)
 

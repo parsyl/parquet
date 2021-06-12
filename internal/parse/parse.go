@@ -69,7 +69,7 @@ func Fields(typ, pth string) (*Result, error) {
 	errs := getChildren(&parent, fields)
 
 	return &Result{
-		Parent: flds.Field{Children: parent.Children},
+		Parent: flds.Field{Type: typ, Children: parent.Children},
 		Errors: errs,
 	}, nil
 }
@@ -77,9 +77,9 @@ func Fields(typ, pth string) (*Result, error) {
 func getChildren(parent *flds.Field, fields map[string]flds.Field) []error {
 	var children []flds.Field
 	var errs []error
-	p, ok := fields[parent.FieldType]
+	p, ok := fields[parent.Type]
 	if !ok {
-		errs = append(errs, fmt.Errorf("could not find %+v", parent))
+		errs = append(errs, fmt.Errorf("could not find %s", parent.Type))
 	}
 
 	for _, child := range p.Children {
@@ -88,16 +88,19 @@ func getChildren(parent *flds.Field, fields map[string]flds.Field) []error {
 			continue
 		}
 
-		f, ok := fields[child.FieldType]
+		f, ok := fields[child.Type]
 		if !ok {
-			errs = append(errs, fmt.Errorf("unsupported type %+v", child.FieldType))
-			continue
+			f, ok = fields[child.Type]
+			if !ok {
+				errs = append(errs, fmt.Errorf("unsupported type %+v", child.Type))
+				continue
+			}
 		}
 
 		errs = append(errs, getChildren(&child, fields)...)
 
-		f.FieldName = child.FieldName
-		f.TypeName = child.TypeName
+		f.Name = child.Name
+		f.Type = child.Type
 		f.ColumnName = child.ColumnName
 		f.Children = child.Children
 		f.RepetitionType = child.RepetitionType
@@ -127,17 +130,13 @@ func isPrivate(x *ast.Field) bool {
 func getFields(n map[string]ast.Node) (map[string]fields.Field, error) {
 	fields := map[string]flds.Field{}
 	for k, n := range n {
-		x, ok := n.(*ast.TypeSpec)
+		_, ok := n.(*ast.TypeSpec)
 		if !ok {
 			continue
 		}
 
 		parent := flds.Field{
-			Type:       x.Name.Name,
-			TypeName:   x.Name.Name,
-			ColumnName: x.Name.Name,
-			FieldName:  x.Name.Name,
-			FieldType:  x.Name.Name,
+			Type: k,
 		}
 
 		ast.Inspect(n, func(n ast.Node) bool {
@@ -206,8 +205,6 @@ func getField(name string, x ast.Node, parent *flds.Field) (flds.Field, bool) {
 		tag = name
 	}
 
-	_, cat, pt, _ := lookupTypeAndCategory(typ, optional, repeated)
-
 	rt := fields.Required
 	if repeated {
 		rt = fields.Repeated
@@ -216,13 +213,9 @@ func getField(name string, x ast.Node, parent *flds.Field) (flds.Field, bool) {
 	}
 
 	return flds.Field{
-		FieldName:  name,
-		FieldType:  typ,
-		ColumnName: tag,
-		TypeName:   getTypeName(typ, optional),
-		//Type:           fn,
-		ParquetType:    pt,
-		Category:       cat,
+		Type:           typ,
+		Name:           name,
+		ColumnName:     tag,
 		RepetitionType: rt,
 	}, tag == "-"
 }
@@ -234,42 +227,6 @@ func parseTag(t string) string {
 	}
 	t = t[i+9:]
 	return t[:strings.Index(t, `"`)]
-}
-
-func getTypeName(s string, optional bool) string {
-	var star string
-	if optional {
-		star = "*"
-	}
-	return fmt.Sprintf("%s%s", star, s)
-}
-
-func lookupTypeAndCategory(name string, optional, repeated bool) (string, string, string, bool) {
-	var op string
-	if optional || repeated {
-		op = "Optional"
-	}
-	f, ok := types[name]
-	if !ok {
-		return "", "", "", false
-	}
-	return fmt.Sprintf(f.name, op, "Field"), fmt.Sprintf(f.category, op), fmt.Sprintf(f.name, "", "Type"), true
-}
-
-type fieldType struct {
-	name     string
-	category string
-}
-
-var types = map[string]fieldType{
-	"int32":   {"Int32%s%s", "numeric%s"},
-	"uint32":  {"Uint32%s%s", "numeric%s"},
-	"int64":   {"Int64%s%s", "numeric%s"},
-	"uint64":  {"Uint64%s%s", "numeric%s"},
-	"float32": {"Float32%s%s", "numeric%s"},
-	"float64": {"Float64%s%s", "numeric%s"},
-	"bool":    {"Bool%s%s", "bool%s"},
-	"string":  {"String%s%s", "string%s"},
 }
 
 type visitorFunc func(n ast.Node) ast.Visitor
@@ -295,10 +252,20 @@ func (f *finder) findTypes(n ast.Node) ast.Visitor {
 			return visitorFunc(f.findTypes)
 		}
 	case *ast.TypeSpec:
-		//fmt.Printf("node: %+v\n", n)
 		f.n[n.Name.Name] = n
 		return visitorFunc(f.findTypes)
 	}
 
 	return nil
+}
+
+var types = map[string]bool{
+	"int32":   true,
+	"uint32":  true,
+	"int64":   true,
+	"uint64":  true,
+	"float32": true,
+	"float64": true,
+	"bool":    true,
+	"string":  true,
 }
