@@ -340,16 +340,11 @@ func TestFields(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d %s", i, tc.name), func(t *testing.T) {
 			out, err := parse.Fields(tc.typ, "./parse_test.go")
 			assert.Nil(t, err, tc.name)
-			assert.Equal(t, tc.expected, out.Parent, tc.name)
-			if assert.Equal(t, len(tc.errors), len(out.Errors), tc.name) {
-				for i, err := range out.Errors {
-					assert.EqualError(t, tc.errors[i], err.Error(), tc.name)
-				}
-			} else {
-				for _, err := range out.Errors {
-					fmt.Println(err)
-				}
+			if !assert.Equal(t, tc.errors, out.Errors, tc.name) {
+				return
 			}
+
+			assert.Equal(t, tc.expected.Children, out.Parent.Children, tc.name)
 		})
 	}
 }

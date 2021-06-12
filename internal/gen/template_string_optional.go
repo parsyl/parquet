@@ -4,12 +4,12 @@ var stringOptionalTpl = `{{define "stringOptionalField"}}
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals []string
-	read   func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
-	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
+	read   func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
+	write  func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
@@ -22,7 +22,7 @@ func (f *StringOptionalField) Schema() parquet.Field {
 	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: f.RepetitionType, Types: f.Types}
 }
 
-func (f *StringOptionalField) Add(r {{.Type}}) {
+func (f *StringOptionalField) Add(r {{.StructType}}) {
 	vals, defs, reps := f.read(r)
 	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
@@ -30,7 +30,7 @@ func (f *StringOptionalField) Add(r {{.Type}}) {
 	f.Reps = append(f.Reps, reps...)
 }
 
-func (f *StringOptionalField) Scan(r *{{.Type}}) {
+func (f *StringOptionalField) Scan(r *{{.StructType}}) {
 	if len(f.Defs) == 0 {
 		return
 	}

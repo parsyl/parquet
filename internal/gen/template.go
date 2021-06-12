@@ -191,7 +191,7 @@ func (p *ParquetWriter) Close() error {
 	return err
 }
 
-func (p *ParquetWriter) Add(rec {{.Type}}) {
+func (p *ParquetWriter) Add(rec {{.Parent.StructType}}) {
 	if p.len == p.max {
 		if p.child == nil {
 			// an error can't happen here
@@ -211,10 +211,10 @@ func (p *ParquetWriter) Add(rec {{.Type}}) {
 }
 
 type Field interface {
-	Add(r {{.Type}})
+	Add(r {{.Parent.StructType}})
 	Write(w io.Writer, meta *parquet.Metadata) error
 	Schema() parquet.Field
-	Scan(r *{{.Type}})
+	Scan(r *{{.Parent.StructType}})
 	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
 	Levels() ([]uint8, []uint8)
@@ -366,7 +366,7 @@ func (p *ParquetReader) Next() bool {
 	return true
 }
 
-func (p *ParquetReader) Scan(x *{{.Type}}) {
+func (p *ParquetReader) Scan(x *{{.Parent.StructType}}) {
 	if p.err != nil {
 		return
 	}

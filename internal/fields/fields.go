@@ -31,6 +31,10 @@ type input struct {
 }
 
 func (f Field) StructType() string {
+	if f.Parent == nil {
+		return f.Type
+	}
+
 	var typ string
 	for fld := f.Parent; fld != nil; fld = fld.Parent {
 		typ = fld.Type

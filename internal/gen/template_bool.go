@@ -45,7 +45,7 @@ func (f *BoolField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	return err
 }
 
-func (f *BoolField) Scan(r *{{.Type}}) {
+func (f *BoolField) Scan(r *{{.StructType}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -54,7 +54,7 @@ func (f *BoolField) Scan(r *{{.Type}}) {
     f.vals = f.vals[1:]
 }
 
-func (f *BoolField) Add(r {{.Type}}) {
+func (f *BoolField) Add(r {{.StructType}}) {
 	v := f.read(r)
 	f.vals = append(f.vals, v)
 }

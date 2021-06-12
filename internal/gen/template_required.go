@@ -4,12 +4,12 @@ var requiredNumericTpl = `{{define "numericField"}}
 type {{.FieldType}} struct {
 	vals []{{.TypeName}}
 	parquet.RequiredField
-	read  func(r {{.Type}}) {{.TypeName}}
-	write func(r *{{.Type}}, vals []{{removeStar .TypeName}})
+	read  func(r {{.StructType}}) {{.TypeName}}
+	write func(r *{{.StructType}}, vals []{{removeStar .TypeName}})
 	stats *{{.TypeName}}stats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) {{.TypeName}}, write func(r *{{.Type}}, vals []{{removeStar .TypeName}}), path []string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.StructType}}) {{.TypeName}}, write func(r *{{.StructType}}, vals []{{removeStar .TypeName}}), path []string, opts ...func(*parquet.RequiredField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:           read,
 		write:          write,
@@ -44,7 +44,7 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
 }
 
-func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
+func (f *{{.FieldType}}) Scan(r *{{.StructType}}) {
 	if len(f.vals) == 0 {
 		return
 	}
@@ -53,7 +53,7 @@ func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
 	f.vals = f.vals[1:]
 }
 
-func (f *{{.FieldType}}) Add(r {{.Type}}) {
+func (f *{{.FieldType}}) Add(r {{.Parent.StructType}}) {
 	v := f.read(r)
 	f.stats.add(v)
 	f.vals = append(f.vals, v)

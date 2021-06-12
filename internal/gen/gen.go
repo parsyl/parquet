@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"log"
 	"os"
 	"text/template"
 
@@ -28,18 +27,14 @@ var (
 
 // FromStruct generates a parquet reader and writer based on the struct
 // of type 'typ' that is defined in the go file at 'pth'.
-func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
+func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) error {
 	result, err := parse.Fields(typ, pth)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, err := range result.Errors {
-		log.Println(err)
+		return err
 	}
 
 	if len(result.Errors) > 0 && !ignore {
-		log.Fatal("not generating parquet.go (-ignore set to false), err: ", result.Errors)
+		return fmt.Errorf("not generating parquet.go (-ignore set to false), err: %v", result.Errors)
 	}
 
 	i := input{
@@ -52,7 +47,7 @@ func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
 	tmpl := template.New("output").Funcs(funcs)
 	tmpl, err = tmpl.Parse(tpl)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	for _, t := range []string{
@@ -73,45 +68,45 @@ func FromStruct(pth, outPth, typ, pkg, imp string, ignore bool) {
 		var err error
 		tmpl, err = tmpl.Parse(t)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, i)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	gocode, err := format.Source(buf.Bytes())
 	if err != nil {
-		log.Fatal(err, string(buf.Bytes()))
+		return fmt.Errorf("err: %s, gocode: %s", err, string(buf.Bytes()))
 	}
 
 	f, err := os.Create(outPth)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	_, err = f.Write(gocode)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	f.Close()
+	return f.Close()
 }
 
 // FromParquet generates a go struct, a reader, and a writer based
 // on the parquet file at 'parq'
-func FromParquet(parq, pth, outPth, typ, pkg, imp string, ignore bool) {
+func FromParquet(parq, pth, outPth, typ, pkg, imp string, ignore bool) error {
 	pf, err := os.Open(parq)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	footer, err := parquet.ReadMetaData(pf)
 	if err != nil {
-		log.Fatal("couldn't read footer: ", err)
+		return fmt.Errorf("couldn't read footer: %s", err)
 	}
 
 	pf.Close()
@@ -119,7 +114,7 @@ func FromParquet(parq, pth, outPth, typ, pkg, imp string, ignore bool) {
 	tmpl := template.New("output").Funcs(funcs)
 	tmpl, err = tmpl.Parse(structTpl)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	n := newStruct{
@@ -130,26 +125,26 @@ func FromParquet(parq, pth, outPth, typ, pkg, imp string, ignore bool) {
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, n)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	gocode, err := format.Source(buf.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	f, err := os.Create(pth)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	_, err = f.Write(gocode)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	f.Close()
-	FromStruct(pth, outPth, typ, pkg, imp, ignore)
+	return FromStruct(pth, outPth, typ, pkg, imp, ignore)
 }
 
 type input struct {
@@ -159,25 +154,25 @@ type input struct {
 	Parent  fields.Field
 }
 
-func getFieldType(se *sch.SchemaElement) string {
+func getFieldType(se *sch.SchemaElement) (string, error) {
 	if se.Type == nil {
-		log.Fatal("nil parquet schema type")
+		return "", fmt.Errorf("nil parquet schema type")
 	}
 	s := se.Type.String()
 	out, ok := parquetTypes[s]
 	if !ok {
-		log.Fatalf("unsupported parquet schema type: %s", s)
+		return "", fmt.Errorf("unsupported parquet schema type: %s", s)
 	}
 
 	if se.RepetitionType != nil && *se.RepetitionType == sch.FieldRepetitionType_REPEATED {
-		log.Fatalf("field %s is FieldRepetitionType_REPEATED, which is currently not supported", se.Name)
+		return "", fmt.Errorf("field %s is FieldRepetitionType_REPEATED, which is currently not supported", se.Name)
 	}
 
 	var star string
 	if se.RepetitionType != nil && *se.RepetitionType == sch.FieldRepetitionType_OPTIONAL {
 		star = "*"
 	}
-	return fmt.Sprintf("%s%s", star, out)
+	return fmt.Sprintf("%s%s", star, out), nil
 }
 
 func dedupe(flds []fields.Field) []fields.Field {

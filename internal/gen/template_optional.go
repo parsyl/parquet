@@ -7,12 +7,12 @@ var optionalNumericTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
 	vals  []{{removeStar .TypeName}}
-	read   func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
-	write  func(r *{{.Type}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
+	read   func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
+	write  func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
 	stats *{{removeStar .TypeName}}optionalStats
 }
 
-func New{{.FieldType}}(read func(r {{.Type}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.Type}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:          read,
 		write:         write,
@@ -47,7 +47,7 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 	return err
 }
 
-func (f *{{.FieldType}}) Add(r {{.Type}}) {
+func (f *{{.FieldType}}) Add(r {{.StructType}}) {
 	vals, defs, reps := f.read(r)
 	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
@@ -55,7 +55,7 @@ func (f *{{.FieldType}}) Add(r {{.Type}}) {
 	f.Reps = append(f.Reps, reps...)
 }
 
-func (f *{{.FieldType}}) Scan(r *{{.Type}}) {
+func (f *{{.FieldType}}) Scan(r *{{.StructType}}) {
 	if len(f.Defs) == 0 {
 		return
 	}

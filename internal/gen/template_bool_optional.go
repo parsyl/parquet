@@ -32,7 +32,7 @@ func (f *BoolOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 	return err
 }
 
-func (f *BoolOptionalField) Scan(r *{{.Type}}) {
+func (f *BoolOptionalField) Scan(r *{{.StructType}}) {
 	if len(f.Defs) == 0 {
 		return
 	}
@@ -45,7 +45,7 @@ func (f *BoolOptionalField) Scan(r *{{.Type}}) {
 	}
 }
 
-func (f *BoolOptionalField) Add(r {{.Type}}) {
+func (f *BoolOptionalField) Add(r {{.StructType}}) {
 	vals, defs, reps := f.read(r)
 	f.stats.add(vals, defs)
 	f.vals = append(f.vals, vals...)
