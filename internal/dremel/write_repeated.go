@@ -21,13 +21,19 @@ type defCase struct {
 	Field fields.Field
 }
 
+type writeRepeatedInput struct {
+	Field fields.Field
+	Defs  []int
+	Func  string
+}
+
 func init() {
 	funcs := template.FuncMap{
 		"removeStar": func(s string) string {
 			return strings.Replace(strings.Replace(s, "*", "", 1), "[]", "", 1)
 		},
-		"newDefCase": func(def int, seen []fields.RepetitionType, f fields.Field) defCase {
-			return defCase{Def: def, Seen: seen, Field: f}
+		"newDefCase": func(def int, f fields.Field) defCase {
+			return defCase{Def: def, Field: f}
 		},
 		"init": initRepeated,
 		"getRep": func(def int, f fields.Field) int {
@@ -78,15 +84,15 @@ func init() {
 
 	defSwitchTpl := `{{define "defSwitch"}}switch def { {{range $i, $def := .Defs}}
 			case {{$def}}:
-				{{ template "defCase" newDefCase $def $.Seen $.Field}}{{if eq $def $.Field.MaxDef}}
+				{{ template "defCase" newDefCase $def $.Field}}{{if eq $def $.Field.MaxDef}}
 				nVals++{{end}}{{end}}			
 		}{{end}}`
 
-	defCaseTpl := `{{define "defCase"}}{{if eq .Def .Field.MaxDef}}{{template "repSwitch" .}}{{else}}{{$rep:=getRep .Def .Field}}{{init .Def $rep .Seen .Field}}{{end}}{{end}}`
+	defCaseTpl := `{{define "defCase"}}{{if eq .Def .Field.MaxDef}}{{template "repSwitch" .}}{{else}}{{$rep:=getRep .Def .Field}}{{init .Def $rep .Field}}{{end}}{{end}}`
 
 	repSwitchTpl := `{{define "repSwitch"}}switch rep {
-{{range $case := .Field.RepCases $.Seen}}{{$case.Case}}
-{{init $.Def $case.Rep $.Seen $.Field}}
+{{range $case := .Field.RepCases}}{{$case.Case}}
+{{init $.Def $case.Rep $.Field}}
 {{end}} } {{end}}`
 
 	for _, t := range []string{defCaseTpl, defSwitchTpl, repSwitchTpl} {
@@ -97,18 +103,6 @@ func init() {
 	}
 }
 
-type writeRepeatedInput struct {
-	Field fields.Field
-	Defs  []int
-	Func  string
-}
-
-func writeRequired(f fields.Field) string {
-	return fmt.Sprintf(`func %s(x *%s, vals []%s) {
-	x.%s = vals[0]
-}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")), f.StructType(), f.TypeName, strings.Join(f.FieldNames(), "."))
-}
-
 func writeRepeated(f fields.Field) string {
 	wi := writeRepeatedInput{
 		Field: f,
@@ -117,11 +111,14 @@ func writeRepeated(f fields.Field) string {
 	}
 
 	var buf bytes.Buffer
-	writeRepeatedTpl.Execute(&buf, wi)
+	if err := writeRepeatedTpl.Execute(&buf, wi); err != nil {
+		fmt.Println(err)
+		return ""
+	}
 	return string(buf.Bytes())
 }
 
-func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) string {
+func initRepeated(def, rep int, f fields.Field) string {
 	md := int(f.MaxDef())
 	rt := f.RepetitionTypes().Def(def)
 
@@ -129,37 +126,22 @@ func initRepeated(def, rep int, seen fields.RepetitionTypes, f fields.Field) str
 		rep = def
 	}
 
-	if useIfElse(def, rep, f) {
-		ie := ifelses(def, rep, f)
-		var buf bytes.Buffer
-		if err := ifTpl.Execute(&buf, ie); err != nil {
-			log.Fatalf("unable to execute ifTpl: %s", err)
-		}
-		return string(buf.Bytes())
-	}
-
 	return f.Init(def, rep)
 }
 
-func useIfElse(def, rep int, f fields.Field) bool {
-	return f.NthChild == 0 && f.Parent.Parent != nil && f.Optional()
-}
-
 func writeCases(f fields.Field) []int {
-	return nil
-}
-
-func nilField(i int, f fields.Field) string {
-	var flds []string
-	var count int
-	for j, o := range f.RepetitionTypes() {
-		flds = append(flds, f.FieldNames()[j])
-		if o == fields.Optional {
-			count++
-		}
-		if count > i {
-			break
+	var out []int
+	md := f.MaxDef()
+	chain := fields.Reverse(f.Chain())
+	start := 1
+	for _, f := range chain {
+		if f.RepetitionType != fields.Required && f.Defined && start < md {
+			start++
 		}
 	}
-	return strings.Join(flds, ".")
+
+	for def := start; def <= md; def++ {
+		out = append(out, def)
+	}
+	return out
 }

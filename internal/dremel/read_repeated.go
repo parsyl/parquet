@@ -70,7 +70,7 @@ func readRepeated(f fields.Field) string {
 	return vals, defs, reps	
 }`,
 		strings.Join(f.FieldNames(), ""),
-		f.Type,
+		f.StructType(),
 		cleanTypeName(f.TypeName),
 		cleanTypeName(f.TypeName),
 		doReadRepeated(f, 0, "x"),

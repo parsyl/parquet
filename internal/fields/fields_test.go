@@ -355,6 +355,18 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
+				{FieldName: "Friend", FieldType: "Entity", RepetitionType: fields.Optional, Children: []fields.Field{
+					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+					{FieldName: "Hobby", FieldType: "Item", RepetitionType: fields.Optional, Children: []fields.Field{
+						{FieldName: "Name", FieldType: "string", RepetitionType: fields.Optional},
+					}},
+				}},
+			},
+			def:      2,
+			expected: "x.Friend.Hobby = &Item{}",
+		},
+		{
+			fields: []fields.Field{
 				{FieldName: "Names", FieldType: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
 					{FieldName: "Languages", FieldType: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
 						{FieldName: "Country", FieldType: "string", RepetitionType: fields.Repeated},
@@ -433,6 +445,20 @@ func TestInit(t *testing.T) {
 		},
 		{
 			fields: []fields.Field{
+				{
+					FieldName: "Hobby", FieldType: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{FieldName: "Skills", FieldType: "Skill", RepetitionType: fields.Repeated, Children: []fields.Field{
+							{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Required},
+							{FieldType: "string", TypeName: "string", FieldName: "Difficulty", RepetitionType: fields.Required},
+						}},
+					},
+				},
+			},
+			def:      2,
+			expected: "x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]",
+		},
+		{
+			fields: []fields.Field{
 				{FieldName: "Link", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
 					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Repeated},
 					{FieldName: "Forward", FieldType: "int64", RepetitionType: fields.Repeated},
@@ -441,6 +467,17 @@ func TestInit(t *testing.T) {
 			rep:      1,
 			def:      2,
 			expected: "x.Link.Forward = append(x.Link.Forward, vals[nVals])",
+		},
+		{
+			fields: []fields.Field{
+				{FieldName: "Link", FieldType: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{FieldName: "Name", FieldType: "string", RepetitionType: fields.Repeated},
+					{FieldName: "Forward", FieldType: "string", RepetitionType: fields.Repeated},
+				}},
+			},
+			rep:      0,
+			def:      2,
+			expected: "x.Link.Forward = []string{vals[nVals]}",
 		},
 		{
 			fields: []fields.Field{
@@ -501,6 +538,7 @@ func TestInit(t *testing.T) {
 			fields := fields.Field{Children: tc.fields}.Fields()
 			field := fields[len(fields)-1]
 			s := field.Init(tc.def, tc.rep)
+			fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, string(gocode))

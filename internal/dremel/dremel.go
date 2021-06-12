@@ -1,6 +1,9 @@
 package dremel
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/parsyl/parquet/internal/fields"
 )
 
@@ -34,4 +37,10 @@ func Read(f fields.Field) string {
 	}
 
 	return readRequired(f)
+}
+
+func writeRequired(f fields.Field) string {
+	return fmt.Sprintf(`func %s(x *%s, vals []%s) {
+	x.%s = vals[0]
+}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")), f.StructType(), f.TypeName, strings.Join(f.FieldNames(), "."))
 }
