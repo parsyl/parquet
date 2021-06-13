@@ -425,14 +425,14 @@ func (f Field) Primitive() bool {
 	return ok
 }
 
-func (f Field) FieldName() string {
+func (f Field) FieldType() string {
 	var op string
 	if f.RepetitionType == Optional || f.RepetitionType == Repeated {
 		op = "Optional"
 	}
 
 	ft := primitiveTypes[f.Type]
-	return fmt.Sprintf(ft.name, op)
+	return fmt.Sprintf(ft.name, op, "Field")
 }
 
 func (f Field) ParquetType() string {
@@ -447,10 +447,10 @@ func (f Field) Category() string {
 	}
 
 	ft := primitiveTypes[f.Type]
-	return fmt.Sprintf(ft.category, op, "Field")
+	return fmt.Sprintf(ft.category, op, "")
 }
 
-func (f Field) TypeName(s string, optional bool) string {
+func (f Field) TypeName() string {
 	var star string
 	if f.RepetitionType == Optional {
 		star = "*"

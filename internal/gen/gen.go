@@ -179,10 +179,10 @@ func dedupe(flds []fields.Field) []fields.Field {
 	seen := map[string]bool{}
 	out := make([]fields.Field, 0, len(flds))
 	for _, f := range flds {
-		_, ok := seen[f.FieldType]
+		_, ok := seen[f.Type]
 		if !ok {
 			out = append(out, f)
-			seen[f.FieldType] = true
+			seen[f.Type] = true
 		}
 	}
 	return out

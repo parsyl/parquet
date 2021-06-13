@@ -20,7 +20,7 @@ func TestRead(t *testing.T) {
 		{
 			name: "required and not nested",
 			f: fields.Field{
-				FieldType: "int32", TypeName: "int32", FieldName: "ID", RepetitionType: fields.Required,
+				Type: "int32", Name: "ID", RepetitionType: fields.Required,
 			},
 			result: `func readID(x Person) int32 {
 	return x.ID
@@ -30,7 +30,7 @@ func TestRead(t *testing.T) {
 			name: "optional and not nested",
 			////f:    fields.Field{Type: "Person", TypeName: "*int32", FieldNames: []string{"ID"}, RepetitionTypes: []fields.RepetitionType{fields.Optional}},
 			f: fields.Field{
-				FieldType: "int32", TypeName: "*int32", FieldName: "ID", RepetitionType: fields.Optional,
+				Type: "int32", Name: "ID", RepetitionType: fields.Optional,
 			},
 			result: `func readID(x Person) ([]int32, []uint8, []uint8) {
 	switch {
@@ -44,9 +44,9 @@ func TestRead(t *testing.T) {
 		{
 			name: "required and nested",
 			f: fields.Field{
-				FieldName: "Other", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
-						{FieldType: "int32", TypeName: "int32", FieldName: "Difficulty", RepetitionType: fields.Required},
+				Name: "Other", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
+						{Type: "int32", Name: "Difficulty", RepetitionType: fields.Required},
 					}},
 				},
 			},
@@ -57,8 +57,8 @@ func TestRead(t *testing.T) {
 		{
 			name: "optional and nested",
 			f: fields.Field{
-				FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldType: "int32", TypeName: "*int32", FieldName: "Difficulty", RepetitionType: fields.Optional},
+				Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Type: "int32", Name: "Difficulty", RepetitionType: fields.Optional},
 				},
 			},
 			result: `func readHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
@@ -75,8 +75,8 @@ func TestRead(t *testing.T) {
 		{
 			name: "mix of optional and required and nested",
 			f: fields.Field{
-				FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Required},
+				Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Type: "string", Name: "Name", RepetitionType: fields.Required},
 				},
 			},
 			result: `func readHobbyName(x Person) ([]string, []uint8, []uint8) {
@@ -91,8 +91,8 @@ func TestRead(t *testing.T) {
 		{
 			name: "mix of optional and required and nested v2",
 			f: fields.Field{
-				FieldName: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Optional},
+				Name: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
+					{Type: "string", Name: "Name", RepetitionType: fields.Optional},
 				},
 			},
 			result: `func readHobbyName(x Person) ([]string, []uint8, []uint8) {
@@ -107,9 +107,9 @@ func TestRead(t *testing.T) {
 		{
 			name: "mix of optional and require and nested 3 deep",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Optional},
+				Name: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Required, Children: []fields.Field{
+						{Type: "string", Name: "Name", RepetitionType: fields.Optional},
 					}},
 				},
 			},
@@ -127,9 +127,9 @@ func TestRead(t *testing.T) {
 		{
 			name: "mix of optional and require and nested 3 deep v2",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Optional},
+				Name: "Friend", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Type: "string", Name: "Name", RepetitionType: fields.Optional},
 					}},
 				},
 			},
@@ -147,9 +147,9 @@ func TestRead(t *testing.T) {
 		{
 			name: "mix of optional and require and nested 3 deep v3",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Required},
+				Name: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Type: "string", Name: "Name", RepetitionType: fields.Required},
 					}},
 				},
 			},
@@ -167,9 +167,9 @@ func TestRead(t *testing.T) {
 		{
 			name: "nested 3 deep all optional",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Name", RepetitionType: fields.Optional},
+				Name: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Type: "string", Name: "Name", RepetitionType: fields.Optional},
 					}},
 				},
 			},
@@ -189,10 +189,10 @@ func TestRead(t *testing.T) {
 		{
 			name: "four deep",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
-							{FieldType: "string", TypeName: "string", FieldName: "First", RepetitionType: fields.Optional},
+				Name: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Type: "string", Name: "First", RepetitionType: fields.Optional},
 						}},
 					}},
 				},
@@ -215,10 +215,10 @@ func TestRead(t *testing.T) {
 		{
 			name: "four deep mixed",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
-							{FieldType: "string", TypeName: "string", FieldName: "First", RepetitionType: fields.Optional},
+				Name: "Friend", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Type: "string", Name: "First", RepetitionType: fields.Optional},
 						}},
 					}},
 				},
@@ -239,10 +239,10 @@ func TestRead(t *testing.T) {
 		{
 			name: "four deep mixed v2",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
-						{FieldName: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
-							{FieldType: "string", TypeName: "string", FieldName: "First", RepetitionType: fields.Required},
+				Name: "Friend", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Hobby", RepetitionType: fields.Optional, Children: []fields.Field{
+						{Name: "Name", RepetitionType: fields.Optional, Children: []fields.Field{
+							{Type: "string", Name: "First", RepetitionType: fields.Required},
 						}},
 					}},
 				},
@@ -263,7 +263,7 @@ func TestRead(t *testing.T) {
 		{
 			name: "repeated",
 			f: fields.Field{
-				FieldType: "string", TypeName: "string", FieldName: "Friends", RepetitionType: fields.Repeated,
+				Type: "string", Name: "Friends", RepetitionType: fields.Repeated,
 			},
 			result: `func readFriends(x Person) ([]string, []uint8, []uint8) {
 	var vals []string
@@ -291,8 +291,8 @@ func TestRead(t *testing.T) {
 			name:       "readLinkFoward",
 			structName: "Document",
 			f: fields.Field{
-				FieldName: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldType: "int64", TypeName: "int64", FieldName: "Forward", RepetitionType: fields.Repeated},
+				Name: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Type: "int64", Name: "Forward", RepetitionType: fields.Repeated},
 				},
 			},
 			result: `func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
@@ -326,9 +326,9 @@ func TestRead(t *testing.T) {
 			name:       "readNamesLanguagesCode",
 			structName: "Document",
 			f: fields.Field{
-				FieldName: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Code", RepetitionType: fields.Required},
+				Name: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Type: "string", Name: "Code", RepetitionType: fields.Required},
 					}},
 				},
 			},
@@ -368,9 +368,9 @@ func TestRead(t *testing.T) {
 			name:       "readNamesLanguagesCountry",
 			structName: "Document",
 			f: fields.Field{
-				FieldName: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Languages", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Country", RepetitionType: fields.Optional},
+				Name: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Languages", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Type: "string", Name: "Country", RepetitionType: fields.Optional},
 					}},
 				},
 			},
@@ -415,8 +415,8 @@ func TestRead(t *testing.T) {
 			name:       "readNamesURL",
 			structName: "Document",
 			f: fields.Field{
-				FieldName: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldType: "string", TypeName: "string", FieldName: "URL", RepetitionType: fields.Optional},
+				Name: "Names", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Type: "string", Name: "URL", RepetitionType: fields.Optional},
 				},
 			},
 			result: `func readNamesURL(x Document) ([]string, []uint8, []uint8) {
@@ -450,9 +450,9 @@ func TestRead(t *testing.T) {
 			name:       "run of required",
 			structName: "Document",
 			f: fields.Field{
-				FieldName: "Friends", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{FieldName: "Name", RepetitionType: fields.Required, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Last", RepetitionType: fields.Required},
+				Name: "Friends", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Name", RepetitionType: fields.Required, Children: []fields.Field{
+						{Type: "string", Name: "Last", RepetitionType: fields.Required},
 					}},
 				},
 			},
@@ -482,9 +482,9 @@ func TestRead(t *testing.T) {
 			name:       "run of required v2",
 			structName: "Document",
 			f: fields.Field{
-				FieldName: "Friend", RepetitionType: fields.Required, Children: []fields.Field{
-					{FieldName: "Name", RepetitionType: fields.Required, Children: []fields.Field{
-						{FieldType: "string", TypeName: "string", FieldName: "Aliases", RepetitionType: fields.Repeated},
+				Name: "Friend", RepetitionType: fields.Required, Children: []fields.Field{
+					{Name: "Name", RepetitionType: fields.Required, Children: []fields.Field{
+						{Type: "string", Name: "Aliases", RepetitionType: fields.Repeated},
 					}},
 				},
 			},
@@ -514,10 +514,10 @@ func TestRead(t *testing.T) {
 			name:       "run of required v3",
 			structName: "Document",
 			f: fields.Field{
-				FieldName: "Other", RepetitionType: fields.Optional, Children: []fields.Field{
-					{FieldName: "Friends", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{FieldName: "Name", RepetitionType: fields.Required, Children: []fields.Field{
-							{FieldType: "string", TypeName: "string", FieldName: "Middle", RepetitionType: fields.Required},
+				Name: "Other", RepetitionType: fields.Optional, Children: []fields.Field{
+					{Name: "Friends", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Name", RepetitionType: fields.Required, Children: []fields.Field{
+							{Type: "string", Name: "Middle", RepetitionType: fields.Required},
 						}},
 					}},
 				},

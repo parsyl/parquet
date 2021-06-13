@@ -38,8 +38,10 @@ func TestNilFields(t *testing.T) {
 				return
 			}
 
-			for i := 0; i < tc.f.MaxDef(); i++ {
-				s, _, _, _ := tc.f.NilField(i)
+			f := fields.Field{Type: "Person", Children: []fields.Field{tc.f}}
+
+			for i := 0; i < f.MaxDef(); i++ {
+				s, _, _, _ := f.NilField(i)
 				assert.Equal(t, tc.expected[i], s)
 			}
 		})

@@ -23,7 +23,7 @@ var (
 		},
 		"dedupe": dedupe,
 		"compressionFunc": func(f fields.Field) string {
-			if strings.Contains(f.FieldType, "Optional") {
+			if strings.Contains(f.Category(), "Optional") {
 				return "optionalFieldCompression"
 			}
 			return "fieldCompression"
@@ -45,11 +45,11 @@ var (
 			var out []string
 			var intFound, stringFound bool
 			for _, f := range fields {
-				if !intFound && strings.Contains(f.TypeName, "int") {
+				if !intFound && strings.Contains(f.Type, "int") {
 					intFound = true
 					out = append(out, `"math"`)
 				}
-				if !stringFound && strings.Contains(f.TypeName, "string") {
+				if !stringFound && strings.Contains(f.Type, "string") {
 					stringFound = true
 					out = append(out, `"sort"`)
 				}
@@ -58,7 +58,7 @@ var (
 		},
 		"maxType": func(f fields.Field) string {
 			var out string
-			switch f.TypeName {
+			switch f.Type {
 			case "int32", "*int32":
 				out = "math.MaxInt32"
 			case "int64", "*int64":

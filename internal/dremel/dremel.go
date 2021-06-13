@@ -42,5 +42,5 @@ func Read(f fields.Field) string {
 func writeRequired(f fields.Field) string {
 	return fmt.Sprintf(`func %s(x *%s, vals []%s) {
 	x.%s = vals[0]
-}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")), f.StructType(), f.TypeName, strings.Join(f.FieldNames(), "."))
+}`, fmt.Sprintf("write%s", strings.Join(f.FieldNames(), "")), f.StructType(), f.TypeName(), strings.Join(f.FieldNames(), "."))
 }
