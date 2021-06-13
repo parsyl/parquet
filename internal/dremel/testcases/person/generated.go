@@ -203,7 +203,7 @@ func writeHobbySkillsDifficulty(x *Person, vals []string, defs, reps []uint8) (i
 		switch def {
 		case 2:
 			switch rep {
-			case 0, 1:
+			default:
 				x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
 			}
 			nVals++

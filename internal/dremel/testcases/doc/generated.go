@@ -164,9 +164,7 @@ func writeLinksForward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 		switch def {
 		case 2:
 			switch rep {
-			case 0:
-				x.Links.Forward = []int64{vals[nVals]}
-			case 1:
+			default:
 				x.Links.Forward = append(x.Links.Forward, vals[nVals])
 			}
 			nVals++
@@ -295,7 +293,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 		switch def {
 		case 3:
 			switch rep {
-			case 0, 2:
+			default:
 				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
 			}
 			nVals++
@@ -349,7 +347,7 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 		switch def {
 		case 2:
 			switch rep {
-			case 0, 1:
+			default:
 				x.Names[ind[0]].URL = pstring(vals[nVals])
 			}
 			nVals++

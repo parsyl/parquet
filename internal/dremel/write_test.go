@@ -470,9 +470,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 2:
 			switch rep {
-			case 0:
-				x.Link.Forward = []string{vals[nVals]}
-			case 1:
+			default:
 				x.Link.Forward = append(x.Link.Forward, vals[nVals])
 			}
 			nVals++
@@ -526,11 +524,7 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name: "writeNamesLanguagesCountry",
-			// fields: []fields.Field{
-			// 	{Type: "Document",  FieldNames: []string{"Names", "Languages", "Code"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Required}},
-			// 	{Type: "Document",  FieldNames: []string{"Names", "Languages", "Country"}, FieldTypes: []string{"Name", "Language", "string"}, RepetitionTypes: []fields.RepetitionType{fields.Repeated, fields.Repeated, fields.Optional}},
-			// },
+			name:       "writeNamesLanguagesCountry",
 			structName: "Document",
 			field: fields.Field{
 				Name: "Names", Type: "Name", RepetitionType: fields.Repeated, Children: []fields.Field{
@@ -557,7 +551,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 3:
 			switch rep {
-			case 0, 2:
+			default:
 				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
 			}
 			nVals++
@@ -628,7 +622,7 @@ func TestWrite(t *testing.T) {
 		case 1:
 			switch rep {
 			case 0:
-				x.LuckyNumbers = []int64{vals[nVals]}
+				x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])
 			case 1:
 				x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])
 			}
@@ -640,7 +634,7 @@ func TestWrite(t *testing.T) {
 }`,
 		},
 		{
-			name:       "repeated field not handled by previous repeated field",
+			name:       "repeated field handled by previous repeated field",
 			structName: "Document",
 			field: fields.Field{
 				Name: "Link", Type: "Link", RepetitionType: fields.Optional, Children: []fields.Field{
@@ -665,9 +659,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 2:
 			switch rep {
-			case 0:
-				x.Link.Forward = []string{vals[nVals]}
-			case 1:
+			default:
 				x.Link.Forward = append(x.Link.Forward, vals[nVals])
 			}
 			nVals++
@@ -705,7 +697,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 2:
 			switch rep {
-			case 0, 1:
+			default:
 				x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
 			}
 			nVals++

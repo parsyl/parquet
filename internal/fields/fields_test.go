@@ -479,7 +479,7 @@ func TestInit(t *testing.T) {
 			},
 			rep:      0,
 			def:      2,
-			expected: "x.Link.Forward = []string{vals[nVals]}",
+			expected: "x.Link.Forward = append(x.Link.Forward, vals[nVals])",
 		},
 		{
 			fields: []fields.Field{
@@ -487,7 +487,7 @@ func TestInit(t *testing.T) {
 			},
 			def:      1,
 			rep:      0,
-			expected: "x.LuckyNumbers = []int64{vals[nVals]}",
+			expected: "x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])",
 		},
 		{
 			fields: []fields.Field{

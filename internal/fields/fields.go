@@ -192,8 +192,8 @@ type RepCase struct {
 func (f Field) RepCases() []RepCase {
 	mr := int(f.MaxRep())
 
-	if f.RepetitionType != Repeated && f.Parent != nil && f.Parent.RepetitionType == Repeated && f.Parent.Defined {
-		return []RepCase{{Case: fmt.Sprintf("case 0, %d:", mr)}}
+	if f.Repeated() && f.Parent != nil && f.Parent.Defined {
+		return []RepCase{{Case: "default:"}}
 	}
 
 	var out []RepCase
@@ -375,12 +375,10 @@ func (f Field) Init(def, rep int) string {
 			if fld.Primitive() {
 				if rep == 0 && fld.Parent.RepetitionType == Repeated {
 					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{vals[nVals]}}%%s", fld.Name, fld.Type))
-				} else if (fld.Parent.Parent == nil || fld.Parent.Defined) && rep == 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{vals[nVals]}%%s", fld.Type))
+				} else if reps == rep || (fld.Parent.Parent == nil || fld.Parent.Defined) && rep == 0 {
+					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, vals[nVals])%%s", left))
 				} else if rep == 0 {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{vals[nVals]}%%s", fld.Name, fld.Type))
-				} else if reps == rep {
-					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, vals[nVals])%%s", left))
 				} else {
 					right = fmt.Sprintf(right, fmt.Sprintf("[%s: []%s{vals[nVals]}]%%s", fld.Name, fld.Type))
 				}
