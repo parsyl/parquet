@@ -427,7 +427,7 @@ func (f Field) Primitive() bool {
 
 func (f Field) FieldType() string {
 	var op string
-	if f.RepetitionType == Optional || f.RepetitionType == Repeated {
+	if f.Optional() || f.Repeated() {
 		op = "Optional"
 	}
 
@@ -442,12 +442,12 @@ func (f Field) ParquetType() string {
 
 func (f Field) Category() string {
 	var op string
-	if f.RepetitionType == Optional || f.RepetitionType == Repeated {
+	if f.Optional() || f.Repeated() {
 		op = "Optional"
 	}
 
 	ft := primitiveTypes[f.Type]
-	return fmt.Sprintf(ft.category, op, "")
+	return fmt.Sprintf(ft.category, op)
 }
 
 func (f Field) TypeName() string {

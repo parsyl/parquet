@@ -176,14 +176,20 @@ func getFieldType(se *sch.SchemaElement) (string, error) {
 }
 
 func dedupe(flds []fields.Field) []fields.Field {
+	fmt.Printf("deduping before: %+v\n", flds)
 	seen := map[string]bool{}
 	out := make([]fields.Field, 0, len(flds))
 	for _, f := range flds {
-		_, ok := seen[f.Type]
+		_, ok := seen[f.Category()]
 		if !ok {
 			out = append(out, f)
-			seen[f.Type] = true
+			seen[f.Category()] = true
 		}
+	}
+	fmt.Println("deduping", out)
+
+	for _, f := range out {
+		fmt.Println("cat", f.Category())
 	}
 	return out
 }
