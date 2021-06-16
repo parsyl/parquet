@@ -186,7 +186,7 @@ func (f Field) MaxRepForDef(def int) int {
 // RepCase is used by parquetgen to generate code.
 type RepCase struct {
 	// Case is the code for a switch case (for example: case 0:)
-	Case string
+	Reps []int
 	// Rep is the repetition level that is handled by the switch case.
 	Rep int
 
@@ -196,9 +196,17 @@ type RepCase struct {
 	Repeated bool
 }
 
+func (r RepCase) Case() string {
+	return fmt.Sprintf(
+		"case %s:",
+		strings.Trim(strings.Replace(fmt.Sprint(r.Reps), " ", ", ", -1), "[]"),
+	)
+}
+
 type RepCases []RepCase
 
 func (r RepCases) UseRepCase(f Field) bool {
+	fmt.Println("use rep case", r)
 	if f.Parent.IsRoot() {
 		return false
 	}
@@ -238,9 +246,7 @@ func (f Field) RepCases(def int) RepCases {
 		fmt.Println(rollup, fld.Defined, fld.Name, reps, defs, mr, def)
 
 		if !fld.Defined || (defs == def && fld.RepetitionType != Required) {
-			c := fmt.Sprintf("case %s:", strings.Trim(strings.Replace(fmt.Sprint(rollup), " ", ", ", -1), "[]"))
-			fmt.Printf("%s (def: %d, rep: %d)\n", c, def, reps)
-			out = append(out, RepCase{Case: c, Rep: reps, Repeated: reps > 0})
+			out = append(out, RepCase{Reps: rollup[:], Rep: max(rollup), Repeated: reps > 0})
 			rollup = []int{}
 		}
 
@@ -524,4 +530,8 @@ var primitiveTypes = map[string]fieldType{
 	"float64": {"Float64%s%s", "numeric%s"},
 	"bool":    {"Bool%s%s", "bool%s"},
 	"string":  {"String%s%s", "string%s"},
+}
+
+func max(i []int) int {
+	return i[len(i)-1]
 }

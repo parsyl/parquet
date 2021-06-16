@@ -510,7 +510,7 @@ func TestWrite(t *testing.T) {
 		case 2:
 			switch rep {
 			case 0:
-				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
+				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
 			case 1:
 				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
