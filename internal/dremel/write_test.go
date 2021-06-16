@@ -551,7 +551,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 3:
 			switch rep {
-			default:
+			case 0, 1, 2:
 				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
 			}
 			nVals++
@@ -707,6 +707,71 @@ func TestWrite(t *testing.T) {
 	return nVals, nLevels
 }`,
 		},
+		{
+			name:       "everything is repeated",
+			structName: "Doc",
+			field: fields.Field{
+				Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+						{Name: "Countries", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+						{Name: "Countries", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				},
+			},
+			result: ``,
+		},
+		{
+			name:       "everything is repeated seen at rep 1",
+			structName: "Doc",
+			field: fields.Field{
+				Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+						{Name: "Countries", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				},
+			},
+			result: `func writeLinksForwardCodes(x *Doc, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 3)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			switch rep {
+			case 0, 1, 2:
+				x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{})
+			}
+		case 3:
+			switch rep {
+			case 0, 1, 2:
+				x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{Codes: []string{vals[nVals]}})
+			case 3:
+				x.Links[ind[0]].Forward[ind[1]].Codes = append(x.Links[ind[0]].Forward[ind[1]].Codes, vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}`,
+		},
 	}
 
 	for i, tc := range testCases {
@@ -718,6 +783,7 @@ func TestWrite(t *testing.T) {
 			flds := fields.Field{Type: ty, Children: []fields.Field{tc.field}}.Fields()
 			f := flds[len(flds)-1]
 			s := dremel.Write(f)
+			fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))

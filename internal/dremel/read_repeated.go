@@ -36,7 +36,7 @@ var (
  		 reps = append(reps, lastRep)
      } else {
          for i{{.Rep}}, x{{.Rep}} := range {{.Var}}.{{.Field}} {
-             if i{{.Rep}} == 1 {
+             if i{{.Rep}} >= 1 {
 				lastRep = {{inc .Rep}}
 			}
             %s

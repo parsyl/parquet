@@ -533,6 +533,229 @@ func TestInit(t *testing.T) {
 			def:      3,
 			expected: "x.A.B.C.D[ind[0]].E.F = pstring(vals[nVals])",
 		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      1,
+			rep:      0,
+			expected: "x.Links = []Link{}",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      1,
+			rep:      1,
+			expected: "x.Links = append(x.Links, Link{})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      2,
+			rep:      2,
+			expected: "x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      3,
+			expected: "x.Links[ind[0]].Forward[ind[1]].Codes = append(x.Links[ind[0]].Forward[ind[1]].Codes, vals[nVals])",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+						{Name: "Countries", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+						{Name: "Countries", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      3,
+			expected: "x.Links[ind[0]].Backward[ind[1]].Countries = append(x.Links[ind[0]].Backward[ind[1]].Countries, vals[nVals])",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+						{Name: "Countries", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      0,
+			expected: "x.Links[ind[0]].Backward = []Language{{Codes: []string{vals[nVals]}}}",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      1,
+			rep:      0,
+			expected: "x.Links = []Link{}",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      1,
+			rep:      1,
+			expected: "x.Links = append(x.Links, Link{})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      2,
+			rep:      0,
+			expected: "x.Links = []Link{{Backward: []Language{{}}}}",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      2,
+			rep:      1,
+			expected: "x.Links = append(x.Links, Link{Backward: []Language{{}}})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      2,
+			rep:      2,
+			expected: "x.Links[ind[0]].Backward = append(x.Links[ind[0]].Backward, Language{})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      1,
+			expected: "x.Links = append(x.Links, Link{Backward: []Language{{Codes: []string{vals[nVals]}}}})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      2,
+			expected: "x.Links[ind[0]].Backward = append(x.Links[ind[0]].Backward, Language{Codes: []string{vals[nVals]}})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      3,
+			expected: "x.Links[ind[0]].Backward[ind[1]].Codes = append(x.Links[ind[0]].Backward[ind[1]].Codes, vals[nVals])",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+						{Name: "Countries", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      3,
+			expected: "x.Links[ind[0]].Forward[ind[1]].Countries = append(x.Links[ind[0]].Forward[ind[1]].Countries, vals[nVals])",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      2,
+			rep:      2,
+			expected: "x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      1,
+			expected: "x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{Codes: []string{vals[nVals]}})",
+		},
 	}
 
 	for i, tc := range testCases {

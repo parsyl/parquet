@@ -41,6 +41,10 @@ func (f Field) Fields() []Field {
 	return f.fields(0)
 }
 
+func (f Field) IsRoot() bool {
+	return f.Parent == nil
+}
+
 func (f Field) fields(i int) []Field {
 	var out []Field
 	for j, fld := range f.Children {
@@ -189,16 +193,39 @@ type RepCase struct {
 
 // RepCases returns a RepCase slice based on the field types and
 // what sub-fields have already been seen.
-func (f Field) RepCases() []RepCase {
+func (f Field) RepCases(def int) []RepCase {
 	mr := int(f.MaxRep())
 
-	if f.Repeated() && f.Parent != nil && f.Parent.Defined {
-		return []RepCase{{Case: "default:"}}
-	}
-
 	var out []RepCase
-	for i := 0; i <= mr; i++ {
-		out = append(out, RepCase{Case: fmt.Sprintf("case %d:", i), Rep: i})
+	var defs int
+	var reps int
+	var rollup []int
+	var i int
+	for _, fld := range Reverse(f.Chain()) {
+		if fld.IsRoot() {
+			continue
+		}
+		rollup = append(rollup, i)
+		if fld.RepetitionType == Required || fld.RepetitionType == Repeated {
+			defs++
+		}
+
+		if fld.RepetitionType == Repeated && reps < mr && defs < def {
+			reps++
+		}
+
+		fmt.Println(rollup, fld.Defined, fld.Name, reps, defs)
+
+		if !fld.Defined || defs == def {
+			c := fmt.Sprintf("case %s:", strings.Trim(strings.Replace(fmt.Sprint(rollup), " ", ", ", -1), "[]"))
+			out = append(out, RepCase{Case: c, Rep: reps})
+			rollup = []int{}
+		}
+
+		if defs == def {
+			break
+		}
+		i++
 	}
 	return out
 }
@@ -247,7 +274,7 @@ func (f Field) Required() bool {
 	return f.RepetitionTypes().Required()
 }
 
-func (f Field) rightComplete(fld Field, i, def, rep, maxDef, maxRep, defs, reps int) bool {
+func (f Field) leftComplete(fld Field, i, def, rep, maxDef, maxRep, defs, reps int) bool {
 	if fld.RepetitionType == Optional && rep == 0 && !fld.Defined {
 		return true
 	}
@@ -266,6 +293,10 @@ func (f Field) rightComplete(fld Field, i, def, rep, maxDef, maxRep, defs, reps 
 	}
 
 	return false
+}
+
+func (f Field) rightComplete(def, defs, maxDef int) bool {
+	return def != maxDef && defs >= def
 }
 
 // Init is called by parquetgen's templates to generate the code
@@ -304,14 +335,14 @@ func (f Field) Init(def, rep int) string {
 		case Optional:
 			left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.Name))
 		case Repeated:
-			if (rep > 0 && reps < rep) || (f.NthChild > 0 && !fld.Primitive()) {
-				left = fmt.Sprintf(left, fmt.Sprintf(".%s[ind[%d]]%%s", fld.Name, reps-1))
-			} else {
+			if fld.Primitive() || f.leftComplete(fld, i, def, rep, maxDef, maxRep, defs, reps) {
 				left = fmt.Sprintf(left, fmt.Sprintf(".%s%%s", fld.Name))
+			} else {
+				left = fmt.Sprintf(left, fmt.Sprintf(".%s[ind[%d]]%%s", fld.Name, reps-1))
 			}
 		}
 
-		if f.rightComplete(fld, i, def, rep, maxDef, maxRep, defs, reps) {
+		if f.leftComplete(fld, i, def, rep, maxDef, maxRep, defs, reps) {
 			i++
 			break
 		}
@@ -337,19 +368,13 @@ func (f Field) Init(def, rep int) string {
 					right = fmt.Sprintf(right, "vals[nVals]%s")
 				} else if (fld.Parent.Parent == nil || fld.Parent.Defined) && rep == 0 {
 					right = fmt.Sprintf(right, "vals[0]%s")
-				} else if fld.Parent.RepetitionType == Repeated && rep < maxRep { //need one more case:
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: vals[nVals]}%%s", fld.Name))
 				} else if fld.Parent.RepetitionType == Repeated {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[nVals]%%s", fld.Name))
 				} else {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: vals[0]%%s", fld.Name))
 				}
 			} else {
-				if fld.Parent.RepetitionType == Repeated && rep < maxRep {
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: %s{%%s}}", fld.Name, fld.Type))
-				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: %s{%%s}", fld.Name, fld.Type))
-				}
+				right = fmt.Sprintf(right, fmt.Sprintf("%s: %s{%%s}", fld.Name, fld.Type))
 			}
 		case Optional:
 			if fld.Primitive() {
@@ -373,37 +398,47 @@ func (f Field) Init(def, rep int) string {
 			}
 		case Repeated:
 			if fld.Primitive() {
-				if rep == 0 && fld.Parent.RepetitionType == Repeated {
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{vals[nVals]}}%%s", fld.Name, fld.Type))
-				} else if reps == rep || (fld.Parent.Parent == nil || fld.Parent.Defined) && rep == 0 {
+				if j == 0 {
 					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, vals[nVals])%%s", left))
-				} else if rep == 0 {
+				} else if !fld.IsRoot() {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{vals[nVals]}%%s", fld.Name, fld.Type))
 				} else {
-					right = fmt.Sprintf(right, fmt.Sprintf("[%s: []%s{vals[nVals]}]%%s", fld.Name, fld.Type))
+					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{vals[nVals]}%%s", fld.Type))
 				}
 			} else {
-				if rep == 0 && j == 0 {
-					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{%%s}", fld.Type))
-				} else if rep == 0 && reps == maxRep && fld.Parent != nil && fld.Parent.RepetitionType == Repeated {
-					right = fmt.Sprintf(right, fmt.Sprintf("{%s: []%s{%%s}}", fld.Name, fld.Type))
-				} else if rep == 0 && reps == maxRep {
-					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{%%s}", fld.Name, fld.Type))
-				} else if reps == rep {
+				if rep > 0 && reps == rep {
 					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, %s{%%s})", left, fld.Type))
+				} else if rep == 0 && j == 0 && !f.rightComplete(def, defs, maxDef) {
+					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{{%%s}}", fld.Type))
+				} else if rep == 0 && j == 0 {
+					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{%%s}", fld.Type))
+				} else if (!f.rightComplete(def, defs, maxDef) && !chain[j+1].Primitive()) || (f.rightComplete(def, defs, maxDef) && def == defs) {
+					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{{%%s}}", fld.Name, fld.Type))
 				} else {
 					right = fmt.Sprintf(right, fmt.Sprintf("%s: []%s{%%s}", fld.Name, fld.Type))
 				}
 			}
 		}
 
-		if def != maxDef && defs >= def {
+		if f.rightComplete(def, defs, maxDef) {
 			break
 		}
 	}
 
 	right = fmt.Sprintf(right, "")
 	return fmt.Sprintf("x%s = %s", left, right)
+}
+
+// IsRep is true if this fields is one being repeated
+func (f Field) IsRep(rep int) bool {
+	var reps int
+	for _, fld := range Reverse(f.Chain()) {
+		if fld.RepetitionType == Repeated {
+			reps++
+		}
+	}
+
+	return reps == rep
 }
 
 // Path creates gocode for initializing a string slice in a go template

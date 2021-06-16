@@ -7,6 +7,7 @@ import (
 
 	"github.com/parsyl/parquet/internal/dremel/testcases/doc"
 	"github.com/parsyl/parquet/internal/dremel/testcases/person"
+	"github.com/parsyl/parquet/internal/dremel/testcases/repetition"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -175,4 +176,82 @@ func pstring(s string) *string {
 
 func pint32(i int32) *int32 {
 	return &i
+}
+
+var (
+	repetitionDocs = []repetition.Document{
+		{
+			Links: []repetition.Link{
+				{
+					Backward: []repetition.Language{{Codes: []string{"a", "b"}}},
+					Forward:  []repetition.Language{{Codes: []string{"aa", "bbb"}}},
+				},
+				{
+					Backward: nil,
+					Forward:  []repetition.Language{{Codes: []string{"c", "d"}}},
+				},
+				{
+					Backward: []repetition.Language{{Countries: []string{"e", "f"}}},
+					Forward:  nil,
+				},
+				{
+					Backward: nil,
+					Forward:  []repetition.Language{{Countries: []string{"g", "h"}}},
+				},
+				{
+					Backward: []repetition.Language{{Countries: []string{"i", "j"}}},
+					Forward:  []repetition.Language{{Codes: []string{"k", "l"}}},
+				},
+				{
+					Backward: []repetition.Language{
+						{
+							Codes:     []string{"m", "n"},
+							Countries: []string{"o", "p"},
+						},
+						{
+							Codes:     []string{"q", "r"},
+							Countries: []string{"s", "t"},
+						},
+					},
+					Forward: []repetition.Language{{Countries: []string{"u", "v"}}},
+				},
+				{
+					Backward: []repetition.Language{{Codes: []string{"w", "x"}}},
+					Forward:  []repetition.Language{{Countries: []string{"y", "z"}}},
+				},
+			},
+		},
+	}
+)
+
+func TestRepetition(t *testing.T) {
+	var buf bytes.Buffer
+	pw, err := repetition.NewParquetWriter(&buf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, doc := range repetitionDocs {
+		pw.Add(doc)
+	}
+
+	if err := pw.Write(); err != nil {
+		log.Fatal(err)
+	}
+
+	pw.Close()
+
+	pr, err := repetition.NewParquetReader(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var out []repetition.Document
+	for pr.Next() {
+		var d repetition.Document
+		pr.Scan(&d)
+		out = append(out, d)
+	}
+
+	assert.Equal(t, repetitionDocs, out)
 }
