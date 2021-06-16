@@ -753,8 +753,23 @@ func TestInit(t *testing.T) {
 				}},
 			},
 			def:      3,
-			rep:      1,
+			rep:      2, //1 isn't a valid rep because it is handled by Links.Backward.Codes
 			expected: "x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{Codes: []string{vals[nVals]}})",
+		},
+		{
+			fields: []fields.Field{
+				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
+					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+					{Name: "Forward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
+						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
+					}},
+				}},
+			},
+			def:      3,
+			rep:      3,
+			expected: "x.Links[ind[0]].Forward[ind[1]].Codes = append(x.Links[ind[0]].Forward[ind[1]].Codes, vals[nVals])",
 		},
 	}
 
@@ -763,7 +778,7 @@ func TestInit(t *testing.T) {
 			fields := fields.Field{Children: tc.fields}.Fields()
 			field := fields[len(fields)-1]
 			s := field.Init(tc.def, tc.rep)
-			fmt.Println(s)
+			//fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, string(gocode))

@@ -189,11 +189,27 @@ type RepCase struct {
 	Case string
 	// Rep is the repetition level that is handled by the switch case.
 	Rep int
+
+	// Repeated is true if any of the fields (including the one at the def level) were repeated
+	// This allows the def case to not have a rep case for fields that have a repetition somewhere
+	// in the chain.
+	Repeated bool
+}
+
+type RepCases []RepCase
+
+func (r RepCases) UseRepCase(f Field) bool {
+	if f.Parent.IsRoot() {
+		return false
+	}
+	return len(r) > 1 ||
+		(len(r) == 1 && r[0].Repeated)
 }
 
 // RepCases returns a RepCase slice based on the field types and
 // what sub-fields have already been seen.
-func (f Field) RepCases(def int) []RepCase {
+func (f Field) RepCases(def int) RepCases {
+	fmt.Println("rep cases", def)
 	mr := int(f.MaxRep())
 
 	var out []RepCase
@@ -205,26 +221,29 @@ func (f Field) RepCases(def int) []RepCase {
 		if fld.IsRoot() {
 			continue
 		}
+
+		if defs == def && fld.RepetitionType != Required {
+			break
+		}
+
 		rollup = append(rollup, i)
-		if fld.RepetitionType == Required || fld.RepetitionType == Repeated {
+		if fld.RepetitionType == Optional || fld.RepetitionType == Repeated {
 			defs++
 		}
 
-		if fld.RepetitionType == Repeated && reps < mr && defs < def {
+		if fld.RepetitionType == Repeated && reps < mr && defs <= def {
 			reps++
 		}
 
-		fmt.Println(rollup, fld.Defined, fld.Name, reps, defs)
+		fmt.Println(rollup, fld.Defined, fld.Name, reps, defs, mr, def)
 
-		if !fld.Defined || defs == def {
+		if !fld.Defined || (defs == def && fld.RepetitionType != Required) {
 			c := fmt.Sprintf("case %s:", strings.Trim(strings.Replace(fmt.Sprint(rollup), " ", ", ", -1), "[]"))
-			out = append(out, RepCase{Case: c, Rep: reps})
+			fmt.Printf("%s (def: %d, rep: %d)\n", c, def, reps)
+			out = append(out, RepCase{Case: c, Rep: reps, Repeated: reps > 0})
 			rollup = []int{}
 		}
 
-		if defs == def {
-			break
-		}
 		i++
 	}
 	return out

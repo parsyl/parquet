@@ -470,7 +470,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 2:
 			switch rep {
-			default:
+			case 0, 1:
 				x.Link.Forward = append(x.Link.Forward, vals[nVals])
 			}
 			nVals++
@@ -510,7 +510,7 @@ func TestWrite(t *testing.T) {
 		case 2:
 			switch rep {
 			case 0:
-				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
+				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 1:
 				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
@@ -587,7 +587,7 @@ func TestWrite(t *testing.T) {
 		case 1:
 			switch rep {
 			case 0:
-				x.Friends = []Being{{ID: vals[nVals]}}
+				x.Friends = append(x.Friends, Being{ID: vals[nVals]})
 			case 1:
 				x.Friends = append(x.Friends, Being{ID: vals[nVals]})
 			}
@@ -620,12 +620,7 @@ func TestWrite(t *testing.T) {
 
 		switch def {
 		case 1:
-			switch rep {
-			case 0:
-				x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])
-			case 1:
-				x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])
-			}
+			x.LuckyNumbers = append(x.LuckyNumbers, vals[nVals])
 			nVals++
 		}
 	}
@@ -659,7 +654,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 2:
 			switch rep {
-			default:
+			case 0, 1:
 				x.Link.Forward = append(x.Link.Forward, vals[nVals])
 			}
 			nVals++

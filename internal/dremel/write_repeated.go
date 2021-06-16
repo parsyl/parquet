@@ -88,10 +88,10 @@ func init() {
 				nVals++{{end}}{{end}}			
 		}{{end}}`
 
-	defCaseTpl := `{{define "defCase"}}switch rep {
-{{range $case := .Field.RepCases $.Def}}{{$case.Case}}
+	defCaseTpl := `{{define "defCase"}}{{$cases := .Field.RepCases $.Def}}{{if $cases.UseRepCase .Field}}switch rep {
+{{range $case := $cases}}{{$case.Case}}
 	{{init $.Def $case.Rep $.Field}}
-{{end}} }{{end}}`
+{{end}}}{{else}}{{init $.Def 0 $.Field}}{{end}}{{end}}`
 
 	for _, t := range []string{defCaseTpl, defSwitchTpl} {
 		writeRepeatedTpl, err = writeRepeatedTpl.Parse(t)
