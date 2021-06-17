@@ -146,8 +146,7 @@ func writeHobbySkillsName(x *Person, vals []string, defs, reps []uint8) (int, in
 
 		switch def {
 		case 2:
-			switch rep {
-			}
+			x.Hobby.Skills = append(x.Hobby.Skills, Skill{Name: vals[nVals]})
 			nVals++
 		}
 	}
@@ -198,8 +197,7 @@ func writeHobbySkillsDifficulty(x *Person, vals []string, defs, reps []uint8) (i
 
 		switch def {
 		case 2:
-			switch rep {
-			}
+			x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
 			nVals++
 		}
 	}

@@ -205,13 +205,13 @@ func (r RepCase) Case() string {
 
 type RepCases []RepCase
 
-func (r RepCases) UseRepCase(f Field) bool {
-	fmt.Println("use rep case", r)
+func (r RepCases) UseRepCase(f Field, def int) bool {
+	fmt.Println("use rep case", r, f.MaxRepForDef(def))
 	if f.Parent.IsRoot() {
 		return false
 	}
 	return len(r) > 1 ||
-		(len(r) == 1 && r[0].Repeated)
+		(len(r) == 1 && r[0].Repeated && r[0].Rep < f.MaxRepForDef(def))
 }
 
 // RepCases returns a RepCase slice based on the field types and
@@ -245,8 +245,8 @@ func (f Field) RepCases(def int) RepCases {
 
 		fmt.Println(rollup, fld.Defined, fld.Name, reps, defs, mr, def)
 
-		if !fld.Defined || (defs == def && fld.RepetitionType != Required) {
-			fmt.Println("xxxxxxxxxxxxx")
+		if len(rollup) > 0 && (!fld.Defined || (defs == def && fld.RepetitionType != Required)) {
+			fmt.Println("xxxxxxxxxxxxx", rollup)
 			out = append(out, RepCase{Reps: rollup[:], Rep: max(rollup), Repeated: reps > 0})
 			rollup = []int{}
 		}
@@ -432,7 +432,7 @@ func (f Field) Init(def, rep int) string {
 					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{vals[nVals]}%%s", fld.Type))
 				}
 			} else {
-				if rep > 0 && reps == rep {
+				if rep > 0 && reps == rep || (fld.MaxRepForDef(def) == rep && !strings.Contains(right, "append(")) {
 					right = fmt.Sprintf(right, fmt.Sprintf("append(x%s, %s{%%s})", left, fld.Type))
 				} else if rep == 0 && j == 0 && !f.rightComplete(def, defs, maxDef) {
 					right = fmt.Sprintf(right, fmt.Sprintf("[]%s{{%%s}}", fld.Type))

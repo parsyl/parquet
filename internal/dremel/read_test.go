@@ -275,7 +275,7 @@ func TestRead(t *testing.T) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Friends {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			defs = append(defs, 1)
@@ -309,7 +309,7 @@ func TestRead(t *testing.T) {
 			reps = append(reps, lastRep)
 		} else {
 			for i0, x0 := range x.Link.Forward {
-				if i0 == 1 {
+				if i0 >= 1 {
 					lastRep = 1
 				}
 				defs = append(defs, 2)
@@ -342,7 +342,7 @@ func TestRead(t *testing.T) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			if len(x0.Languages) == 0 {
@@ -350,7 +350,7 @@ func TestRead(t *testing.T) {
 				reps = append(reps, lastRep)
 			} else {
 				for i1, x1 := range x0.Languages {
-					if i1 == 1 {
+					if i1 >= 1 {
 						lastRep = 2
 					}
 					defs = append(defs, 2)
@@ -384,7 +384,7 @@ func TestRead(t *testing.T) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			if len(x0.Languages) == 0 {
@@ -392,7 +392,7 @@ func TestRead(t *testing.T) {
 				reps = append(reps, lastRep)
 			} else {
 				for i1, x1 := range x0.Languages {
-					if i1 == 1 {
+					if i1 >= 1 {
 						lastRep = 2
 					}
 					if x1.Country == nil {
@@ -429,7 +429,7 @@ func TestRead(t *testing.T) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			if x0.URL == nil {
@@ -466,7 +466,7 @@ func TestRead(t *testing.T) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Friends {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			defs = append(defs, 1)
@@ -498,7 +498,7 @@ func TestRead(t *testing.T) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Friend.Name.Aliases {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			defs = append(defs, 1)
@@ -536,7 +536,7 @@ func TestRead(t *testing.T) {
 			reps = append(reps, lastRep)
 		} else {
 			for i0, x0 := range x.Other.Friends {
-				if i0 == 1 {
+				if i0 >= 1 {
 					lastRep = 1
 				}
 				defs = append(defs, 2)

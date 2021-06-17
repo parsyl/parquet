@@ -88,7 +88,7 @@ func init() {
 				nVals++{{end}}{{end}}			
 		}{{end}}`
 
-	defCaseTpl := `{{define "defCase"}}{{$cases := .Field.RepCases $.Def}}{{if $cases.UseRepCase .Field}}switch rep {
+	defCaseTpl := `{{define "defCase"}}{{$cases := .Field.RepCases $.Def}}{{if $cases.UseRepCase .Field $.Def}}switch rep {
 {{range $case := $cases}}{{$case.Case}}
 	{{init $.Def $case.Rep $.Field}}
 {{end}}}{{else}}{{init $.Def 0 $.Field}}{{end}}{{end}}`

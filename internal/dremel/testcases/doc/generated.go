@@ -76,7 +76,7 @@ func readLinksBackward(x Document) ([]int64, []uint8, []uint8) {
 			reps = append(reps, lastRep)
 		} else {
 			for i0, x0 := range x.Links.Backward {
-				if i0 == 1 {
+				if i0 >= 1 {
 					lastRep = 1
 				}
 				defs = append(defs, 2)
@@ -134,7 +134,7 @@ func readLinksForward(x Document) ([]int64, []uint8, []uint8) {
 			reps = append(reps, lastRep)
 		} else {
 			for i0, x0 := range x.Links.Forward {
-				if i0 == 1 {
+				if i0 >= 1 {
 					lastRep = 1
 				}
 				defs = append(defs, 2)
@@ -163,10 +163,7 @@ func writeLinksForward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 
 		switch def {
 		case 2:
-			switch rep {
-			default:
-				x.Links.Forward = append(x.Links.Forward, vals[nVals])
-			}
+			x.Links.Forward = append(x.Links.Forward, vals[nVals])
 			nVals++
 		}
 	}
@@ -184,7 +181,7 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			if len(x0.Languages) == 0 {
@@ -192,7 +189,7 @@ func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
 				reps = append(reps, lastRep)
 			} else {
 				for i1, x1 := range x0.Languages {
-					if i1 == 1 {
+					if i1 >= 1 {
 						lastRep = 2
 					}
 					defs = append(defs, 2)
@@ -225,9 +222,7 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 			x.Names = append(x.Names, Name{})
 		case 2:
 			switch rep {
-			case 0:
-				x.Names = []Name{{Languages: []Language{{Code: vals[nVals]}}}}
-			case 1:
+			case 0, 1:
 				x.Names = append(x.Names, Name{Languages: []Language{{Code: vals[nVals]}}})
 			case 2:
 				x.Names[ind[0]].Languages = append(x.Names[ind[0]].Languages, Language{Code: vals[nVals]})
@@ -249,7 +244,7 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			if len(x0.Languages) == 0 {
@@ -257,7 +252,7 @@ func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
 				reps = append(reps, lastRep)
 			} else {
 				for i1, x1 := range x0.Languages {
-					if i1 == 1 {
+					if i1 >= 1 {
 						lastRep = 2
 					}
 					if x1.Country == nil {
@@ -292,10 +287,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 
 		switch def {
 		case 3:
-			switch rep {
-			default:
-				x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
-			}
+			x.Names[ind[0]].Languages[ind[1]].Country = pstring(vals[nVals])
 			nVals++
 		}
 	}
@@ -313,7 +305,7 @@ func readNamesURL(x Document) ([]string, []uint8, []uint8) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Names {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			if x0.URL == nil {
@@ -346,10 +338,7 @@ func writeNamesURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
 
 		switch def {
 		case 2:
-			switch rep {
-			default:
-				x.Names[ind[0]].URL = pstring(vals[nVals])
-			}
+			x.Names[ind[0]].URL = pstring(vals[nVals])
 			nVals++
 		}
 	}

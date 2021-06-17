@@ -109,26 +109,17 @@ func writeLinksBackwardCodes(x *Document, vals []string, defs, reps []uint8) (in
 
 		switch def {
 		case 1:
-			switch rep {
-			case 0:
-				x.Links = append(x.Links, Link{})
-			case 1:
-				x.Links = append(x.Links, Link{})
-			}
+			x.Links = append(x.Links, Link{})
 		case 2:
 			switch rep {
-			case 0:
-				x.Links[ind[0]].Backward = append(x.Links[ind[0]].Backward, Language{})
-			case 1:
+			case 0, 1:
 				x.Links = append(x.Links, Link{Backward: []Language{{}}})
 			case 2:
 				x.Links[ind[0]].Backward = append(x.Links[ind[0]].Backward, Language{})
 			}
 		case 3:
 			switch rep {
-			case 0:
-				x.Links = []Link{{Backward: []Language{{Codes: []string{vals[nVals]}}}}}
-			case 1:
+			case 0, 1:
 				x.Links = append(x.Links, Link{Backward: []Language{{Codes: []string{vals[nVals]}}}})
 			case 2:
 				x.Links[ind[0]].Backward = append(x.Links[ind[0]].Backward, Language{Codes: []string{vals[nVals]}})
@@ -200,10 +191,7 @@ func writeLinksBackwardCountries(x *Document, vals []string, defs, reps []uint8)
 
 		switch def {
 		case 3:
-			switch rep {
-			case 0, 1, 2, 3:
-				x.Links[ind[0]].Backward[ind[1]].Countries = append(x.Links[ind[0]].Backward[ind[1]].Countries, vals[nVals])
-			}
+			x.Links[ind[0]].Backward[ind[1]].Countries = append(x.Links[ind[0]].Backward[ind[1]].Countries, vals[nVals])
 			nVals++
 		}
 	}
@@ -269,10 +257,7 @@ func writeLinksForwardCodes(x *Document, vals []string, defs, reps []uint8) (int
 
 		switch def {
 		case 2:
-			switch rep {
-			case 0, 1, 2:
-				x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{})
-			}
+			x.Links[ind[0]].Forward = append(x.Links[ind[0]].Forward, Language{})
 		case 3:
 			switch rep {
 			case 0, 1, 2:
@@ -345,10 +330,7 @@ func writeLinksForwardCountries(x *Document, vals []string, defs, reps []uint8) 
 
 		switch def {
 		case 3:
-			switch rep {
-			case 0, 1, 2, 3:
-				x.Links[ind[0]].Forward[ind[1]].Countries = append(x.Links[ind[0]].Forward[ind[1]].Countries, vals[nVals])
-			}
+			x.Links[ind[0]].Forward[ind[1]].Countries = append(x.Links[ind[0]].Forward[ind[1]].Countries, vals[nVals])
 			nVals++
 		}
 	}
