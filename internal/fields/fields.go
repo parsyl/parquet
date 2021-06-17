@@ -223,8 +223,8 @@ func (f Field) RepCases(def int) RepCases {
 	var out []RepCase
 	var defs int
 	var reps int
-	var rollup []int
-	var i int
+	rollup := []int{0}
+	i := 1
 	for _, fld := range Reverse(f.Chain()) {
 		if fld.IsRoot() {
 			continue
@@ -234,18 +234,19 @@ func (f Field) RepCases(def int) RepCases {
 			break
 		}
 
-		rollup = append(rollup, i)
 		if fld.RepetitionType == Optional || fld.RepetitionType == Repeated {
 			defs++
 		}
 
 		if fld.RepetitionType == Repeated && reps < mr && defs <= def {
 			reps++
+			rollup = append(rollup, reps)
 		}
 
 		fmt.Println(rollup, fld.Defined, fld.Name, reps, defs, mr, def)
 
 		if !fld.Defined || (defs == def && fld.RepetitionType != Required) {
+			fmt.Println("xxxxxxxxxxxxx")
 			out = append(out, RepCase{Reps: rollup[:], Rep: max(rollup), Repeated: reps > 0})
 			rollup = []int{}
 		}
@@ -389,7 +390,7 @@ func (f Field) Init(def, rep int) string {
 		switch fld.RepetitionType {
 		case Required:
 			if fld.Primitive() {
-				if (fld.Parent.Parent == nil || fld.Parent.Defined) && fld.Parent.RepetitionType == Repeated && rep == 0 { //Should this be a check for repated anywhere in the full chain?
+				if (fld.Parent.IsRoot() || fld.Parent.Defined) && fld.Parent.RepetitionType == Repeated && (rep == 0 || rep == reps) { //Should this be a check for repeated anywhere in the full chain?
 					right = fmt.Sprintf(right, "vals[nVals]%s")
 				} else if (fld.Parent.Parent == nil || fld.Parent.Defined) && rep == 0 {
 					right = fmt.Sprintf(right, "vals[0]%s")

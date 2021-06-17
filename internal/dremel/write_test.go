@@ -692,7 +692,7 @@ func TestWrite(t *testing.T) {
 		switch def {
 		case 2:
 			switch rep {
-			default:
+			case 0, 1:
 				x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
 			}
 			nVals++
@@ -704,7 +704,7 @@ func TestWrite(t *testing.T) {
 		},
 		{
 			name:       "everything is repeated",
-			structName: "Doc",
+			structName: "Document",
 			field: fields.Field{
 				Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
 					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
@@ -717,7 +717,32 @@ func TestWrite(t *testing.T) {
 					}},
 				},
 			},
-			result: ``,
+			result: `func writeLinksForwardCountries(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 3)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 3:
+			switch rep {
+			case 0, 1, 2, 3:
+				x.Links[ind[0]].Forward[ind[1]].Countries = append(x.Links[ind[0]].Forward[ind[1]].Countries, vals[nVals])
+			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}`,
 		},
 		{
 			name:       "everything is repeated seen at rep 1",
