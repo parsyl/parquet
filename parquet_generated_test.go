@@ -1071,6 +1071,136 @@ func (f *Int32OptionalField) Levels() ([]uint8, []uint8) {
 	return f.Defs, f.Reps
 }
 
+type Int64Field struct {
+	vals []int64
+	parquet.RequiredField
+	read  func(r Person) int64
+	write func(r *Person, vals []int64)
+	stats *int64stats
+}
+
+func NewInt64Field(read func(r Person) int64, write func(r *Person, vals []int64), path []string, opts ...func(*parquet.RequiredField)) *Int64Field {
+	return &Int64Field{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newInt64stats(),
+	}
+}
+
+func (f *Int64Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *Int64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]int64, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *Int64Field) Scan(r *Person) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *Int64Field) Add(r Person) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *Int64Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type Int64OptionalField struct {
+	parquet.OptionalField
+	vals  []int64
+	read  func(r Person) ([]int64, []uint8, []uint8)
+	write func(r *Person, vals []int64, def, rep []uint8) (int, int)
+	stats *int64optionalStats
+}
+
+func NewInt64OptionalField(read func(r Person) ([]int64, []uint8, []uint8), write func(r *Person, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+	return &Int64OptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newint64optionalStats(maxDef(types)),
+	}
+}
+
+func (f *Int64OptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int64Type, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]int64, f.Values()-len(f.vals))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Int64OptionalField) Add(r Person) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *Int64OptionalField) Scan(r *Person) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *Int64OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
@@ -1151,15 +1281,207 @@ func (f *StringOptionalField) Levels() ([]uint8, []uint8) {
 	return f.Defs, f.Reps
 }
 
+type Float32Field struct {
+	vals []float32
+	parquet.RequiredField
+	read  func(r Person) float32
+	write func(r *Person, vals []float32)
+	stats *float32stats
+}
+
+func NewFloat32Field(read func(r Person) float32, write func(r *Person, vals []float32), path []string, opts ...func(*parquet.RequiredField)) *Float32Field {
+	return &Float32Field{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newFloat32stats(),
+	}
+}
+
+func (f *Float32Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *Float32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]float32, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Float32Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *Float32Field) Scan(r *Person) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *Float32Field) Add(r Person) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *Float32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type Float64Field struct {
+	vals []float64
+	parquet.RequiredField
+	read  func(r Person) float64
+	write func(r *Person, vals []float64)
+	stats *float64stats
+}
+
+func NewFloat64Field(read func(r Person) float64, write func(r *Person, vals []float64), path []string, opts ...func(*parquet.RequiredField)) *Float64Field {
+	return &Float64Field{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newFloat64stats(),
+	}
+}
+
+func (f *Float64Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float64Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *Float64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]float64, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Float64Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *Float64Field) Scan(r *Person) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *Float64Field) Add(r Person) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *Float64Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type Float32OptionalField struct {
+	parquet.OptionalField
+	vals  []float32
+	read  func(r Person) ([]float32, []uint8, []uint8)
+	write func(r *Person, vals []float32, def, rep []uint8) (int, int)
+	stats *float32optionalStats
+}
+
+func NewFloat32OptionalField(read func(r Person) ([]float32, []uint8, []uint8), write func(r *Person, vals []float32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
+	return &Float32OptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newfloat32optionalStats(maxDef(types)),
+	}
+}
+
+func (f *Float32OptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float32Type, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]float32, f.Values()-len(f.vals))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Float32OptionalField) Add(r Person) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *Float32OptionalField) Scan(r *Person) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *Float32OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
 type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	read  func(r bool) ([]bool, []uint8, []uint8)
-	write func(r *bool, vals []bool, defs, reps []uint8) (int, int)
+	read  func(r Person) ([]bool, []uint8, []uint8)
+	write func(r *Person, vals []bool, defs, reps []uint8) (int, int)
 	stats *boolOptionalStats
 }
 
-func NewBoolOptionalField(read func(r bool) ([]bool, []uint8, []uint8), write func(r *bool, vals []bool, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+func NewBoolOptionalField(read func(r Person) ([]bool, []uint8, []uint8), write func(r *Person, vals []bool, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		read:          read,
 		write:         write,
@@ -1222,15 +1544,145 @@ func (f *BoolOptionalField) Levels() ([]uint8, []uint8) {
 	return f.Defs, f.Reps
 }
 
+type Uint32Field struct {
+	vals []uint32
+	parquet.RequiredField
+	read  func(r Person) uint32
+	write func(r *Person, vals []uint32)
+	stats *uint32stats
+}
+
+func NewUint32Field(read func(r Person) uint32, write func(r *Person, vals []uint32), path []string, opts ...func(*parquet.RequiredField)) *Uint32Field {
+	return &Uint32Field{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newUint32stats(),
+	}
+}
+
+func (f *Uint32Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Uint32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *Uint32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]uint32, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Uint32Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *Uint32Field) Scan(r *Person) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *Uint32Field) Add(r Person) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *Uint32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type Uint64OptionalField struct {
+	parquet.OptionalField
+	vals  []uint64
+	read  func(r Person) ([]uint64, []uint8, []uint8)
+	write func(r *Person, vals []uint64, def, rep []uint8) (int, int)
+	stats *uint64optionalStats
+}
+
+func NewUint64OptionalField(read func(r Person) ([]uint64, []uint8, []uint8), write func(r *Person, vals []uint64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Uint64OptionalField {
+	return &Uint64OptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newuint64optionalStats(maxDef(types)),
+	}
+}
+
+func (f *Uint64OptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Uint64Type, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *Uint64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *Uint64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]uint64, f.Values()-len(f.vals))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Uint64OptionalField) Add(r Person) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *Uint64OptionalField) Scan(r *Person) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *Uint64OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
 type BoolField struct {
 	parquet.RequiredField
 	vals  []bool
-	read  func(r bool) bool
-	write func(r *bool, vals []bool)
+	read  func(r Person) bool
+	write func(r *Person, vals []bool)
 	stats *boolStats
 }
 
-func NewBoolField(read func(r bool) bool, write func(r *bool, vals []bool), path []string, opts ...func(*parquet.RequiredField)) *BoolField {
+func NewBoolField(read func(r Person) bool, write func(r *Person, vals []bool), path []string, opts ...func(*parquet.RequiredField)) *BoolField {
 	return &BoolField{
 		read:          read,
 		write:         write,
@@ -1437,6 +1889,111 @@ func (f *int32optionalStats) Max() []byte {
 	return f.bytes(f.max)
 }
 
+type int64stats struct {
+	min int64
+	max int64
+}
+
+func newInt64stats() *int64stats {
+	return &int64stats{
+		min: int64(math.MaxInt64),
+	}
+}
+
+func (i *int64stats) add(val int64) {
+	if val < i.min {
+		i.min = val
+	}
+	if val > i.max {
+		i.max = val
+	}
+}
+
+func (f *int64stats) bytes(val int64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *int64stats) NullCount() *int64 {
+	return nil
+}
+
+func (f *int64stats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *int64stats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *int64stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type int64optionalStats struct {
+	min     int64
+	max     int64
+	nils    int64
+	nonNils int64
+	maxDef  uint8
+}
+
+func newint64optionalStats(d uint8) *int64optionalStats {
+	return &int64optionalStats{
+		min:    int64(math.MaxInt64),
+		maxDef: d,
+	}
+}
+
+func (f *int64optionalStats) add(vals []int64, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
+
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
+	}
+}
+
+func (f *int64optionalStats) bytes(val int64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *int64optionalStats) NullCount() *int64 {
+	return &f.nils
+}
+
+func (f *int64optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *int64optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.min)
+}
+
+func (f *int64optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.max)
+}
+
 type stringOptionalStats struct {
 	vals   []string
 	min    []byte
@@ -1495,6 +2052,153 @@ func (s *stringOptionalStats) minMax() {
 	s.max = []byte(tmp[len(tmp)-1])
 }
 
+type float32stats struct {
+	min float32
+	max float32
+}
+
+func newFloat32stats() *float32stats {
+	return &float32stats{
+		min: float32(math.MaxFloat32),
+	}
+}
+
+func (i *float32stats) add(val float32) {
+	if val < i.min {
+		i.min = val
+	}
+	if val > i.max {
+		i.max = val
+	}
+}
+
+func (f *float32stats) bytes(val float32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *float32stats) NullCount() *int64 {
+	return nil
+}
+
+func (f *float32stats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *float32stats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *float32stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type float64stats struct {
+	min float64
+	max float64
+}
+
+func newFloat64stats() *float64stats {
+	return &float64stats{
+		min: float64(math.MaxFloat64),
+	}
+}
+
+func (i *float64stats) add(val float64) {
+	if val < i.min {
+		i.min = val
+	}
+	if val > i.max {
+		i.max = val
+	}
+}
+
+func (f *float64stats) bytes(val float64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *float64stats) NullCount() *int64 {
+	return nil
+}
+
+func (f *float64stats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *float64stats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *float64stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type float32optionalStats struct {
+	min     float32
+	max     float32
+	nils    int64
+	nonNils int64
+	maxDef  uint8
+}
+
+func newfloat32optionalStats(d uint8) *float32optionalStats {
+	return &float32optionalStats{
+		min:    float32(math.MaxFloat32),
+		maxDef: d,
+	}
+}
+
+func (f *float32optionalStats) add(vals []float32, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
+
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
+	}
+}
+
+func (f *float32optionalStats) bytes(val float32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *float32optionalStats) NullCount() *int64 {
+	return &f.nils
+}
+
+func (f *float32optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *float32optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.min)
+}
+
+func (f *float32optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.max)
+}
+
 type boolOptionalStats struct {
 	maxDef uint8
 	nils   int64
@@ -1526,6 +2230,111 @@ func (b *boolOptionalStats) Min() []byte {
 
 func (b *boolOptionalStats) Max() []byte {
 	return nil
+}
+
+type uint32stats struct {
+	min uint32
+	max uint32
+}
+
+func newUint32stats() *uint32stats {
+	return &uint32stats{
+		min: uint32(math.MaxUint32),
+	}
+}
+
+func (i *uint32stats) add(val uint32) {
+	if val < i.min {
+		i.min = val
+	}
+	if val > i.max {
+		i.max = val
+	}
+}
+
+func (f *uint32stats) bytes(val uint32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *uint32stats) NullCount() *int64 {
+	return nil
+}
+
+func (f *uint32stats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *uint32stats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *uint32stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type uint64optionalStats struct {
+	min     uint64
+	max     uint64
+	nils    int64
+	nonNils int64
+	maxDef  uint8
+}
+
+func newuint64optionalStats(d uint8) *uint64optionalStats {
+	return &uint64optionalStats{
+		min:    uint64(math.MaxUint64),
+		maxDef: d,
+	}
+}
+
+func (f *uint64optionalStats) add(vals []uint64, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
+
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
+	}
+}
+
+func (f *uint64optionalStats) bytes(val uint64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *uint64optionalStats) NullCount() *int64 {
+	return &f.nils
+}
+
+func (f *uint64optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *uint64optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.min)
+}
+
+func (f *uint64optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.max)
 }
 
 type boolStats struct{}
