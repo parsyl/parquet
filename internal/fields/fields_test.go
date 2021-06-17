@@ -543,18 +543,6 @@ func TestInit(t *testing.T) {
 				}},
 			},
 			def:      1,
-			rep:      0,
-			expected: "x.Links = []Link{}",
-		},
-		{
-			fields: []fields.Field{
-				{Name: "Links", Type: "Link", RepetitionType: fields.Repeated, Children: []fields.Field{
-					{Name: "Backward", Type: "Language", RepetitionType: fields.Repeated, Children: []fields.Field{
-						{Name: "Codes", Type: "string", RepetitionType: fields.Repeated},
-					}},
-				}},
-			},
-			def:      1,
 			rep:      1,
 			expected: "x.Links = append(x.Links, Link{})",
 		},
@@ -641,7 +629,7 @@ func TestInit(t *testing.T) {
 			},
 			def:      1,
 			rep:      0,
-			expected: "x.Links = []Link{}",
+			expected: "x.Links = append(x.Links, Link{})",
 		},
 		{
 			fields: []fields.Field{
@@ -795,7 +783,7 @@ func TestInit(t *testing.T) {
 			fields := fields.Field{Children: tc.fields}.Fields()
 			field := fields[len(fields)-1]
 			s := field.Init(tc.def, tc.rep)
-			fmt.Println(s)
+			//fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, string(gocode))
