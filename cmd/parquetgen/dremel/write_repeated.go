@@ -110,8 +110,7 @@ func writeRepeated(f fields.Field) string {
 
 	var buf bytes.Buffer
 	if err := writeRepeatedTpl.Execute(&buf, wi); err != nil {
-		fmt.Println(err)
-		return ""
+		log.Fatal(err)
 	}
 	return string(buf.Bytes())
 }

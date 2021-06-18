@@ -5,8 +5,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/parsyl/parquet/internal/cases"
-	"github.com/parsyl/parquet/internal/dremel"
+	"github.com/parsyl/parquet/cmd/parquetgen/cases"
+	"github.com/parsyl/parquet/cmd/parquetgen/dremel"
 	"github.com/parsyl/parquet/internal/fields"
 )
 

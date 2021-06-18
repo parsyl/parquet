@@ -5,7 +5,7 @@ import (
 	"go/format"
 	"testing"
 
-	"github.com/parsyl/parquet/internal/dremel"
+	"github.com/parsyl/parquet/cmd/parquetgen/dremel"
 	"github.com/parsyl/parquet/internal/fields"
 	"github.com/stretchr/testify/assert"
 )
@@ -778,7 +778,6 @@ func TestWrite(t *testing.T) {
 			flds := fields.Field{Type: ty, Children: []fields.Field{tc.field}}.Fields()
 			f := flds[len(flds)-1]
 			s := dremel.Write(f)
-			//fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.result, string(gocode))

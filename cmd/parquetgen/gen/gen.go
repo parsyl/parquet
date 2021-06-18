@@ -8,9 +8,9 @@ import (
 	"text/template"
 
 	"github.com/parsyl/parquet"
+	"github.com/parsyl/parquet/cmd/parquetgen/parse"
+	"github.com/parsyl/parquet/cmd/parquetgen/structs"
 	"github.com/parsyl/parquet/internal/fields"
-	"github.com/parsyl/parquet/internal/parse"
-	"github.com/parsyl/parquet/internal/structs"
 	sch "github.com/parsyl/parquet/schema"
 )
 
@@ -176,7 +176,6 @@ func getFieldType(se *sch.SchemaElement) (string, error) {
 }
 
 func dedupe(flds []fields.Field) []fields.Field {
-	fmt.Printf("deduping before: %+v\n", flds)
 	seen := map[string]bool{}
 	out := make([]fields.Field, 0, len(flds))
 	for _, f := range flds {
@@ -186,11 +185,7 @@ func dedupe(flds []fields.Field) []fields.Field {
 			seen[f.FieldType()] = true
 		}
 	}
-	fmt.Println("deduping", out)
 
-	for _, f := range out {
-		fmt.Println("cat", f.FieldType())
-	}
 	return out
 }
 

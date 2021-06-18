@@ -206,7 +206,6 @@ func (r RepCase) Case() string {
 type RepCases []RepCase
 
 func (r RepCases) UseRepCase(f Field, def int) bool {
-	fmt.Println("use rep case", r, f.MaxRepForDef(def))
 	if f.Parent.IsRoot() {
 		return false
 	}
@@ -217,7 +216,6 @@ func (r RepCases) UseRepCase(f Field, def int) bool {
 // RepCases returns a RepCase slice based on the field types and
 // what sub-fields have already been seen.
 func (f Field) RepCases(def int) RepCases {
-	fmt.Println("rep cases", def)
 	mr := int(f.MaxRep())
 
 	var out []RepCase
@@ -243,10 +241,7 @@ func (f Field) RepCases(def int) RepCases {
 			rollup = append(rollup, reps)
 		}
 
-		fmt.Println(rollup, fld.Defined, fld.Name, reps, defs, mr, def)
-
 		if len(rollup) > 0 && (!fld.Defined || (defs == def && fld.RepetitionType != Required)) {
-			fmt.Println("xxxxxxxxxxxxx", rollup)
 			out = append(out, RepCase{Reps: rollup[:], Rep: max(rollup), Repeated: reps > 0})
 			rollup = []int{}
 		}

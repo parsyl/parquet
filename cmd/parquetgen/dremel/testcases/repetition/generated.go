@@ -45,10 +45,10 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewStringOptionalField(readLinksBackwardCodes, writeLinksBackwardCodes, []string{"links", "backward", "code"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
-		NewStringOptionalField(readLinksBackwardURL, writeLinksBackwardURL, []string{"links", "backward", "URL"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readLinksBackwardURL, writeLinksBackwardURL, []string{"links", "backward", "url"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readLinksBackwardCountries, writeLinksBackwardCountries, []string{"links", "backward", "countries"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readLinksForwardCodes, writeLinksForwardCodes, []string{"links", "forward", "code"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
-		NewStringOptionalField(readLinksForwardURL, writeLinksForwardURL, []string{"links", "forward", "URL"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readLinksForwardURL, writeLinksForwardURL, []string{"links", "forward", "url"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readLinksForwardCountries, writeLinksForwardCountries, []string{"links", "forward", "countries"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
 	}
 }
@@ -128,6 +128,67 @@ func writeLinksBackwardCodes(x *Document, vals []string, defs, reps []uint8) (in
 			case 3:
 				x.Links[ind[0]].Backward[ind[1]].Codes = append(x.Links[ind[0]].Backward[ind[1]].Codes, vals[nVals])
 			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readLinksBackwardURL(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Links) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Links {
+			if i0 >= 1 {
+				lastRep = 1
+			}
+			if len(x0.Backward) == 0 {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				for i1, x1 := range x0.Backward {
+					if i1 >= 1 {
+						lastRep = 2
+					}
+					if x1.URL == nil {
+						defs = append(defs, 2)
+						reps = append(reps, lastRep)
+					} else {
+						defs = append(defs, 3)
+						reps = append(reps, lastRep)
+						vals = append(vals, *x1.URL)
+					}
+				}
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeLinksBackwardURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 2)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 3:
+			x.Links[ind[0]].Backward[ind[1]].URL = pstring(vals[nVals])
 			nVals++
 		}
 	}
@@ -267,6 +328,67 @@ func writeLinksForwardCodes(x *Document, vals []string, defs, reps []uint8) (int
 			case 3:
 				x.Links[ind[0]].Forward[ind[1]].Codes = append(x.Links[ind[0]].Forward[ind[1]].Codes, vals[nVals])
 			}
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readLinksForwardURL(x Document) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Links) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Links {
+			if i0 >= 1 {
+				lastRep = 1
+			}
+			if len(x0.Forward) == 0 {
+				defs = append(defs, 1)
+				reps = append(reps, lastRep)
+			} else {
+				for i1, x1 := range x0.Forward {
+					if i1 >= 1 {
+						lastRep = 2
+					}
+					if x1.URL == nil {
+						defs = append(defs, 2)
+						reps = append(reps, lastRep)
+					} else {
+						defs = append(defs, 3)
+						reps = append(reps, lastRep)
+						vals = append(vals, *x1.URL)
+					}
+				}
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeLinksForwardURL(x *Document, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 2)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 3:
+			x.Links[ind[0]].Forward[ind[1]].URL = pstring(vals[nVals])
 			nVals++
 		}
 	}

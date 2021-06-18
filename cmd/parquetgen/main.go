@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/parsyl/parquet"
-	"github.com/parsyl/parquet/internal/gen"
+	"github.com/parsyl/parquet/cmd/parquetgen/gen"
 	sch "github.com/parsyl/parquet/schema"
 )
 

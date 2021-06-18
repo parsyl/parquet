@@ -5,7 +5,7 @@ import (
 	"go/format"
 	"testing"
 
-	"github.com/parsyl/parquet/internal/structs"
+	"github.com/parsyl/parquet/cmd/parquetgen/structs"
 	sch "github.com/parsyl/parquet/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,7 +69,7 @@ func TestStruct(t *testing.T) {
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			if !assert.Equal(t, tc.expected, string(gocode)) {
-				fmt.Println(string(gocode))
+				t.Fatal(string(gocode))
 			}
 		})
 	}

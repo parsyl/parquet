@@ -783,7 +783,6 @@ func TestInit(t *testing.T) {
 			fields := fields.Field{Children: tc.fields}.Fields()
 			field := fields[len(fields)-1]
 			s := field.Init(tc.def, tc.rep)
-			//fmt.Println(s)
 			gocode, err := format.Source([]byte(s))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, string(gocode))

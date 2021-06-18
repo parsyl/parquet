@@ -14,6 +14,7 @@ type (
 
 	Language struct {
 		Codes     []string `parquet:"code"`
+		URL       *string  `parquet:"url"`
 		Countries []string `parquet:"countries"`
 	}
 )
