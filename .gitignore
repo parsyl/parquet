@@ -14,8 +14,8 @@
 *.out
 
 
-examples/people/parquet.go
-examples/people/people.parquet
-examples/people/read.py
-examples/via_parquet/generated_struct.go
-examples/via_parquet/parquet.go
+_examples/people/parquet.go
+_examples/people/people.parquet
+_examples/people/read.py
+_examples/via_parquet/generated_struct.go
+_examples/via_parquet/parquet.go
