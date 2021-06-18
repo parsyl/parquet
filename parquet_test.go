@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -19,9 +20,15 @@ import (
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
+	if os.Getenv("INCLUDE+GZIP") == "true" {
+		compressionCases = append(compressionCases, "gzip")
+	}
 }
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var (
+	letterRunes      = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	compressionCases = []string{"uncompressed", "snappy"}
+)
 
 func TestParquet(t *testing.T) {
 	type testCase struct {
@@ -42,7 +49,18 @@ func TestParquet(t *testing.T) {
 		{
 			name: "single nested person",
 			input: [][]Person{
-				{{Hobby: &Hobby{Name: "napping", Difficulty: pint32(10)}}},
+				{
+					{
+						Hobby: &Hobby{
+							Name:       "napping",
+							Difficulty: pint32(10),
+							Skills: []Skill{
+								{Name: "meditation", Difficulty: "very"},
+								{Name: "calmness", Difficulty: "so-so"},
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -435,7 +453,7 @@ func TestParquet(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		for j, comp := range []string{"uncompressed", "snappy", "gzip"} {
+		for j, comp := range compressionCases {
 			t.Run(fmt.Sprintf("%02d %s %s", 2*i+j, tc.name, comp), func(t *testing.T) {
 				if tc.pageSize == 0 {
 					tc.pageSize = 100
@@ -514,7 +532,7 @@ func TestPageHeaders(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, 72, len(pageHeaders))
+	assert.Equal(t, 88, len(pageHeaders))
 }
 
 func TestStats(t *testing.T) {
@@ -969,13 +987,20 @@ func writeFloat64(f float64) []byte {
 }
 
 type Being struct {
-	ID  int32  `parquet:"id"`
-	Age *int32 `parquet:"age"`
+	ID   int32  `parquet:"id"`
+	Name string `parquet:"name"`
+	Age  *int32 `parquet:"age"`
+}
+
+type Skill struct {
+	Name       string `parquet:"name"`
+	Difficulty string `parquet:"difficulty"`
 }
 
 type Hobby struct {
-	Name       string `parquet:"name"`
-	Difficulty *int32 `parquet:"difficulty"`
+	Name       string  `parquet:"name"`
+	Difficulty *int32  `parquet:"difficulty"`
+	Skills     []Skill `parquet:"skills"`
 }
 
 type Person struct {

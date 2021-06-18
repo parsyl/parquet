@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/parsyl/parquet"
-	"github.com/parsyl/parquet/internal/gen"
+	"github.com/parsyl/parquet/cmd/parquetgen/gen"
 	sch "github.com/parsyl/parquet/schema"
 )
 
@@ -32,14 +32,19 @@ func main() {
 		log.Fatal("choose -parquet or -input, but not both")
 	}
 
+	var err error
 	if *metadata {
 		readFooter()
 	} else if *pageheaders {
 		readPageHeaders()
 	} else if *parq == "" {
-		gen.FromStruct(*pth, *outPth, *typ, *pkg, *imp, *ignore)
+		err = gen.FromStruct(*pth, *outPth, *typ, *pkg, *imp, *ignore)
 	} else {
-		gen.FromParquet(*parq, *structOutPth, *outPth, *typ, *pkg, *imp, *ignore)
+		err = gen.FromParquet(*parq, *structOutPth, *outPth, *typ, *pkg, *imp, *ignore)
+	}
+
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 

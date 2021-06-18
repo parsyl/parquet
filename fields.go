@@ -11,10 +11,44 @@ import (
 	"io"
 
 	"github.com/golang/snappy"
-	"github.com/parsyl/parquet/internal/fields"
 	"github.com/parsyl/parquet/internal/rle"
 	sch "github.com/parsyl/parquet/schema"
 )
+
+// RepetitionType is an enum of the possible
+// parquet repetition types
+type RepetitionType int
+
+const (
+	Unseen   RepetitionType = -1
+	Required RepetitionType = 0
+	Optional RepetitionType = 1
+	Repeated RepetitionType = 2
+)
+
+type RepetitionTypes []RepetitionType
+
+// MaxDef returns the largest definition level
+func (r RepetitionTypes) MaxDef() uint8 {
+	var out uint8
+	for _, rt := range r {
+		if rt == Optional || rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
+// MaxRep returns the largest repetition level
+func (r RepetitionTypes) MaxRep() uint8 {
+	var out uint8
+	for _, rt := range r {
+		if rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
 
 // RequiredField writes the raw data for required columns
 type RequiredField struct {
@@ -121,12 +155,12 @@ type OptionalField struct {
 	repeated       bool
 }
 
-func getRepetitionTypes(in []int) fields.RepetitionTypes {
-	out := make([]fields.RepetitionType, len(in))
+func getRepetitionTypes(in []int) RepetitionTypes {
+	out := make([]RepetitionType, len(in))
 	for i, x := range in {
-		out[i] = fields.RepetitionType(x)
+		out[i] = RepetitionType(x)
 	}
-	return fields.RepetitionTypes(out)
+	return RepetitionTypes(out)
 }
 
 // NewOptionalField creates an optional field
@@ -189,21 +223,23 @@ func (f *OptionalField) valsFromDefs(defs []uint8, max uint8) int {
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
 	buf := bytes.Buffer{}
 	wc := &writeCounter{w: &buf}
-	err := writeLevels(wc, f.Defs, int32(bits.Len(uint(f.MaxLevels.Def))))
-	if err != nil {
-		return err
-	}
 
-	defLen := wc.n
+	var repLen int64
 
 	if f.repeated {
 		err := writeLevels(wc, f.Reps, int32(bits.Len(uint(f.MaxLevels.Rep))))
 		if err != nil {
 			return err
 		}
+		repLen = wc.n
 	}
 
-	repLen := wc.n - defLen
+	err := writeLevels(wc, f.Defs, int32(bits.Len(uint(f.MaxLevels.Def))))
+	if err != nil {
+		return err
+	}
+
+	defLen := wc.n - repLen
 
 	wc.Write(vals)
 	l, cl, vals, err := compress(f.compression, buf.Bytes())
@@ -238,20 +274,23 @@ func (f *OptionalField) DoRead(r io.ReadSeeker, pg Page) (io.Reader, []int, erro
 			return nil, nil, err
 		}
 
-		defs, l, err := readLevels(bytes.NewBuffer(data), int32(bits.Len(uint(f.MaxLevels.Def))))
-		if err != nil {
-			return nil, nil, err
-		}
+		var l int
 
-		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
 		if f.repeated {
 			reps, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(uint(f.MaxLevels.Rep))))
 			if err != nil {
 				return nil, nil, err
 			}
-			l += l2
 			f.Reps = append(f.Reps, reps[:int(ph.DataPageHeader.NumValues)]...)
+			l += l2
 		}
+
+		defs, l2, err := readLevels(bytes.NewBuffer(data[l:]), int32(bits.Len(uint(f.MaxLevels.Def))))
+		if err != nil {
+			return nil, nil, err
+		}
+		f.Defs = append(f.Defs, defs[:int(ph.DataPageHeader.NumValues)]...)
+		l += l2
 
 		n := f.valsFromDefs(defs, uint8(f.MaxLevels.Def))
 		sizes = append(sizes, n)

@@ -46,6 +46,7 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewInt32Field(readID, writeID, []string{"id"}, fieldCompression(compression)),
+		NewStringField(readName, writeName, []string{"name"}, fieldCompression(compression)),
 		NewInt32OptionalField(readAge, writeAge, []string{"age"}, []int{1}, optionalFieldCompression(compression)),
 		NewInt64Field(readHappiness, writeHappiness, []string{"happiness"}, fieldCompression(compression)),
 		NewInt64OptionalField(readSadness, writeSadness, []string{"sadness"}, []int{1}, optionalFieldCompression(compression)),
@@ -60,7 +61,10 @@ func Fields(compression compression) []Field {
 		NewBoolField(readHungry, writeHungry, []string{"hungry"}, fieldCompression(compression)),
 		NewStringOptionalField(readHobbyName, writeHobbyName, []string{"hobby", "name"}, []int{1, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readHobbyDifficulty, writeHobbyDifficulty, []string{"hobby", "difficulty"}, []int{1, 1}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readHobbySkillsName, writeHobbySkillsName, []string{"hobby", "skills", "name"}, []int{1, 2, 0}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readHobbySkillsDifficulty, writeHobbySkillsDifficulty, []string{"hobby", "skills", "difficulty"}, []int{1, 2, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readFriendsID, writeFriendsID, []string{"friends", "id"}, []int{2, 0}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readFriendsName, writeFriendsName, []string{"friends", "name"}, []int{2, 0}, optionalFieldCompression(compression)),
 		NewInt32OptionalField(readFriendsAge, writeFriendsAge, []string{"friends", "age"}, []int{2, 1}, optionalFieldCompression(compression)),
 		NewBoolField(readSleepy, writeSleepy, []string{"Sleepy"}, fieldCompression(compression)),
 	}
@@ -72,6 +76,14 @@ func readID(x Person) int32 {
 
 func writeID(x *Person, vals []int32) {
 	x.ID = vals[0]
+}
+
+func readName(x Person) string {
+	return x.Name
+}
+
+func writeName(x *Person, vals []string) {
+	x.Name = vals[0]
 }
 
 func readAge(x Person) ([]int32, []uint8, []uint8) {
@@ -276,20 +288,114 @@ func readHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
 func writeHobbyDifficulty(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 	def := defs[0]
 	switch def {
-	case 1:
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{}
-		}
 	case 2:
-		if x.Hobby == nil {
-			x.Hobby = &Hobby{Difficulty: pint32(vals[0])}
-		} else {
-			x.Hobby.Difficulty = pint32(vals[0])
-		}
+		x.Hobby.Difficulty = pint32(vals[0])
 		return 1, 1
 	}
 
 	return 0, 1
+}
+
+func readHobbySkillsName(x Person) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Hobby == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Hobby.Skills) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Hobby.Skills {
+				if i0 >= 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0.Name)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeHobbySkillsName(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			x.Hobby.Skills = append(x.Hobby.Skills, Skill{Name: vals[nVals]})
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readHobbySkillsDifficulty(x Person) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if x.Hobby == nil {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		if len(x.Hobby.Skills) == 0 {
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+		} else {
+			for i0, x0 := range x.Hobby.Skills {
+				if i0 >= 1 {
+					lastRep = 1
+				}
+				defs = append(defs, 2)
+				reps = append(reps, lastRep)
+				vals = append(vals, x0.Difficulty)
+			}
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeHobbySkillsDifficulty(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 2:
+			x.Hobby.Skills[ind[0]].Difficulty = vals[nVals]
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
 }
 
 func readFriendsID(x Person) ([]int32, []uint8, []uint8) {
@@ -302,7 +408,7 @@ func readFriendsID(x Person) ([]int32, []uint8, []uint8) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Friends {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			defs = append(defs, 1)
@@ -330,12 +436,53 @@ func writeFriendsID(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 
 		switch def {
 		case 1:
-			switch rep {
-			case 0:
-				x.Friends = []Being{{ID: vals[nVals]}}
-			case 1:
-				x.Friends = append(x.Friends, Being{ID: vals[nVals]})
+			x.Friends = append(x.Friends, Being{ID: vals[nVals]})
+			nVals++
+		}
+	}
+
+	return nVals, nLevels
+}
+
+func readFriendsName(x Person) ([]string, []uint8, []uint8) {
+	var vals []string
+	var defs, reps []uint8
+	var lastRep uint8
+
+	if len(x.Friends) == 0 {
+		defs = append(defs, 0)
+		reps = append(reps, lastRep)
+	} else {
+		for i0, x0 := range x.Friends {
+			if i0 >= 1 {
+				lastRep = 1
 			}
+			defs = append(defs, 1)
+			reps = append(reps, lastRep)
+			vals = append(vals, x0.Name)
+		}
+	}
+
+	return vals, defs, reps
+}
+
+func writeFriendsName(x *Person, vals []string, defs, reps []uint8) (int, int) {
+	var nVals, nLevels int
+	ind := make(indices, 1)
+
+	for i := range defs {
+		def := defs[i]
+		rep := reps[i]
+		if i > 0 && rep == 0 {
+			break
+		}
+
+		nLevels++
+		ind.rep(rep)
+
+		switch def {
+		case 1:
+			x.Friends[ind[0]].Name = vals[nVals]
 			nVals++
 		}
 	}
@@ -353,7 +500,7 @@ func readFriendsAge(x Person) ([]int32, []uint8, []uint8) {
 		reps = append(reps, lastRep)
 	} else {
 		for i0, x0 := range x.Friends {
-			if i0 == 1 {
+			if i0 >= 1 {
 				lastRep = 1
 			}
 			if x0.Age == nil {
@@ -386,10 +533,7 @@ func writeFriendsAge(x *Person, vals []int32, defs, reps []uint8) (int, int) {
 
 		switch def {
 		case 2:
-			switch rep {
-			default:
-				x.Friends[ind[0]].Age = pint32(vals[nVals])
-			}
+			x.Friends[ind[0]].Age = pint32(vals[nVals])
 			nVals++
 		}
 	}
@@ -782,6 +926,80 @@ func (f *Int32Field) Add(r Person) {
 }
 
 func (f *Int32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type StringField struct {
+	parquet.RequiredField
+	vals  []string
+	read  func(r Person) string
+	write func(r *Person, vals []string)
+	stats *stringStats
+}
+
+func NewStringField(read func(r Person) string, write func(r *Person, vals []string), path []string, opts ...func(*parquet.RequiredField)) *StringField {
+	return &StringField{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newStringStats(),
+	}
+}
+
+func (f *StringField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
+	buf := bytes.Buffer{}
+
+	for _, s := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, int32(len(s))); err != nil {
+			return err
+		}
+		buf.Write([]byte(s))
+	}
+
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *StringField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	for j := 0; j < pg.N; j++ {
+		var x int32
+		if err := binary.Read(rr, binary.LittleEndian, &x); err != nil {
+			return err
+		}
+		s := make([]byte, x)
+		if _, err := rr.Read(s); err != nil {
+			return err
+		}
+
+		f.vals = append(f.vals, string(s))
+	}
+	return nil
+}
+
+func (f *StringField) Scan(r *Person) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *StringField) Add(r Person) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *StringField) Levels() ([]uint8, []uint8) {
 	return nil, nil
 }
 
@@ -1456,80 +1674,6 @@ func (f *Uint64OptionalField) Levels() ([]uint8, []uint8) {
 	return f.Defs, f.Reps
 }
 
-type StringField struct {
-	parquet.RequiredField
-	vals  []string
-	read  func(r Person) string
-	write func(r *Person, vals []string)
-	stats *stringStats
-}
-
-func NewStringField(read func(r Person) string, write func(r *Person, vals []string), path []string, opts ...func(*parquet.RequiredField)) *StringField {
-	return &StringField{
-		read:          read,
-		write:         write,
-		RequiredField: parquet.NewRequiredField(path, opts...),
-		stats:         newStringStats(),
-	}
-}
-
-func (f *StringField) Schema() parquet.Field {
-	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
-}
-
-func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
-	buf := bytes.Buffer{}
-
-	for _, s := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, int32(len(s))); err != nil {
-			return err
-		}
-		buf.Write([]byte(s))
-	}
-
-	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
-}
-
-func (f *StringField) Read(r io.ReadSeeker, pg parquet.Page) error {
-	rr, _, err := f.DoRead(r, pg)
-	if err != nil {
-		return err
-	}
-
-	for j := 0; j < pg.N; j++ {
-		var x int32
-		if err := binary.Read(rr, binary.LittleEndian, &x); err != nil {
-			return err
-		}
-		s := make([]byte, x)
-		if _, err := rr.Read(s); err != nil {
-			return err
-		}
-
-		f.vals = append(f.vals, string(s))
-	}
-	return nil
-}
-
-func (f *StringField) Scan(r *Person) {
-	if len(f.vals) == 0 {
-		return
-	}
-
-	f.write(r, f.vals)
-	f.vals = f.vals[1:]
-}
-
-func (f *StringField) Add(r Person) {
-	v := f.read(r)
-	f.stats.add(v)
-	f.vals = append(f.vals, v)
-}
-
-func (f *StringField) Levels() ([]uint8, []uint8) {
-	return nil, nil
-}
-
 type BoolField struct {
 	parquet.RequiredField
 	vals  []bool
@@ -1632,6 +1776,54 @@ func (f *int32stats) Min() []byte {
 
 func (f *int32stats) Max() []byte {
 	return f.bytes(f.max)
+}
+
+type stringStats struct {
+	vals []string
+	min  []byte
+	max  []byte
+}
+
+func newStringStats() *stringStats {
+	return &stringStats{}
+}
+
+func (s *stringStats) add(val string) {
+	s.vals = append(s.vals, val)
+}
+
+func (s *stringStats) NullCount() *int64 {
+	return nil
+}
+
+func (s *stringStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (s *stringStats) Min() []byte {
+	if s.min == nil {
+		s.minMax()
+	}
+	return s.min
+}
+
+func (s *stringStats) Max() []byte {
+	if s.max == nil {
+		s.minMax()
+	}
+	return s.max
+}
+
+func (s *stringStats) minMax() {
+	if len(s.vals) == 0 {
+		return
+	}
+
+	tmp := make([]string, len(s.vals))
+	copy(tmp, s.vals)
+	sort.Strings(tmp)
+	s.min = []byte(tmp[0])
+	s.max = []byte(tmp[len(tmp)-1])
 }
 
 type int32optionalStats struct {
@@ -2143,54 +2335,6 @@ func (f *uint64optionalStats) Max() []byte {
 		return nil
 	}
 	return f.bytes(f.max)
-}
-
-type stringStats struct {
-	vals []string
-	min  []byte
-	max  []byte
-}
-
-func newStringStats() *stringStats {
-	return &stringStats{}
-}
-
-func (s *stringStats) add(val string) {
-	s.vals = append(s.vals, val)
-}
-
-func (s *stringStats) NullCount() *int64 {
-	return nil
-}
-
-func (s *stringStats) DistinctCount() *int64 {
-	return nil
-}
-
-func (s *stringStats) Min() []byte {
-	if s.min == nil {
-		s.minMax()
-	}
-	return s.min
-}
-
-func (s *stringStats) Max() []byte {
-	if s.max == nil {
-		s.minMax()
-	}
-	return s.max
-}
-
-func (s *stringStats) minMax() {
-	if len(s.vals) == 0 {
-		return
-	}
-
-	tmp := make([]string, len(s.vals))
-	copy(tmp, s.vals)
-	sort.Strings(tmp)
-	s.min = []byte(tmp[0])
-	s.max = []byte(tmp[len(tmp)-1])
 }
 
 type boolStats struct{}
