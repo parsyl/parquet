@@ -2,7 +2,6 @@ package dremel_test
 
 import (
 	"bytes"
-	"log"
 	"testing"
 
 	"github.com/parsyl/parquet/internal/dremel/testcases/doc"
@@ -142,7 +141,7 @@ func TestDremel(t *testing.T) {
 	var buf bytes.Buffer
 	pw, err := doc.NewParquetWriter(&buf)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	for _, doc := range dremelDocs {
@@ -150,14 +149,14 @@ func TestDremel(t *testing.T) {
 	}
 
 	if err := pw.Write(); err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	pw.Close()
 
 	pr, err := doc.NewParquetReader(bytes.NewReader(buf.Bytes()))
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	var out []doc.Document
@@ -219,6 +218,29 @@ var (
 					Backward: []repetition.Language{{Codes: []string{"w", "x"}}},
 					Forward:  []repetition.Language{{Countries: []string{"y", "z"}}},
 				},
+				{
+					Backward: []repetition.Language{
+						{
+							Codes:     []string{"aa"},
+							URL:       pstring("http://abc.com"),
+							Countries: []string{"ab"},
+						},
+						{
+							URL:       pstring("http://abc.com"),
+							Countries: []string{"ac"},
+						},
+						{
+							Codes: []string{"ad"},
+							URL:   pstring("http://abc.com"),
+						},
+					},
+					Forward: []repetition.Language{
+						{
+							Countries: []string{"y", "z"},
+							URL:       pstring("http://abc.com"),
+						},
+					},
+				},
 			},
 		},
 	}
@@ -228,7 +250,7 @@ func TestRepetition(t *testing.T) {
 	var buf bytes.Buffer
 	pw, err := repetition.NewParquetWriter(&buf)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	for _, doc := range repetitionDocs {
@@ -236,14 +258,14 @@ func TestRepetition(t *testing.T) {
 	}
 
 	if err := pw.Write(); err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	pw.Close()
 
 	pr, err := repetition.NewParquetReader(bytes.NewReader(buf.Bytes()))
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	var out []repetition.Document

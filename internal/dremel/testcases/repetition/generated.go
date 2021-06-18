@@ -45,8 +45,10 @@ type ParquetWriter struct {
 func Fields(compression compression) []Field {
 	return []Field{
 		NewStringOptionalField(readLinksBackwardCodes, writeLinksBackwardCodes, []string{"links", "backward", "code"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readLinksBackwardURL, writeLinksBackwardURL, []string{"links", "backward", "URL"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readLinksBackwardCountries, writeLinksBackwardCountries, []string{"links", "backward", "countries"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readLinksForwardCodes, writeLinksForwardCodes, []string{"links", "forward", "code"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
+		NewStringOptionalField(readLinksForwardURL, writeLinksForwardURL, []string{"links", "forward", "URL"}, []int{2, 2, 1}, optionalFieldCompression(compression)),
 		NewStringOptionalField(readLinksForwardCountries, writeLinksForwardCountries, []string{"links", "forward", "countries"}, []int{2, 2, 2}, optionalFieldCompression(compression)),
 	}
 }
