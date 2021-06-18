@@ -2,6 +2,7 @@ package parquet
 
 import (
 	"bytes"
+	"compress/gzip"
 	"math/bits"
 	"strings"
 
@@ -39,6 +40,12 @@ func RequiredFieldSnappy(r *RequiredField) {
 	r.compression = sch.CompressionCodec_SNAPPY
 }
 
+// RequiredFieldGzip sets the compression for a column to gzip
+// It is an optional arg to NewRequiredField
+func RequiredFieldGzip(r *RequiredField) {
+	r.compression = sch.CompressionCodec_GZIP
+}
+
 // RequiredFieldUncompressed sets the compression to none
 // It is an optional arg to NewRequiredField
 func RequiredFieldUncompressed(r *RequiredField) {
@@ -47,12 +54,16 @@ func RequiredFieldUncompressed(r *RequiredField) {
 
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
-	l, cl, vals := compress(f.compression, vals)
+	l, cl, vals, err := compress(f.compression, vals)
+	if err != nil {
+		return err
+	}
+
 	if err := meta.WritePageHeader(w, f.pth, l, cl, count, count, 0, 0, f.compression, stats); err != nil {
 		return err
 	}
 
-	_, err := w.Write(vals)
+	_, err = w.Write(vals)
 	return err
 }
 
@@ -145,6 +156,12 @@ func OptionalFieldSnappy(r *OptionalField) {
 	r.compression = sch.CompressionCodec_SNAPPY
 }
 
+// OptionalFieldGzip sets the compression for a column to gzip
+// It is an optional arg to NewOptionalField
+func OptionalFieldGzip(r *OptionalField) {
+	r.compression = sch.CompressionCodec_GZIP
+}
+
 // OptionalFieldUncompressed sets the compression to none
 // It is an optional arg to NewOptionalField
 func OptionalFieldUncompressed(o *OptionalField) {
@@ -189,7 +206,11 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 	repLen := wc.n - defLen
 
 	wc.Write(vals)
-	l, cl, vals := compress(f.compression, buf.Bytes())
+	l, cl, vals, err := compress(f.compression, buf.Bytes())
+	if err != nil {
+		return err
+	}
+
 	if err := meta.WritePageHeader(w, f.pth, l, cl, len(f.Defs), count, defLen, repLen, f.compression, stats); err != nil {
 		return err
 	}
@@ -293,6 +314,26 @@ func pageData(r io.Reader, ph *sch.PageHeader, pg Page) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+	case sch.CompressionCodec_GZIP:
+		var buf bytes.Buffer
+		_, err := io.CopyN(&buf, r, int64(ph.CompressedPageSize))
+		if err != nil {
+			return nil, err
+		}
+
+		zr, err := gzip.NewReader(&buf)
+		if err != nil {
+			return nil, err
+		}
+
+		data, err = io.ReadAll(zr)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := zr.Close(); err != nil {
+			return nil, err
+		}
 	case sch.CompressionCodec_UNCOMPRESSED:
 		data = make([]byte, ph.UncompressedPageSize)
 		if _, err := r.Read(data); err != nil {
@@ -305,18 +346,32 @@ func pageData(r io.Reader, ph *sch.PageHeader, pg Page) ([]byte, error) {
 	return data, nil
 }
 
-func compress(codec sch.CompressionCodec, vals []byte) (int, int, []byte) {
-	var l, cl int
+func compress(codec sch.CompressionCodec, vals []byte) (int, int, []byte, error) {
+	var err error
+	l := len(vals)
 	switch codec {
 	case sch.CompressionCodec_SNAPPY:
-		l = len(vals)
 		vals = snappy.Encode(nil, vals)
-		cl = len(vals)
-	case sch.CompressionCodec_UNCOMPRESSED:
-		l = len(vals)
-		cl = len(vals)
+	case sch.CompressionCodec_GZIP:
+		var buf bytes.Buffer
+		zw, err := gzip.NewWriterLevel(&buf, gzip.BestSpeed)
+		if err != nil {
+			return l, 0, vals, err
+		}
+
+		_, err = zw.Write(vals)
+		if err != nil {
+			return l, 0, vals, err
+		}
+
+		err = zw.Close()
+		if err != nil {
+			return l, 0, vals, err
+		}
+
+		vals = buf.Bytes()
 	}
-	return l, cl, vals
+	return l, len(vals), vals, err
 }
 
 // writeLevels writes vals to w as RLE/bitpack encoded data
