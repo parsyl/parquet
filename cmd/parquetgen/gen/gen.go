@@ -8,9 +8,9 @@ import (
 	"text/template"
 
 	"github.com/parsyl/parquet"
+	"github.com/parsyl/parquet/cmd/parquetgen/fields"
 	"github.com/parsyl/parquet/cmd/parquetgen/parse"
 	"github.com/parsyl/parquet/cmd/parquetgen/structs"
-	"github.com/parsyl/parquet/internal/fields"
 	sch "github.com/parsyl/parquet/schema"
 )
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/parsyl/parquet/internal/fields"
+	"github.com/parsyl/parquet/cmd/parquetgen/fields"
 )
 
 func init() {

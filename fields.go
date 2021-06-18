@@ -11,10 +11,44 @@ import (
 	"io"
 
 	"github.com/golang/snappy"
-	"github.com/parsyl/parquet/internal/fields"
 	"github.com/parsyl/parquet/internal/rle"
 	sch "github.com/parsyl/parquet/schema"
 )
+
+// RepetitionType is an enum of the possible
+// parquet repetition types
+type RepetitionType int
+
+const (
+	Unseen   RepetitionType = -1
+	Required RepetitionType = 0
+	Optional RepetitionType = 1
+	Repeated RepetitionType = 2
+)
+
+type RepetitionTypes []RepetitionType
+
+// MaxDef returns the largest definition level
+func (r RepetitionTypes) MaxDef() uint8 {
+	var out uint8
+	for _, rt := range r {
+		if rt == Optional || rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
+
+// MaxRep returns the largest repetition level
+func (r RepetitionTypes) MaxRep() uint8 {
+	var out uint8
+	for _, rt := range r {
+		if rt == Repeated {
+			out++
+		}
+	}
+	return out
+}
 
 // RequiredField writes the raw data for required columns
 type RequiredField struct {
@@ -121,12 +155,12 @@ type OptionalField struct {
 	repeated       bool
 }
 
-func getRepetitionTypes(in []int) fields.RepetitionTypes {
-	out := make([]fields.RepetitionType, len(in))
+func getRepetitionTypes(in []int) RepetitionTypes {
+	out := make([]RepetitionType, len(in))
 	for i, x := range in {
-		out[i] = fields.RepetitionType(x)
+		out[i] = RepetitionType(x)
 	}
-	return fields.RepetitionTypes(out)
+	return RepetitionTypes(out)
 }
 
 // NewOptionalField creates an optional field

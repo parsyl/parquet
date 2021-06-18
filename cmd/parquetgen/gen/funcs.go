@@ -7,7 +7,7 @@ import (
 
 	"github.com/parsyl/parquet/cmd/parquetgen/cases"
 	"github.com/parsyl/parquet/cmd/parquetgen/dremel"
-	"github.com/parsyl/parquet/internal/fields"
+	"github.com/parsyl/parquet/cmd/parquetgen/fields"
 )
 
 var (

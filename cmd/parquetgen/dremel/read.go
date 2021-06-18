@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/parsyl/parquet/internal/fields"
+	"github.com/parsyl/parquet/cmd/parquetgen/fields"
 )
 
 func readRequired(f fields.Field) string {
