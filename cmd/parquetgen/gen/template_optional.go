@@ -26,9 +26,11 @@ func (f *{{.FieldType}}) Schema() parquet.Field {
 }
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
-	var buf bytes.Buffer
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
+
 	for _, v := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}

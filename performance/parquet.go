@@ -12,6 +12,7 @@ import (
 	"github.com/parsyl/parquet"
 	. "github.com/parsyl/parquet/performance/message"
 	sch "github.com/parsyl/parquet/schema"
+	"github.com/valyala/bytebufferpool"
 	"math"
 	"sort"
 )
@@ -24,6 +25,8 @@ const (
 	compressionGzip         compression = 2
 	compressionUnknown      compression = -1
 )
+
+var buffpool = bytebufferpool.Pool{}
 
 // ParquetWriter reprents a row group
 type ParquetWriter struct {
@@ -748,10 +751,11 @@ func (f *StringField) Schema() parquet.Field {
 }
 
 func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
-	buf := bytes.Buffer{}
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
 
 	for _, s := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, int32(len(s))); err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, int32(len(s))); err != nil {
 			return err
 		}
 		buf.Write([]byte(s))
@@ -834,9 +838,11 @@ func (f *Int64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata) error {
-	var buf bytes.Buffer
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
+
 	for _, v := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}
@@ -896,9 +902,11 @@ func (f *Float64Field) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Float64Field) Write(w io.Writer, meta *parquet.Metadata) error {
-	var buf bytes.Buffer
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
+
 	for _, v := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, v); err != nil {
 			return err
 		}
 	}

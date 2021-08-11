@@ -10,7 +10,7 @@ import (
 
 const (
 	writeBatch = 5_000
-	inputSize  = 30_000
+	inputSize  = 100_000
 )
 
 type parquetWriter interface {

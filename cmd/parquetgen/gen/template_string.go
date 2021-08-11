@@ -23,10 +23,11 @@ func (f *StringField) Schema() parquet.Field {
 }
 
 func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
-	buf := bytes.Buffer{}
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
 
 	for _, s := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, int32(len(s))); err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, int32(len(s))); err != nil {
 			return err
 		}
 		buf.Write([]byte(s))
