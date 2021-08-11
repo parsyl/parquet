@@ -26,8 +26,10 @@ func (f *StringField) Write(w io.Writer, meta *parquet.Metadata) error {
 	buf := buffpool.Get()
 	defer buffpool.Put(buf)
 
+	bs := make([]byte, 4)
 	for _, s := range f.vals {
-		if err := binary.Write(buf, binary.LittleEndian, int32(len(s))); err != nil {
+		binary.LittleEndian.PutUint32(bs, uint32(len(s)))
+		if _, err := buf.Write(bs); err != nil {
 			return err
 		}
 		buf.WriteString(s)
