@@ -51,7 +51,7 @@ func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
 		if err := binary.Write(buf, binary.LittleEndian, int32(len(s))); err != nil {
 			return err
 		}
-		buf.Write([]byte(s))
+		buf.WriteString(s)
 	}
 
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
