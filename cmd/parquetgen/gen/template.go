@@ -9,7 +9,6 @@ var tpl = `package {{.Package}}
 import (
 	"fmt"
 	"io"
-	"bytes"
 	"strings"
 	"encoding/binary"
 
