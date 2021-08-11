@@ -81,5 +81,57 @@ var (
 			}
 			return "parquet.RequiredField"
 		},
+		"byteSize": func(f fields.Field) string {
+			var out string
+			switch f.Type {
+			case "int32", "*int32", "uint32", "*uint32", "float32", "*float32":
+				out = "4"
+			case "int64", "*int64", "uint64", "*uint64", "float64", "*float64":
+				out = "8"
+			}
+			return out
+		},
+		// based on binary.Write
+		"putFunc": func(f fields.Field) string {
+			var out string
+			switch f.Type {
+			case "int32", "*int32", "uint32", "*uint32", "float32", "*float32":
+				out = "PutUint32"
+			case "int64", "*int64", "uint64", "*uint64", "float64", "*float64":
+				out = "PutUint64"
+			}
+			return out
+		},
+		// based on binary.Write
+		"uintFunc": func(f fields.Field) string {
+			var out string
+			switch f.Type {
+			case "int32":
+				out = "uint32(v)"
+			case "*int32":
+				out = "uint32(*v)"
+			case "uint32":
+				out = "v"
+			case "*uint32":
+				out = "*v"
+			case "float32":
+				out = "math.Float32bits(v)"
+			case "*float32":
+				out = "math.Float32bits(*v)"
+			case "int64":
+				out = "uint64(v)"
+			case "*int64":
+				out = "uint64(*v)"
+			case "uint64":
+				out = "v"
+			case "*uint64":
+				out = "*v"
+			case "float64":
+				out = "math.Float64bits(v)"
+			case "*float64":
+				out = "math.Float64bits(*v)"
+			}
+			return out
+		},
 	}
 )

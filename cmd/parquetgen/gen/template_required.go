@@ -38,8 +38,10 @@ func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
 	buf := buffpool.Get()
 	defer buffpool.Put(buf)
 
+	bs := make([]byte, {{byteSize .}})
 	for _, v := range f.vals {
-		if err := binary.Write(buf, binary.LittleEndian, v); err != nil {
+		binary.LittleEndian.{{ putFunc . }}(bs, {{ uintFunc . }})
+		if _, err := buf.Write(bs); err != nil {
 			return err
 		}
 	}

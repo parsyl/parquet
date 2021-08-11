@@ -840,8 +840,10 @@ func (f *Int64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	buf := buffpool.Get()
 	defer buffpool.Put(buf)
 
+	bs := make([]byte, 8)
 	for _, v := range f.vals {
-		if err := binary.Write(buf, binary.LittleEndian, v); err != nil {
+		binary.LittleEndian.PutUint64(bs, uint64(v))
+		if _, err := buf.Write(bs); err != nil {
 			return err
 		}
 	}
@@ -904,8 +906,10 @@ func (f *Float64Field) Write(w io.Writer, meta *parquet.Metadata) error {
 	buf := buffpool.Get()
 	defer buffpool.Put(buf)
 
+	bs := make([]byte, 8)
 	for _, v := range f.vals {
-		if err := binary.Write(buf, binary.LittleEndian, v); err != nil {
+		binary.LittleEndian.PutUint64(bs, math.Float64bits(v))
+		if _, err := buf.Write(bs); err != nil {
 			return err
 		}
 	}
