@@ -5,7 +5,7 @@ package message
 // optimized
 // go run cmd/parquetgen/main.go -input performance/message/message.go -type Message -package performance  -output performance/parquet.go -import github.com/parsyl/parquet/performance/message
 type Message struct {
-	ColStr0 string `parquet:"col_str_0" json:"col_str_0" faker:"paragraph"`
+	ColStr0 string `parquet:"col_str_0" json:"col_str_0" faker:"oneof: aaaaa, "` // optionally empty
 	ColStr1 string `parquet:"col_str_1" json:"col_str_1" faker:"paragraph"`
 	ColStr2 string `parquet:"col_str_2" json:"col_str_2" faker:"paragraph"`
 	ColStr3 string `parquet:"col_str_3" json:"col_str_3" faker:"paragraph"`
@@ -16,7 +16,7 @@ type Message struct {
 	ColStr8 string `parquet:"col_str_8" json:"col_str_8" faker:"word"`
 	ColStr9 string `parquet:"col_str_9" json:"col_str_9" faker:"word"`
 
-	ColInt0 int64 `parquet:"col_int_0" json:"col_int_0" faker:"unix_time"`
+	ColInt0 int64 `parquet:"col_int_0" json:"col_int_0" faker:"oneof: 0, 1"`
 	ColInt1 int64 `parquet:"col_int_1" json:"col_int_1" faker:"unix_time"`
 	ColInt2 int64 `parquet:"col_int_2" json:"col_int_2" faker:"unix_time"`
 	ColInt3 int64 `parquet:"col_int_3" json:"col_int_3" faker:"unix_time"`
@@ -27,7 +27,7 @@ type Message struct {
 	ColInt8 int64 `parquet:"col_int_8" json:"col_int_8" faker:"unix_time"`
 	ColInt9 int64 `parquet:"col_int_9" json:"col_int_9" faker:"unix_time"`
 
-	ColFloat0 float64 `parquet:"col_float_0" json:"col_float_0"`
+	ColFloat0 float64 `parquet:"col_float_0" json:"col_float_0" faker:"oneof: 0.0, 1.1"`
 	ColFloat1 float64 `parquet:"col_float_1" json:"col_float_1"`
 	ColFloat2 float64 `parquet:"col_float_2" json:"col_float_2"`
 	ColFloat3 float64 `parquet:"col_float_3" json:"col_float_3"`

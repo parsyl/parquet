@@ -78,18 +78,36 @@ func (f *StringField) Levels() ([]uint8, []uint8) {
 {{end}}`
 
 var stringStatsTpl = `{{define "stringStats"}}
+
+const nilString = "__#NIL#__"
+
 type stringStats struct {
-	vals []string
-	min []byte
-	max []byte
+	min string
+	max string
 }
 
 func newStringStats() *stringStats {
-	return &stringStats{}
+	return &stringStats{
+		min: nilString,
+		max: nilString,
+	}
 }
 
 func (s *stringStats) add(val string) {
-	s.vals = append(s.vals, val)
+	if s.min == nilString {
+		s.min = val
+	} else {
+		if val < s.min {
+			s.min = val
+		}
+	}
+	if s.max == nilString {
+		s.max = val
+	} else {
+		if val > s.max {
+			s.max = val
+		}
+	}
 }
 
 func (s *stringStats) NullCount() *int64 {
@@ -101,28 +119,16 @@ func (s *stringStats) DistinctCount() *int64 {
 }
 
 func (s *stringStats) Min() []byte {
-	if s.min == nil {
-		s.minMax()
+	if s.min == nilString {
+		return nil
 	}
-	return s.min
+	return []byte(s.min)
 }
 
 func (s *stringStats) Max() []byte {
-	if s.max == nil {
-		s.minMax()
+	if s.max == nilString {
+		return nil
 	}
-	return s.max
-}
-
-func (s *stringStats) minMax()  {
-	if len(s.vals) == 0 {
-		return
-	}
-
-	tmp := make([]string, len(s.vals))
-	copy(tmp, s.vals)
-	sort.Strings(tmp)
-	s.min = []byte(tmp[0])
-	s.max = []byte(tmp[len(tmp)-1])
+	return []byte(s.max)
 }
 {{end}}`

@@ -43,15 +43,11 @@ var (
 		},
 		"imports": func(fields []fields.Field) []string {
 			var out []string
-			var intFound, stringFound bool
+			var intFound bool
 			for _, f := range fields {
 				if !intFound && strings.Contains(f.Type, "int") {
 					intFound = true
 					out = append(out, `"math"`)
-				}
-				if !stringFound && strings.Contains(f.Type, "string") {
-					stringFound = true
-					out = append(out, `"sort"`)
 				}
 			}
 			return out
