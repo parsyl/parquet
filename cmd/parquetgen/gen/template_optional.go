@@ -113,10 +113,10 @@ func (f *{{removeStar .TypeName}}optionalStats) add(vals []{{removeStar .TypeNam
 	}
 }
 
-func (f *{{removeStar .TypeName}}optionalStats) bytes(val {{removeStar .TypeName}}) []byte {
-	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, val)
-	return buf.Bytes()
+func (f *{{removeStar .TypeName}}optionalStats) bytes(v {{removeStar .TypeName}}) []byte {
+	bs := make([]byte, {{byteSize .}})
+	binary.LittleEndian.{{ putFunc . }}(bs, {{ uintFunc . }})
+	return bs
 }
 
 func (f *{{removeStar .TypeName}}optionalStats) NullCount() *int64 {
