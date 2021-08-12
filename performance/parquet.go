@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/parsyl/parquet"
@@ -1838,16 +1837,21 @@ func (f *BoolField) Levels() ([]uint8, []uint8) {
 	return nil, nil
 }
 
+const nilOptString = "__#NIL#__"
+
 type stringOptionalStats struct {
-	vals   []string
-	min    []byte
-	max    []byte
+	min    string
+	max    string
 	nils   int64
 	maxDef uint8
 }
 
 func newStringOptionalStats(d uint8) *stringOptionalStats {
-	return &stringOptionalStats{maxDef: d}
+	return &stringOptionalStats{
+		min:    nilOptString,
+		max:    nilOptString,
+		maxDef: d,
+	}
 }
 
 func (s *stringOptionalStats) add(vals []string, defs []uint8) {
@@ -1856,7 +1860,21 @@ func (s *stringOptionalStats) add(vals []string, defs []uint8) {
 		if def < s.maxDef {
 			s.nils++
 		} else {
-			s.vals = append(s.vals, vals[i])
+			val := vals[i]
+			if s.min == nilString {
+				s.min = val
+			} else {
+				if val < s.min {
+					s.min = val
+				}
+			}
+			if s.max == nilString {
+				s.max = val
+			} else {
+				if val > s.max {
+					s.max = val
+				}
+			}
 			i++
 		}
 	}
@@ -1871,29 +1889,17 @@ func (s *stringOptionalStats) DistinctCount() *int64 {
 }
 
 func (s *stringOptionalStats) Min() []byte {
-	if s.min == nil {
-		s.minMax()
+	if s.min == nilOptString {
+		return nil
 	}
-	return s.min
+	return []byte(s.min)
 }
 
 func (s *stringOptionalStats) Max() []byte {
-	if s.max == nil {
-		s.minMax()
+	if s.max == nilOptString {
+		return nil
 	}
-	return s.max
-}
-
-func (s *stringOptionalStats) minMax() {
-	if len(s.vals) == 0 {
-		return
-	}
-
-	tmp := make([]string, len(s.vals))
-	copy(tmp, s.vals)
-	sort.Strings(tmp)
-	s.min = []byte(tmp[0])
-	s.max = []byte(tmp[len(tmp)-1])
+	return []byte(s.max)
 }
 
 const nilString = "__#NIL#__"
