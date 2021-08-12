@@ -3,6 +3,7 @@ package parquet
 import (
 	"bytes"
 	"compress/gzip"
+	"github.com/valyala/bytebufferpool"
 	"math/bits"
 	"strings"
 
@@ -218,11 +219,14 @@ func (f *OptionalField) valsFromDefs(defs []uint8, max uint8) int {
 	return out
 }
 
+var buffpool = bytebufferpool.Pool{}
+
 // DoWrite is called by all optional field types to write the definition levels
 // and raw data to the io.Writer
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
-	buf := bytes.Buffer{}
-	wc := &writeCounter{w: &buf}
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
+	wc := &writeCounter{w: buf}
 
 	var repLen int64
 
