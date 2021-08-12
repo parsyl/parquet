@@ -5,6 +5,7 @@ import (
 	"github.com/bxcodec/faker/v3"
 	"github.com/parsyl/parquet/performance/base"
 	"github.com/parsyl/parquet/performance/message"
+	"math/rand"
 	"testing"
 )
 
@@ -23,6 +24,15 @@ func generateTestData(count int) []message.Message {
 	res := make([]message.Message, count)
 	for i := 0; i < count; i++ {
 		err := faker.FakeData(&res[i])
+		// faker doesn't set nil, so we set them ourselves sometimes
+		if rand.Intn(2) == 0 {
+			res[i].ColBool0 = nil
+			res[i].ColFloat0 = nil
+			res[i].ColFloat32_0 = nil
+			res[i].ColInt0 = nil
+			res[i].ColInt32_0 = nil
+			res[i].ColStr0 = nil
+		}
 		if err != nil {
 			panic(err)
 		}

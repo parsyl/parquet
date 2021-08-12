@@ -45,55 +45,67 @@ type ParquetWriter struct {
 
 func Fields(compression compression) []Field {
 	return []Field{
-		NewStringField(readColStr0, writeColStr0, []string{"col_str_0"}, fieldCompression(compression)),
+		NewStringOptionalField(readColStr0, writeColStr0, []string{"col_str_0"}, []int{1}, optionalFieldCompression(compression)),
 		NewStringField(readColStr1, writeColStr1, []string{"col_str_1"}, fieldCompression(compression)),
-		NewStringField(readColStr2, writeColStr2, []string{"col_str_2"}, fieldCompression(compression)),
+		NewStringOptionalField(readColStr2, writeColStr2, []string{"col_str_2"}, []int{1}, optionalFieldCompression(compression)),
 		NewStringField(readColStr3, writeColStr3, []string{"col_str_3"}, fieldCompression(compression)),
-		NewStringField(readColStr4, writeColStr4, []string{"col_str_4"}, fieldCompression(compression)),
+		NewStringOptionalField(readColStr4, writeColStr4, []string{"col_str_4"}, []int{1}, optionalFieldCompression(compression)),
 		NewStringField(readColStr5, writeColStr5, []string{"col_str_5"}, fieldCompression(compression)),
-		NewStringField(readColStr6, writeColStr6, []string{"col_str_6"}, fieldCompression(compression)),
+		NewStringOptionalField(readColStr6, writeColStr6, []string{"col_str_6"}, []int{1}, optionalFieldCompression(compression)),
 		NewStringField(readColStr7, writeColStr7, []string{"col_str_7"}, fieldCompression(compression)),
-		NewStringField(readColStr8, writeColStr8, []string{"col_str_8"}, fieldCompression(compression)),
+		NewStringOptionalField(readColStr8, writeColStr8, []string{"col_str_8"}, []int{1}, optionalFieldCompression(compression)),
 		NewStringField(readColStr9, writeColStr9, []string{"col_str_9"}, fieldCompression(compression)),
-		NewInt64Field(readColInt0, writeColInt0, []string{"col_int_0"}, fieldCompression(compression)),
+		NewInt64OptionalField(readColInt0, writeColInt0, []string{"col_int_0"}, []int{1}, optionalFieldCompression(compression)),
 		NewInt64Field(readColInt1, writeColInt1, []string{"col_int_1"}, fieldCompression(compression)),
-		NewInt64Field(readColInt2, writeColInt2, []string{"col_int_2"}, fieldCompression(compression)),
+		NewInt64OptionalField(readColInt2, writeColInt2, []string{"col_int_2"}, []int{1}, optionalFieldCompression(compression)),
 		NewInt64Field(readColInt3, writeColInt3, []string{"col_int_3"}, fieldCompression(compression)),
-		NewInt64Field(readColInt4, writeColInt4, []string{"col_int_4"}, fieldCompression(compression)),
-		NewInt64Field(readColInt5, writeColInt5, []string{"col_int_5"}, fieldCompression(compression)),
-		NewInt64Field(readColInt6, writeColInt6, []string{"col_int_6"}, fieldCompression(compression)),
-		NewInt64Field(readColInt7, writeColInt7, []string{"col_int_7"}, fieldCompression(compression)),
-		NewInt64Field(readColInt8, writeColInt8, []string{"col_int_8"}, fieldCompression(compression)),
-		NewInt64Field(readColInt9, writeColInt9, []string{"col_int_9"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat0, writeColFloat0, []string{"col_float_0"}, fieldCompression(compression)),
+		NewInt64OptionalField(readColInt4, writeColInt4, []string{"col_int_4"}, []int{1}, optionalFieldCompression(compression)),
+		NewInt32OptionalField(readColInt32_0, writeColInt32_0, []string{"col_int_32_0"}, []int{1}, optionalFieldCompression(compression)),
+		NewInt32Field(readColInt32_1, writeColInt32_1, []string{"col_int_32_1"}, fieldCompression(compression)),
+		NewInt32OptionalField(readColInt32_2, writeColInt32_2, []string{"col_int_32_2"}, []int{1}, optionalFieldCompression(compression)),
+		NewInt32Field(readColInt32_3, writeColInt32_3, []string{"col_int_32_3"}, fieldCompression(compression)),
+		NewInt32OptionalField(readColInt32_4, writeColInt32_4, []string{"col_int_32_4"}, []int{1}, optionalFieldCompression(compression)),
+		NewFloat64OptionalField(readColFloat0, writeColFloat0, []string{"col_float_0"}, []int{1}, optionalFieldCompression(compression)),
 		NewFloat64Field(readColFloat1, writeColFloat1, []string{"col_float_1"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat2, writeColFloat2, []string{"col_float_2"}, fieldCompression(compression)),
+		NewFloat64OptionalField(readColFloat2, writeColFloat2, []string{"col_float_2"}, []int{1}, optionalFieldCompression(compression)),
 		NewFloat64Field(readColFloat3, writeColFloat3, []string{"col_float_3"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat4, writeColFloat4, []string{"col_float_4"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat5, writeColFloat5, []string{"col_float_5"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat6, writeColFloat6, []string{"col_float_6"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat7, writeColFloat7, []string{"col_float_7"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat8, writeColFloat8, []string{"col_float_8"}, fieldCompression(compression)),
-		NewFloat64Field(readColFloat9, writeColFloat9, []string{"col_float_9"}, fieldCompression(compression)),
-		NewBoolField(readColBool0, writeColBool0, []string{"col_bool_0"}, fieldCompression(compression)),
+		NewFloat64OptionalField(readColFloat4, writeColFloat4, []string{"col_float_4"}, []int{1}, optionalFieldCompression(compression)),
+		NewFloat32OptionalField(readColFloat32_0, writeColFloat32_0, []string{"col_float_32_0"}, []int{1}, optionalFieldCompression(compression)),
+		NewFloat32Field(readColFloat32_1, writeColFloat32_1, []string{"col_float_32_1"}, fieldCompression(compression)),
+		NewFloat32OptionalField(readColFloat32_2, writeColFloat32_2, []string{"col_float_32_2"}, []int{1}, optionalFieldCompression(compression)),
+		NewFloat32Field(readColFloat32_3, writeColFloat32_3, []string{"col_float_32_3"}, fieldCompression(compression)),
+		NewFloat32OptionalField(readColFloat32_4, writeColFloat32_4, []string{"col_float_32_4"}, []int{1}, optionalFieldCompression(compression)),
+		NewBoolOptionalField(readColBool0, writeColBool0, []string{"col_bool_0"}, []int{1}, optionalFieldCompression(compression)),
 		NewBoolField(readColBool1, writeColBool1, []string{"col_bool_1"}, fieldCompression(compression)),
-		NewBoolField(readColBool2, writeColBool2, []string{"col_bool_2"}, fieldCompression(compression)),
+		NewBoolOptionalField(readColBool2, writeColBool2, []string{"col_bool_2"}, []int{1}, optionalFieldCompression(compression)),
 		NewBoolField(readColBool3, writeColBool3, []string{"col_bool_3"}, fieldCompression(compression)),
-		NewBoolField(readColBool4, writeColBool4, []string{"col_bool_4"}, fieldCompression(compression)),
+		NewBoolOptionalField(readColBool4, writeColBool4, []string{"col_bool_4"}, []int{1}, optionalFieldCompression(compression)),
 		NewBoolField(readColBool5, writeColBool5, []string{"col_bool_5"}, fieldCompression(compression)),
-		NewBoolField(readColBool6, writeColBool6, []string{"col_bool_6"}, fieldCompression(compression)),
+		NewBoolOptionalField(readColBool6, writeColBool6, []string{"col_bool_6"}, []int{1}, optionalFieldCompression(compression)),
 		NewBoolField(readColBool7, writeColBool7, []string{"col_bool_7"}, fieldCompression(compression)),
-		NewBoolField(readColBool8, writeColBool8, []string{"col_bool_8"}, fieldCompression(compression)),
+		NewBoolOptionalField(readColBool8, writeColBool8, []string{"col_bool_8"}, []int{1}, optionalFieldCompression(compression)),
 		NewBoolField(readColBool9, writeColBool9, []string{"col_bool_9"}, fieldCompression(compression)),
 	}
 }
 
-func readColStr0(x Message) string {
-	return x.ColStr0
+func readColStr0(x Message) ([]string, []uint8, []uint8) {
+	switch {
+	case x.ColStr0 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []string{*x.ColStr0}, []uint8{1}, nil
+	}
 }
 
-func writeColStr0(x *Message, vals []string) {
-	x.ColStr0 = vals[0]
+func writeColStr0(x *Message, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColStr0 = pstring(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColStr1(x Message) string {
@@ -104,12 +116,24 @@ func writeColStr1(x *Message, vals []string) {
 	x.ColStr1 = vals[0]
 }
 
-func readColStr2(x Message) string {
-	return x.ColStr2
+func readColStr2(x Message) ([]string, []uint8, []uint8) {
+	switch {
+	case x.ColStr2 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []string{*x.ColStr2}, []uint8{1}, nil
+	}
 }
 
-func writeColStr2(x *Message, vals []string) {
-	x.ColStr2 = vals[0]
+func writeColStr2(x *Message, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColStr2 = pstring(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColStr3(x Message) string {
@@ -120,12 +144,24 @@ func writeColStr3(x *Message, vals []string) {
 	x.ColStr3 = vals[0]
 }
 
-func readColStr4(x Message) string {
-	return x.ColStr4
+func readColStr4(x Message) ([]string, []uint8, []uint8) {
+	switch {
+	case x.ColStr4 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []string{*x.ColStr4}, []uint8{1}, nil
+	}
 }
 
-func writeColStr4(x *Message, vals []string) {
-	x.ColStr4 = vals[0]
+func writeColStr4(x *Message, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColStr4 = pstring(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColStr5(x Message) string {
@@ -136,12 +172,24 @@ func writeColStr5(x *Message, vals []string) {
 	x.ColStr5 = vals[0]
 }
 
-func readColStr6(x Message) string {
-	return x.ColStr6
+func readColStr6(x Message) ([]string, []uint8, []uint8) {
+	switch {
+	case x.ColStr6 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []string{*x.ColStr6}, []uint8{1}, nil
+	}
 }
 
-func writeColStr6(x *Message, vals []string) {
-	x.ColStr6 = vals[0]
+func writeColStr6(x *Message, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColStr6 = pstring(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColStr7(x Message) string {
@@ -152,12 +200,24 @@ func writeColStr7(x *Message, vals []string) {
 	x.ColStr7 = vals[0]
 }
 
-func readColStr8(x Message) string {
-	return x.ColStr8
+func readColStr8(x Message) ([]string, []uint8, []uint8) {
+	switch {
+	case x.ColStr8 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []string{*x.ColStr8}, []uint8{1}, nil
+	}
 }
 
-func writeColStr8(x *Message, vals []string) {
-	x.ColStr8 = vals[0]
+func writeColStr8(x *Message, vals []string, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColStr8 = pstring(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColStr9(x Message) string {
@@ -168,12 +228,24 @@ func writeColStr9(x *Message, vals []string) {
 	x.ColStr9 = vals[0]
 }
 
-func readColInt0(x Message) int64 {
-	return x.ColInt0
+func readColInt0(x Message) ([]int64, []uint8, []uint8) {
+	switch {
+	case x.ColInt0 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []int64{*x.ColInt0}, []uint8{1}, nil
+	}
 }
 
-func writeColInt0(x *Message, vals []int64) {
-	x.ColInt0 = vals[0]
+func writeColInt0(x *Message, vals []int64, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColInt0 = pint64(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColInt1(x Message) int64 {
@@ -184,12 +256,24 @@ func writeColInt1(x *Message, vals []int64) {
 	x.ColInt1 = vals[0]
 }
 
-func readColInt2(x Message) int64 {
-	return x.ColInt2
+func readColInt2(x Message) ([]int64, []uint8, []uint8) {
+	switch {
+	case x.ColInt2 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []int64{*x.ColInt2}, []uint8{1}, nil
+	}
 }
 
-func writeColInt2(x *Message, vals []int64) {
-	x.ColInt2 = vals[0]
+func writeColInt2(x *Message, vals []int64, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColInt2 = pint64(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColInt3(x Message) int64 {
@@ -200,60 +284,120 @@ func writeColInt3(x *Message, vals []int64) {
 	x.ColInt3 = vals[0]
 }
 
-func readColInt4(x Message) int64 {
-	return x.ColInt4
+func readColInt4(x Message) ([]int64, []uint8, []uint8) {
+	switch {
+	case x.ColInt4 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []int64{*x.ColInt4}, []uint8{1}, nil
+	}
 }
 
-func writeColInt4(x *Message, vals []int64) {
-	x.ColInt4 = vals[0]
+func writeColInt4(x *Message, vals []int64, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColInt4 = pint64(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColInt5(x Message) int64 {
-	return x.ColInt5
+func readColInt32_0(x Message) ([]int32, []uint8, []uint8) {
+	switch {
+	case x.ColInt32_0 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []int32{*x.ColInt32_0}, []uint8{1}, nil
+	}
 }
 
-func writeColInt5(x *Message, vals []int64) {
-	x.ColInt5 = vals[0]
+func writeColInt32_0(x *Message, vals []int32, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColInt32_0 = pint32(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColInt6(x Message) int64 {
-	return x.ColInt6
+func readColInt32_1(x Message) int32 {
+	return x.ColInt32_1
 }
 
-func writeColInt6(x *Message, vals []int64) {
-	x.ColInt6 = vals[0]
+func writeColInt32_1(x *Message, vals []int32) {
+	x.ColInt32_1 = vals[0]
 }
 
-func readColInt7(x Message) int64 {
-	return x.ColInt7
+func readColInt32_2(x Message) ([]int32, []uint8, []uint8) {
+	switch {
+	case x.ColInt32_2 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []int32{*x.ColInt32_2}, []uint8{1}, nil
+	}
 }
 
-func writeColInt7(x *Message, vals []int64) {
-	x.ColInt7 = vals[0]
+func writeColInt32_2(x *Message, vals []int32, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColInt32_2 = pint32(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColInt8(x Message) int64 {
-	return x.ColInt8
+func readColInt32_3(x Message) int32 {
+	return x.ColInt32_3
 }
 
-func writeColInt8(x *Message, vals []int64) {
-	x.ColInt8 = vals[0]
+func writeColInt32_3(x *Message, vals []int32) {
+	x.ColInt32_3 = vals[0]
 }
 
-func readColInt9(x Message) int64 {
-	return x.ColInt9
+func readColInt32_4(x Message) ([]int32, []uint8, []uint8) {
+	switch {
+	case x.ColInt32_4 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []int32{*x.ColInt32_4}, []uint8{1}, nil
+	}
 }
 
-func writeColInt9(x *Message, vals []int64) {
-	x.ColInt9 = vals[0]
+func writeColInt32_4(x *Message, vals []int32, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColInt32_4 = pint32(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColFloat0(x Message) float64 {
-	return x.ColFloat0
+func readColFloat0(x Message) ([]float64, []uint8, []uint8) {
+	switch {
+	case x.ColFloat0 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []float64{*x.ColFloat0}, []uint8{1}, nil
+	}
 }
 
-func writeColFloat0(x *Message, vals []float64) {
-	x.ColFloat0 = vals[0]
+func writeColFloat0(x *Message, vals []float64, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColFloat0 = pfloat64(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColFloat1(x Message) float64 {
@@ -264,12 +408,24 @@ func writeColFloat1(x *Message, vals []float64) {
 	x.ColFloat1 = vals[0]
 }
 
-func readColFloat2(x Message) float64 {
-	return x.ColFloat2
+func readColFloat2(x Message) ([]float64, []uint8, []uint8) {
+	switch {
+	case x.ColFloat2 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []float64{*x.ColFloat2}, []uint8{1}, nil
+	}
 }
 
-func writeColFloat2(x *Message, vals []float64) {
-	x.ColFloat2 = vals[0]
+func writeColFloat2(x *Message, vals []float64, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColFloat2 = pfloat64(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColFloat3(x Message) float64 {
@@ -280,60 +436,120 @@ func writeColFloat3(x *Message, vals []float64) {
 	x.ColFloat3 = vals[0]
 }
 
-func readColFloat4(x Message) float64 {
-	return x.ColFloat4
+func readColFloat4(x Message) ([]float64, []uint8, []uint8) {
+	switch {
+	case x.ColFloat4 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []float64{*x.ColFloat4}, []uint8{1}, nil
+	}
 }
 
-func writeColFloat4(x *Message, vals []float64) {
-	x.ColFloat4 = vals[0]
+func writeColFloat4(x *Message, vals []float64, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColFloat4 = pfloat64(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColFloat5(x Message) float64 {
-	return x.ColFloat5
+func readColFloat32_0(x Message) ([]float32, []uint8, []uint8) {
+	switch {
+	case x.ColFloat32_0 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []float32{*x.ColFloat32_0}, []uint8{1}, nil
+	}
 }
 
-func writeColFloat5(x *Message, vals []float64) {
-	x.ColFloat5 = vals[0]
+func writeColFloat32_0(x *Message, vals []float32, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColFloat32_0 = pfloat32(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColFloat6(x Message) float64 {
-	return x.ColFloat6
+func readColFloat32_1(x Message) float32 {
+	return x.ColFloat32_1
 }
 
-func writeColFloat6(x *Message, vals []float64) {
-	x.ColFloat6 = vals[0]
+func writeColFloat32_1(x *Message, vals []float32) {
+	x.ColFloat32_1 = vals[0]
 }
 
-func readColFloat7(x Message) float64 {
-	return x.ColFloat7
+func readColFloat32_2(x Message) ([]float32, []uint8, []uint8) {
+	switch {
+	case x.ColFloat32_2 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []float32{*x.ColFloat32_2}, []uint8{1}, nil
+	}
 }
 
-func writeColFloat7(x *Message, vals []float64) {
-	x.ColFloat7 = vals[0]
+func writeColFloat32_2(x *Message, vals []float32, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColFloat32_2 = pfloat32(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColFloat8(x Message) float64 {
-	return x.ColFloat8
+func readColFloat32_3(x Message) float32 {
+	return x.ColFloat32_3
 }
 
-func writeColFloat8(x *Message, vals []float64) {
-	x.ColFloat8 = vals[0]
+func writeColFloat32_3(x *Message, vals []float32) {
+	x.ColFloat32_3 = vals[0]
 }
 
-func readColFloat9(x Message) float64 {
-	return x.ColFloat9
+func readColFloat32_4(x Message) ([]float32, []uint8, []uint8) {
+	switch {
+	case x.ColFloat32_4 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []float32{*x.ColFloat32_4}, []uint8{1}, nil
+	}
 }
 
-func writeColFloat9(x *Message, vals []float64) {
-	x.ColFloat9 = vals[0]
+func writeColFloat32_4(x *Message, vals []float32, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColFloat32_4 = pfloat32(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
-func readColBool0(x Message) bool {
-	return x.ColBool0
+func readColBool0(x Message) ([]bool, []uint8, []uint8) {
+	switch {
+	case x.ColBool0 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []bool{*x.ColBool0}, []uint8{1}, nil
+	}
 }
 
-func writeColBool0(x *Message, vals []bool) {
-	x.ColBool0 = vals[0]
+func writeColBool0(x *Message, vals []bool, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColBool0 = pbool(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColBool1(x Message) bool {
@@ -344,12 +560,24 @@ func writeColBool1(x *Message, vals []bool) {
 	x.ColBool1 = vals[0]
 }
 
-func readColBool2(x Message) bool {
-	return x.ColBool2
+func readColBool2(x Message) ([]bool, []uint8, []uint8) {
+	switch {
+	case x.ColBool2 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []bool{*x.ColBool2}, []uint8{1}, nil
+	}
 }
 
-func writeColBool2(x *Message, vals []bool) {
-	x.ColBool2 = vals[0]
+func writeColBool2(x *Message, vals []bool, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColBool2 = pbool(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColBool3(x Message) bool {
@@ -360,12 +588,24 @@ func writeColBool3(x *Message, vals []bool) {
 	x.ColBool3 = vals[0]
 }
 
-func readColBool4(x Message) bool {
-	return x.ColBool4
+func readColBool4(x Message) ([]bool, []uint8, []uint8) {
+	switch {
+	case x.ColBool4 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []bool{*x.ColBool4}, []uint8{1}, nil
+	}
 }
 
-func writeColBool4(x *Message, vals []bool) {
-	x.ColBool4 = vals[0]
+func writeColBool4(x *Message, vals []bool, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColBool4 = pbool(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColBool5(x Message) bool {
@@ -376,12 +616,24 @@ func writeColBool5(x *Message, vals []bool) {
 	x.ColBool5 = vals[0]
 }
 
-func readColBool6(x Message) bool {
-	return x.ColBool6
+func readColBool6(x Message) ([]bool, []uint8, []uint8) {
+	switch {
+	case x.ColBool6 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []bool{*x.ColBool6}, []uint8{1}, nil
+	}
 }
 
-func writeColBool6(x *Message, vals []bool) {
-	x.ColBool6 = vals[0]
+func writeColBool6(x *Message, vals []bool, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColBool6 = pbool(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColBool7(x Message) bool {
@@ -392,12 +644,24 @@ func writeColBool7(x *Message, vals []bool) {
 	x.ColBool7 = vals[0]
 }
 
-func readColBool8(x Message) bool {
-	return x.ColBool8
+func readColBool8(x Message) ([]bool, []uint8, []uint8) {
+	switch {
+	case x.ColBool8 == nil:
+		return nil, []uint8{0}, nil
+	default:
+		return []bool{*x.ColBool8}, []uint8{1}, nil
+	}
 }
 
-func writeColBool8(x *Message, vals []bool) {
-	x.ColBool8 = vals[0]
+func writeColBool8(x *Message, vals []bool, defs, reps []uint8) (int, int) {
+	def := defs[0]
+	switch def {
+	case 1:
+		x.ColBool8 = pbool(vals[0])
+		return 1, 1
+	}
+
+	return 0, 1
 }
 
 func readColBool9(x Message) bool {
@@ -726,6 +990,86 @@ func (p *ParquetReader) Scan(x *Message) {
 	}
 }
 
+type StringOptionalField struct {
+	parquet.OptionalField
+	vals  []string
+	read  func(r Message) ([]string, []uint8, []uint8)
+	write func(r *Message, vals []string, def, rep []uint8) (int, int)
+	stats *stringOptionalStats
+}
+
+func NewStringOptionalField(read func(r Message) ([]string, []uint8, []uint8), write func(r *Message, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+	return &StringOptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newStringOptionalStats(maxDef(types)),
+	}
+}
+
+func (f *StringOptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: StringType, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *StringOptionalField) Add(r Message) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *StringOptionalField) Scan(r *Message) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	buf := bytes.Buffer{}
+
+	for _, s := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, int32(len(s))); err != nil {
+			return err
+		}
+		buf.Write([]byte(s))
+	}
+
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *StringOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	for j := 0; j < f.Values(); j++ {
+		var x int32
+		if err := binary.Read(rr, binary.LittleEndian, &x); err != nil {
+			return err
+		}
+		s := make([]byte, x)
+		if _, err := rr.Read(s); err != nil {
+			return err
+		}
+
+		f.vals = append(f.vals, string(s))
+	}
+	return nil
+}
+
+func (f *StringOptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
 type StringField struct {
 	parquet.RequiredField
 	vals  []string
@@ -800,6 +1144,74 @@ func (f *StringField) Levels() ([]uint8, []uint8) {
 	return nil, nil
 }
 
+type Int64OptionalField struct {
+	parquet.OptionalField
+	vals  []int64
+	read  func(r Message) ([]int64, []uint8, []uint8)
+	write func(r *Message, vals []int64, def, rep []uint8) (int, int)
+	stats *int64optionalStats
+}
+
+func NewInt64OptionalField(read func(r Message) ([]int64, []uint8, []uint8), write func(r *Message, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+	return &Int64OptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newint64optionalStats(maxDef(types)),
+	}
+}
+
+func (f *Int64OptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int64Type, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *Int64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]int64, f.Values()-len(f.vals))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Int64OptionalField) Add(r Message) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *Int64OptionalField) Scan(r *Message) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *Int64OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
 type Int64Field struct {
 	vals []int64
 	parquet.RequiredField
@@ -860,6 +1272,204 @@ func (f *Int64Field) Add(r Message) {
 
 func (f *Int64Field) Levels() ([]uint8, []uint8) {
 	return nil, nil
+}
+
+type Int32OptionalField struct {
+	parquet.OptionalField
+	vals  []int32
+	read  func(r Message) ([]int32, []uint8, []uint8)
+	write func(r *Message, vals []int32, def, rep []uint8) (int, int)
+	stats *int32optionalStats
+}
+
+func NewInt32OptionalField(read func(r Message) ([]int32, []uint8, []uint8), write func(r *Message, vals []int32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
+	return &Int32OptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newint32optionalStats(maxDef(types)),
+	}
+}
+
+func (f *Int32OptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int32Type, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *Int32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]int32, f.Values()-len(f.vals))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Int32OptionalField) Add(r Message) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *Int32OptionalField) Scan(r *Message) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *Int32OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
+type Int32Field struct {
+	vals []int32
+	parquet.RequiredField
+	read  func(r Message) int32
+	write func(r *Message, vals []int32)
+	stats *int32stats
+}
+
+func NewInt32Field(read func(r Message) int32, write func(r *Message, vals []int32), path []string, opts ...func(*parquet.RequiredField)) *Int32Field {
+	return &Int32Field{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newInt32stats(),
+	}
+}
+
+func (f *Int32Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Int32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *Int32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]int32, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Int32Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *Int32Field) Scan(r *Message) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *Int32Field) Add(r Message) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *Int32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type Float64OptionalField struct {
+	parquet.OptionalField
+	vals  []float64
+	read  func(r Message) ([]float64, []uint8, []uint8)
+	write func(r *Message, vals []float64, def, rep []uint8) (int, int)
+	stats *float64optionalStats
+}
+
+func NewFloat64OptionalField(read func(r Message) ([]float64, []uint8, []uint8), write func(r *Message, vals []float64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float64OptionalField {
+	return &Float64OptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newfloat64optionalStats(maxDef(types)),
+	}
+}
+
+func (f *Float64OptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float64Type, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *Float64OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *Float64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]float64, f.Values()-len(f.vals))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Float64OptionalField) Add(r Message) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *Float64OptionalField) Scan(r *Message) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *Float64OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
 }
 
 type Float64Field struct {
@@ -924,6 +1534,207 @@ func (f *Float64Field) Levels() ([]uint8, []uint8) {
 	return nil, nil
 }
 
+type Float32OptionalField struct {
+	parquet.OptionalField
+	vals  []float32
+	read  func(r Message) ([]float32, []uint8, []uint8)
+	write func(r *Message, vals []float32, def, rep []uint8) (int, int)
+	stats *float32optionalStats
+}
+
+func NewFloat32OptionalField(read func(r Message) ([]float32, []uint8, []uint8), write func(r *Message, vals []float32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
+	return &Float32OptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newfloat32optionalStats(maxDef(types)),
+	}
+}
+
+func (f *Float32OptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float32Type, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *Float32OptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
+}
+
+func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]float32, f.Values()-len(f.vals))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Float32OptionalField) Add(r Message) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *Float32OptionalField) Scan(r *Message) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *Float32OptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
+type Float32Field struct {
+	vals []float32
+	parquet.RequiredField
+	read  func(r Message) float32
+	write func(r *Message, vals []float32)
+	stats *float32stats
+}
+
+func NewFloat32Field(read func(r Message) float32, write func(r *Message, vals []float32), path []string, opts ...func(*parquet.RequiredField)) *Float32Field {
+	return &Float32Field{
+		read:          read,
+		write:         write,
+		RequiredField: parquet.NewRequiredField(path, opts...),
+		stats:         newFloat32stats(),
+	}
+}
+
+func (f *Float32Field) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: Float32Type, RepetitionType: parquet.RepetitionRequired, Types: []int{0}}
+}
+
+func (f *Float32Field) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, _, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v := make([]float32, int(pg.N))
+	err = binary.Read(rr, binary.LittleEndian, &v)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *Float32Field) Write(w io.Writer, meta *parquet.Metadata) error {
+	var buf bytes.Buffer
+	for _, v := range f.vals {
+		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+			return err
+		}
+	}
+	return f.DoWrite(w, meta, buf.Bytes(), len(f.vals), f.stats)
+}
+
+func (f *Float32Field) Scan(r *Message) {
+	if len(f.vals) == 0 {
+		return
+	}
+
+	f.write(r, f.vals)
+	f.vals = f.vals[1:]
+}
+
+func (f *Float32Field) Add(r Message) {
+	v := f.read(r)
+	f.stats.add(v)
+	f.vals = append(f.vals, v)
+}
+
+func (f *Float32Field) Levels() ([]uint8, []uint8) {
+	return nil, nil
+}
+
+type BoolOptionalField struct {
+	parquet.OptionalField
+	vals  []bool
+	read  func(r Message) ([]bool, []uint8, []uint8)
+	write func(r *Message, vals []bool, defs, reps []uint8) (int, int)
+	stats *boolOptionalStats
+}
+
+func NewBoolOptionalField(read func(r Message) ([]bool, []uint8, []uint8), write func(r *Message, vals []bool, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+	return &BoolOptionalField{
+		read:          read,
+		write:         write,
+		OptionalField: parquet.NewOptionalField(path, types, opts...),
+		stats:         newBoolOptionalStats(maxDef(types)),
+	}
+}
+
+func (f *BoolOptionalField) Schema() parquet.Field {
+	return parquet.Field{Name: f.Name(), Path: f.Path(), Type: BoolType, RepetitionType: f.RepetitionType, Types: f.Types}
+}
+
+func (f *BoolOptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
+	rr, sizes, err := f.DoRead(r, pg)
+	if err != nil {
+		return err
+	}
+
+	v, err := parquet.GetBools(rr, f.Values()-len(f.vals), sizes)
+	f.vals = append(f.vals, v...)
+	return err
+}
+
+func (f *BoolOptionalField) Scan(r *Message) {
+	if len(f.Defs) == 0 {
+		return
+	}
+
+	v, l := f.write(r, f.vals, f.Defs, f.Reps)
+	f.vals = f.vals[v:]
+	f.Defs = f.Defs[l:]
+	if len(f.Reps) > 0 {
+		f.Reps = f.Reps[l:]
+	}
+}
+
+func (f *BoolOptionalField) Add(r Message) {
+	vals, defs, reps := f.read(r)
+	f.stats.add(vals, defs)
+	f.vals = append(f.vals, vals...)
+	f.Defs = append(f.Defs, defs...)
+	f.Reps = append(f.Reps, reps...)
+}
+
+func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
+	ln := len(f.vals)
+	byteNum := (ln + 7) / 8
+	rawBuf := make([]byte, byteNum)
+
+	for i := 0; i < ln; i++ {
+		if f.vals[i] {
+			rawBuf[i/8] = rawBuf[i/8] | (1 << uint32(i%8))
+		}
+	}
+
+	return f.DoWrite(w, meta, rawBuf, len(f.Defs), f.stats)
+}
+
+func (f *BoolOptionalField) Levels() ([]uint8, []uint8) {
+	return f.Defs, f.Reps
+}
+
 type BoolField struct {
 	parquet.RequiredField
 	vals  []bool
@@ -986,6 +1797,64 @@ func (f *BoolField) Levels() ([]uint8, []uint8) {
 	return nil, nil
 }
 
+type stringOptionalStats struct {
+	vals   []string
+	min    []byte
+	max    []byte
+	nils   int64
+	maxDef uint8
+}
+
+func newStringOptionalStats(d uint8) *stringOptionalStats {
+	return &stringOptionalStats{maxDef: d}
+}
+
+func (s *stringOptionalStats) add(vals []string, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < s.maxDef {
+			s.nils++
+		} else {
+			s.vals = append(s.vals, vals[i])
+			i++
+		}
+	}
+}
+
+func (s *stringOptionalStats) NullCount() *int64 {
+	return &s.nils
+}
+
+func (s *stringOptionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (s *stringOptionalStats) Min() []byte {
+	if s.min == nil {
+		s.minMax()
+	}
+	return s.min
+}
+
+func (s *stringOptionalStats) Max() []byte {
+	if s.max == nil {
+		s.minMax()
+	}
+	return s.max
+}
+
+func (s *stringOptionalStats) minMax() {
+	if len(s.vals) == 0 {
+		return
+	}
+
+	tmp := make([]string, len(s.vals))
+	copy(tmp, s.vals)
+	sort.Strings(tmp)
+	s.min = []byte(tmp[0])
+	s.max = []byte(tmp[len(tmp)-1])
+}
+
 type stringStats struct {
 	vals []string
 	min  []byte
@@ -1034,6 +1903,69 @@ func (s *stringStats) minMax() {
 	s.max = []byte(tmp[len(tmp)-1])
 }
 
+type int64optionalStats struct {
+	min     int64
+	max     int64
+	nils    int64
+	nonNils int64
+	maxDef  uint8
+}
+
+func newint64optionalStats(d uint8) *int64optionalStats {
+	return &int64optionalStats{
+		min:    int64(math.MaxInt64),
+		maxDef: d,
+	}
+}
+
+func (f *int64optionalStats) add(vals []int64, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
+
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
+	}
+}
+
+func (f *int64optionalStats) bytes(val int64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *int64optionalStats) NullCount() *int64 {
+	return &f.nils
+}
+
+func (f *int64optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *int64optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.min)
+}
+
+func (f *int64optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.max)
+}
+
 type int64stats struct {
 	min int64
 	max int64
@@ -1073,6 +2005,174 @@ func (f *int64stats) Min() []byte {
 }
 
 func (f *int64stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type int32optionalStats struct {
+	min     int32
+	max     int32
+	nils    int64
+	nonNils int64
+	maxDef  uint8
+}
+
+func newint32optionalStats(d uint8) *int32optionalStats {
+	return &int32optionalStats{
+		min:    int32(math.MaxInt32),
+		maxDef: d,
+	}
+}
+
+func (f *int32optionalStats) add(vals []int32, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
+
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
+	}
+}
+
+func (f *int32optionalStats) bytes(val int32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *int32optionalStats) NullCount() *int64 {
+	return &f.nils
+}
+
+func (f *int32optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *int32optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.min)
+}
+
+func (f *int32optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.max)
+}
+
+type int32stats struct {
+	min int32
+	max int32
+}
+
+func newInt32stats() *int32stats {
+	return &int32stats{
+		min: int32(math.MaxInt32),
+	}
+}
+
+func (i *int32stats) add(val int32) {
+	if val < i.min {
+		i.min = val
+	}
+	if val > i.max {
+		i.max = val
+	}
+}
+
+func (f *int32stats) bytes(val int32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *int32stats) NullCount() *int64 {
+	return nil
+}
+
+func (f *int32stats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *int32stats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *int32stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type float64optionalStats struct {
+	min     float64
+	max     float64
+	nils    int64
+	nonNils int64
+	maxDef  uint8
+}
+
+func newfloat64optionalStats(d uint8) *float64optionalStats {
+	return &float64optionalStats{
+		min:    float64(math.MaxFloat64),
+		maxDef: d,
+	}
+}
+
+func (f *float64optionalStats) add(vals []float64, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
+
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
+	}
+}
+
+func (f *float64optionalStats) bytes(val float64) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *float64optionalStats) NullCount() *int64 {
+	return &f.nils
+}
+
+func (f *float64optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *float64optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.min)
+}
+
+func (f *float64optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
 	return f.bytes(f.max)
 }
 
@@ -1116,6 +2216,144 @@ func (f *float64stats) Min() []byte {
 
 func (f *float64stats) Max() []byte {
 	return f.bytes(f.max)
+}
+
+type float32optionalStats struct {
+	min     float32
+	max     float32
+	nils    int64
+	nonNils int64
+	maxDef  uint8
+}
+
+func newfloat32optionalStats(d uint8) *float32optionalStats {
+	return &float32optionalStats{
+		min:    float32(math.MaxFloat32),
+		maxDef: d,
+	}
+}
+
+func (f *float32optionalStats) add(vals []float32, defs []uint8) {
+	var i int
+	for _, def := range defs {
+		if def < f.maxDef {
+			f.nils++
+		} else {
+			val := vals[i]
+			i++
+
+			f.nonNils++
+			if val < f.min {
+				f.min = val
+			}
+			if val > f.max {
+				f.max = val
+			}
+		}
+	}
+}
+
+func (f *float32optionalStats) bytes(val float32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *float32optionalStats) NullCount() *int64 {
+	return &f.nils
+}
+
+func (f *float32optionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *float32optionalStats) Min() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.min)
+}
+
+func (f *float32optionalStats) Max() []byte {
+	if f.nonNils == 0 {
+		return nil
+	}
+	return f.bytes(f.max)
+}
+
+type float32stats struct {
+	min float32
+	max float32
+}
+
+func newFloat32stats() *float32stats {
+	return &float32stats{
+		min: float32(math.MaxFloat32),
+	}
+}
+
+func (i *float32stats) add(val float32) {
+	if val < i.min {
+		i.min = val
+	}
+	if val > i.max {
+		i.max = val
+	}
+}
+
+func (f *float32stats) bytes(val float32) []byte {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, val)
+	return buf.Bytes()
+}
+
+func (f *float32stats) NullCount() *int64 {
+	return nil
+}
+
+func (f *float32stats) DistinctCount() *int64 {
+	return nil
+}
+
+func (f *float32stats) Min() []byte {
+	return f.bytes(f.min)
+}
+
+func (f *float32stats) Max() []byte {
+	return f.bytes(f.max)
+}
+
+type boolOptionalStats struct {
+	maxDef uint8
+	nils   int64
+}
+
+func newBoolOptionalStats(d uint8) *boolOptionalStats {
+	return &boolOptionalStats{maxDef: d}
+}
+
+func (b *boolOptionalStats) add(vals []bool, defs []uint8) {
+	for _, def := range defs {
+		if def < b.maxDef {
+			b.nils++
+		}
+	}
+}
+
+func (b *boolOptionalStats) NullCount() *int64 {
+	return &b.nils
+}
+
+func (b *boolOptionalStats) DistinctCount() *int64 {
+	return nil
+}
+
+func (b *boolOptionalStats) Min() []byte {
+	return nil
+}
+
+func (b *boolOptionalStats) Max() []byte {
+	return nil
 }
 
 type boolStats struct{}
