@@ -184,12 +184,13 @@ func (p *ParquetWriter) Write() error {
 	return nil
 }
 
+var par1 = []byte("PAR1")
 func (p *ParquetWriter) Close() error {
 	if err := p.meta.Footer(p.w); err != nil {
 		return err
 	}
 
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -282,7 +283,7 @@ type ParquetReader struct {
 	rows           int64
 	rowGroupCursor int64
 	rowGroupCount  int64
-	pages        map[string][]parquet.Page
+	pages          map[string][]parquet.Page
 	meta           *parquet.Metadata
 	err            error
 

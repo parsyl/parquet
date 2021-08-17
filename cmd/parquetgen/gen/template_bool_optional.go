@@ -3,12 +3,12 @@ package gen
 var boolOptionalTpl = `{{define "boolOptionalField"}}type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	read   func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
+	read   func(r {{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) ([]{{removeStar .TypeName}}, []uint8, []uint8)
 	write  func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int)
 	stats *boolOptionalStats
 }
 
-func NewBoolOptionalField(read func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+func NewBoolOptionalField(read func(r {{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		read:          read,
 		write:         write,
@@ -46,11 +46,11 @@ func (f *BoolOptionalField) Scan(r *{{.StructType}}) {
 }
 
 func (f *BoolOptionalField) Add(r {{.StructType}}) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {

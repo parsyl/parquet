@@ -29,7 +29,6 @@ const (
 
 var (
   buffpool = bytebufferpool.Pool{}
-  compresspool = bytebufferpool.Pool{}
 )
 
 type RepetitionTypes []RepetitionType
@@ -94,8 +93,8 @@ func RequiredFieldUncompressed(r *RequiredField) {
 
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
-	buff :=	compresspool.Get()
-	defer compresspool.Put(buff)
+	buff :=	buffpool.Get()
+	defer buffpool.Put(buff)
 
 	l, cl, vals, err := compress(f.compression, buff, vals)
 	if err != nil {
@@ -256,10 +255,10 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 		return err
 	}
 
-	compresBuf := compresspool.Get()
-	defer compresspool.Put(compresBuf)
+	compressed := buffpool.Get()
+	defer buffpool.Put(compressed)
 
-	l, cl, vals, err := compress(f.compression, compresBuf, buf.Bytes())
+	l, cl, vals, err := compress(f.compression, compressed, buf.Bytes())
 	if err != nil {
 		return err
 	}
