@@ -44,13 +44,16 @@ func (f *StringOptionalField) Scan(r *{{.StructType}}) {
 }
 
 func (f *StringOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {
-	buf := bytes.Buffer{}
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
 
+	bs := make([]byte, 4)
 	for _, s := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, int32(len(s))); err != nil {
+		binary.LittleEndian.PutUint32(bs, uint32(len(s)))
+		if _, err := buf.Write(bs); err != nil {
 			return err
 		}
-		buf.Write([]byte(s))
+		buf.WriteString(s)
 	}
 
 	return f.DoWrite(w, meta, buf.Bytes(), len(f.Defs), f.stats)
@@ -83,16 +86,22 @@ func (f *StringOptionalField) Levels() ([]uint8, []uint8) {
 {{end}}`
 
 var stringOptionalStatsTpl = `{{define "stringOptionalStats"}}
+
+const nilOptString = "__#NIL#__"
+
 type stringOptionalStats struct {
-	vals []string
-	min []byte
-	max []byte
+	min    string
+	max    string
 	nils int64
 	maxDef uint8
 }
 
 func newStringOptionalStats(d uint8) *stringOptionalStats {
-	return &stringOptionalStats{maxDef: d}
+	return &stringOptionalStats{
+		min:    nilOptString,
+		max:    nilOptString,
+		maxDef: d,
+	}
 }
 
 func (s *stringOptionalStats) add(vals []string, defs []uint8) {
@@ -101,7 +110,21 @@ func (s *stringOptionalStats) add(vals []string, defs []uint8) {
 		if def < s.maxDef {
 			s.nils++
 		} else {
-			s.vals = append(s.vals, vals[i])
+			val := vals[i]
+			if s.min == nilOptString {
+				s.min = val
+			} else {
+				if val < s.min {
+					s.min = val
+				}
+			}
+			if s.max == nilOptString {
+				s.max = val
+			} else {
+				if val > s.max {
+					s.max = val
+				}
+			}
 			i++
 		}
 	}
@@ -116,28 +139,16 @@ func (s *stringOptionalStats) DistinctCount() *int64 {
 }
 
 func (s *stringOptionalStats) Min() []byte {
-	if s.min == nil {
-		s.minMax()
+	if s.min == nilOptString {
+		return nil
 	}
-	return s.min
+	return []byte(s.min)
 }
 
 func (s *stringOptionalStats) Max() []byte {
-	if s.max == nil {
-		s.minMax()
+	if s.max == nilOptString {
+		return nil
 	}
-	return s.max
-}
-
-func (s *stringOptionalStats) minMax()  {
-	if len(s.vals) == 0 {
-		return
-	}
-
-	tmp := make([]string, len(s.vals))
-	copy(tmp, s.vals)
-	sort.Strings(tmp)
-	s.min = []byte(tmp[0])
-	s.max = []byte(tmp[len(tmp)-1])
+	return []byte(s.max)
 }
 {{end}}`

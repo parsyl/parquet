@@ -26,9 +26,13 @@ func (f *{{.FieldType}}) Schema() parquet.Field {
 }
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
-	var buf bytes.Buffer
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
+
+	bs := make([]byte, {{byteSize .}})
 	for _, v := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+		binary.LittleEndian.{{ putFunc . }}(bs, {{ uintFunc . }})
+		if _, err := buf.Write(bs); err != nil {
 			return err
 		}
 	}
@@ -109,10 +113,10 @@ func (f *{{removeStar .TypeName}}optionalStats) add(vals []{{removeStar .TypeNam
 	}
 }
 
-func (f *{{removeStar .TypeName}}optionalStats) bytes(val {{removeStar .TypeName}}) []byte {
-	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, val)
-	return buf.Bytes()
+func (f *{{removeStar .TypeName}}optionalStats) bytes(v {{removeStar .TypeName}}) []byte {
+	bs := make([]byte, {{byteSize .}})
+	binary.LittleEndian.{{ putFunc . }}(bs, {{ uintFunc . }})
+	return bs
 }
 
 func (f *{{removeStar .TypeName}}optionalStats) NullCount() *int64 {

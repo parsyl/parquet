@@ -9,10 +9,10 @@ var tpl = `package {{.Package}}
 import (
 	"fmt"
 	"io"
-	"bytes"
 	"strings"
 	"encoding/binary"
 
+	"github.com/valyala/bytebufferpool"
 	"github.com/parsyl/parquet"
 	sch "github.com/parsyl/parquet/schema"
 	{{.Import}}
@@ -28,6 +28,8 @@ const (
 	compressionGzip         compression = 2
 	compressionUnknown      compression = -1
 )
+
+var buffpool = bytebufferpool.Pool{}
 
 // ParquetWriter reprents a row group
 type ParquetWriter struct {

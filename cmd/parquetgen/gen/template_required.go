@@ -35,9 +35,13 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *{{.FieldType}}) Write(w io.Writer, meta *parquet.Metadata) error {
-	var buf bytes.Buffer
+	buf := buffpool.Get()
+	defer buffpool.Put(buf)
+
+	bs := make([]byte, {{byteSize .}})
 	for _, v := range f.vals {
-		if err := binary.Write(&buf, binary.LittleEndian, v); err != nil {
+		binary.LittleEndian.{{ putFunc . }}(bs, {{ uintFunc . }})
+		if _, err := buf.Write(bs); err != nil {
 			return err
 		}
 	}
@@ -85,10 +89,10 @@ func (i *{{.TypeName}}stats) add(val {{.TypeName}}) {
 	}
 }
 
-func (f *{{.TypeName}}stats) bytes(val {{.TypeName}}) []byte {
-	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, val)
-	return buf.Bytes()
+func (f *{{.TypeName}}stats) bytes(v {{.TypeName}}) []byte {
+	bs := make([]byte, {{byteSize .}})
+	binary.LittleEndian.{{ putFunc . }}(bs, {{ uintFunc . }})
+	return bs
 }
 
 func (f *{{.TypeName}}stats) NullCount() *int64 {

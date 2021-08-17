@@ -193,7 +193,7 @@ func getImport(i string) string {
 	if i == "" {
 		return ""
 	}
-	return fmt.Sprintf(`"%s"`, i)
+	return fmt.Sprintf(`. "%s"`, i)
 }
 
 type newStruct struct {
