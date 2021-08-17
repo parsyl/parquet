@@ -27,6 +27,11 @@ const (
 	Repeated RepetitionType = 2
 )
 
+var (
+  buffpool = bytebufferpool.Pool{}
+  compresspool = bytebufferpool.Pool{}
+)
+
 type RepetitionTypes []RepetitionType
 
 // MaxDef returns the largest definition level
@@ -89,7 +94,10 @@ func RequiredFieldUncompressed(r *RequiredField) {
 
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
-	l, cl, vals, err := compress(f.compression, vals)
+	buff :=	compresspool.Get()
+	defer compresspool.Put(buff)
+
+	l, cl, vals, err := compress(f.compression, buff, vals)
 	if err != nil {
 		return err
 	}
@@ -219,7 +227,6 @@ func (f *OptionalField) valsFromDefs(defs []uint8, max uint8) int {
 	return out
 }
 
-var buffpool = bytebufferpool.Pool{}
 
 // DoWrite is called by all optional field types to write the definition levels
 // and raw data to the io.Writer
@@ -245,8 +252,14 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 
 	defLen := wc.n - repLen
 
-	wc.Write(vals)
-	l, cl, vals, err := compress(f.compression, buf.Bytes())
+	if _, err = wc.Write(vals); err != nil {
+		return err
+	}
+
+	compresBuf := compresspool.Get()
+	defer compresspool.Put(compresBuf)
+
+	l, cl, vals, err := compress(f.compression, compresBuf, buf.Bytes())
 	if err != nil {
 		return err
 	}
@@ -389,15 +402,20 @@ func pageData(r io.Reader, ph *sch.PageHeader, pg Page) ([]byte, error) {
 	return data, nil
 }
 
-func compress(codec sch.CompressionCodec, vals []byte) (int, int, []byte, error) {
+func compress(codec sch.CompressionCodec, buf *bytebufferpool.ByteBuffer, vals []byte) (int, int, []byte, error) {
 	var err error
 	l := len(vals)
 	switch codec {
 	case sch.CompressionCodec_SNAPPY:
-		vals = snappy.Encode(nil, vals)
+		if v := snappy.MaxEncodedLen(len(vals)); v > cap(buf.B) {
+			buf.B = make([]byte, v)
+		} else {
+			buf.B = buf.B[:v]
+		}
+
+		vals = snappy.Encode(buf.B, vals)
 	case sch.CompressionCodec_GZIP:
-		var buf bytes.Buffer
-		zw, err := gzip.NewWriterLevel(&buf, gzip.BestSpeed)
+		zw, err := gzip.NewWriterLevel(buf, gzip.BestSpeed)
 		if err != nil {
 			return l, 0, vals, err
 		}
