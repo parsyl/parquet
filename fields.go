@@ -3,9 +3,10 @@ package parquet
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/valyala/bytebufferpool"
 	"math/bits"
 	"strings"
+
+	"github.com/valyala/bytebufferpool"
 
 	"fmt"
 
@@ -28,7 +29,7 @@ const (
 )
 
 var (
-  buffpool = bytebufferpool.Pool{}
+	buffpool = bytebufferpool.Pool{}
 )
 
 type RepetitionTypes []RepetitionType
@@ -93,7 +94,7 @@ func RequiredFieldUncompressed(r *RequiredField) {
 
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
-	buff :=	buffpool.Get()
+	buff := buffpool.Get()
 	defer buffpool.Put(buff)
 
 	l, cl, vals, err := compress(f.compression, buff, vals)
@@ -225,7 +226,6 @@ func (f *OptionalField) valsFromDefs(defs []uint8, max uint8) int {
 	}
 	return out
 }
-
 
 // DoWrite is called by all optional field types to write the definition levels
 // and raw data to the io.Writer

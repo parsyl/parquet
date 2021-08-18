@@ -45,7 +45,8 @@ func TestPackAndUnpack(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d %s", i, tc.name), func(t *testing.T) {
-			b := bitpack.Pack(tc.width, tc.ints)
+			b := make([]byte, 0, bitpack.MaxSize)
+			b = bitpack.Pack(b, tc.width, tc.ints)
 			if len(tc.bytes) > 0 {
 				assert.Equal(t, tc.bytes, b)
 			}

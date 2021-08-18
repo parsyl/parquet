@@ -76,7 +76,9 @@ func (r *RLE) writeOrAppendBitPackedRun() {
 		r.headerPointer = r.out.size() - 1
 	}
 
-	r.out.write(bitpack.Pack(int(r.bitWidth), r.valBuf))
+	tmp := make([]byte, 0, bitpack.MaxSize)
+	tmp = bitpack.Pack(tmp, int(r.bitWidth), r.valBuf)
+	r.out.write(tmp)
 	r.bufCount = 0
 	r.repeatCount = 0
 	r.groupCount++

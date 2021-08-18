@@ -125,8 +125,10 @@ func MaxPageSize(m int) func(*ParquetWriter) error {
 	}
 }
 
+var par1 = []byte("PAR1")
+
 func begin(p *ParquetWriter) error {
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -172,7 +174,9 @@ func (p *ParquetWriter) Write() error {
 		}
 	}
 
-	p.fields = Fields(p.compression)
+	for _, field := range p.fields {
+		field.Reset()
+	}
 	p.child = nil
 	p.len = 0
 
@@ -184,7 +188,6 @@ func (p *ParquetWriter) Write() error {
 	return nil
 }
 
-var par1 = []byte("PAR1")
 func (p *ParquetWriter) Close() error {
 	if err := p.meta.Footer(p.w); err != nil {
 		return err
@@ -221,6 +224,7 @@ type Field interface {
 	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
 	Levels() ([]uint8, []uint8)
+	Reset()
 }
 
 func getFields(ff []Field) map[string]Field {
