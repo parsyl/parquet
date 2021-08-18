@@ -75,10 +75,7 @@ func benchmarkParquet(b *testing.B, data []message.Message, buf *bytes.Buffer, g
 func BenchmarkWrite(b *testing.B) {
 	data := generateTestData(inputSize)
 
-	const mib = 1024 * 1024 * 1
-
 	var baseBuff bytes.Buffer
-	baseBuff.Grow(mib)
 	b.Run("base", func(b *testing.B) {
 		getWriter := func(buf *bytes.Buffer) parquetWriter {
 			writer, err := base.NewParquetWriter(&baseBuff)
@@ -92,7 +89,6 @@ func BenchmarkWrite(b *testing.B) {
 	})
 
 	var optBuff bytes.Buffer
-	optBuff.Grow(mib)
 	b.Run("opt", func(b *testing.B) {
 		getWriter := func(buf *bytes.Buffer) parquetWriter {
 			writer, err := NewParquetWriter(&optBuff)
