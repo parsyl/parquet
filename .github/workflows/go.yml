@@ -23,11 +23,3 @@ jobs:
 
     - name: Test
       run: go test -v ./...
-
-    - uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        fields: repo,author,ref
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_BACKEND_CI_WEBHOOK }}
-      if: always()
