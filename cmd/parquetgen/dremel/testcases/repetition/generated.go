@@ -53,9 +53,7 @@ func Fields(compression compression) []Field {
 	}
 }
 
-func readLinksBackwardCodes(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readLinksBackwardCodes(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Links) == 0 {
@@ -135,9 +133,7 @@ func writeLinksBackwardCodes(x *Document, vals []string, defs, reps []uint8) (in
 	return nVals, nLevels
 }
 
-func readLinksBackwardURL(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readLinksBackwardURL(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Links) == 0 {
@@ -196,9 +192,7 @@ func writeLinksBackwardURL(x *Document, vals []string, defs, reps []uint8) (int,
 	return nVals, nLevels
 }
 
-func readLinksBackwardCountries(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readLinksBackwardCountries(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Links) == 0 {
@@ -262,9 +256,7 @@ func writeLinksBackwardCountries(x *Document, vals []string, defs, reps []uint8)
 	return nVals, nLevels
 }
 
-func readLinksForwardCodes(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readLinksForwardCodes(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Links) == 0 {
@@ -335,9 +327,7 @@ func writeLinksForwardCodes(x *Document, vals []string, defs, reps []uint8) (int
 	return nVals, nLevels
 }
 
-func readLinksForwardURL(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readLinksForwardURL(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Links) == 0 {
@@ -396,9 +386,7 @@ func writeLinksForwardURL(x *Document, vals []string, defs, reps []uint8) (int, 
 	return nVals, nLevels
 }
 
-func readLinksForwardCountries(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readLinksForwardCountries(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Links) == 0 {
@@ -526,8 +514,10 @@ func MaxPageSize(m int) func(*ParquetWriter) error {
 	}
 }
 
+var par1 = []byte("PAR1")
+
 func begin(p *ParquetWriter) error {
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -590,7 +580,7 @@ func (p *ParquetWriter) Close() error {
 		return err
 	}
 
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -783,12 +773,12 @@ func (p *ParquetReader) Scan(x *Document) {
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
-	read  func(r Document) ([]string, []uint8, []uint8)
+	read  func(r Document, vals []string, def, rep []uint8) ([]string, []uint8, []uint8)
 	write func(r *Document, vals []string, def, rep []uint8) (int, int)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r Document, vals []string, def, rep []uint8) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
@@ -802,11 +792,11 @@ func (f *StringOptionalField) Schema() parquet.Field {
 }
 
 func (f *StringOptionalField) Add(r Document) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *StringOptionalField) Scan(r *Document) {

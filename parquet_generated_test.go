@@ -2083,14 +2083,14 @@ func (s *stringOptionalStats) add(vals []string, defs []uint8) {
 			s.nils++
 		} else {
 			val := vals[i]
-			if s.min == nilString {
+			if s.min == nilOptString {
 				s.min = val
 			} else {
 				if val < s.min {
 					s.min = val
 				}
 			}
-			if s.max == nilString {
+			if s.max == nilOptString {
 				s.max = val
 			} else {
 				if val > s.max {
