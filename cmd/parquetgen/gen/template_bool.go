@@ -49,7 +49,7 @@ func (f *BoolField) Scan(r *{{.StructType}}) {
 	if len(f.vals) == 0 {
 		return
 	}
-	
+
 	f.write(r, f.vals)
     f.vals = f.vals[1:]
 }

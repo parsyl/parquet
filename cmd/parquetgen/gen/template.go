@@ -174,9 +174,7 @@ func (p *ParquetWriter) Write() error {
 		}
 	}
 
-	for _, field := range p.fields {
-		field.Reset()
-	}
+	p.fields = Fields(p.compression)
 	p.child = nil
 	p.len = 0
 
@@ -224,7 +222,6 @@ type Field interface {
 	Read(r io.ReadSeeker, pg parquet.Page) error
 	Name() string
 	Levels() ([]uint8, []uint8)
-	Reset()
 }
 
 func getFields(ff []Field) map[string]Field {

@@ -803,8 +803,10 @@ func MaxPageSize(m int) func(*ParquetWriter) error {
 	}
 }
 
+var par1 = []byte("PAR1")
+
 func begin(p *ParquetWriter) error {
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -861,8 +863,6 @@ func (p *ParquetWriter) Write() error {
 	p.meta.StartRowGroup(schema...)
 	return nil
 }
-
-var par1 = []byte("PAR1")
 
 func (p *ParquetWriter) Close() error {
 	if err := p.meta.Footer(p.w); err != nil {
