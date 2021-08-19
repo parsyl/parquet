@@ -32,12 +32,15 @@ func TestRead(t *testing.T) {
 			f: fields.Field{
 				Type: "int32", Name: "ID", RepetitionType: fields.Optional,
 			},
-			result: `func readID(x Person) ([]int32, []uint8, []uint8) {
+			result: `func readID(x Person, vals []int32, defs, reps []uint8) ([]int32, []uint8, []uint8) {
 	switch {
 	case x.ID == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []int32{*x.ID}, []uint8{1}, nil
+		vals = append(vals, *x.ID)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -61,14 +64,18 @@ func TestRead(t *testing.T) {
 					{Type: "int32", Name: "Difficulty", RepetitionType: fields.Optional},
 				},
 			},
-			result: `func readHobbyDifficulty(x Person) ([]int32, []uint8, []uint8) {
+			result: `func readHobbyDifficulty(x Person, vals []int32, defs, reps []uint8) ([]int32, []uint8, []uint8) {
 	switch {
 	case x.Hobby == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Hobby.Difficulty == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	default:
-		return []int32{*x.Hobby.Difficulty}, []uint8{2}, nil
+		vals = append(vals, *x.Hobby.Difficulty)
+		defs = append(defs, 2)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -79,12 +86,15 @@ func TestRead(t *testing.T) {
 					{Type: "string", Name: "Name", RepetitionType: fields.Required},
 				},
 			},
-			result: `func readHobbyName(x Person) ([]string, []uint8, []uint8) {
+			result: `func readHobbyName(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Hobby == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []string{x.Hobby.Name}, []uint8{1}, nil
+		vals = append(vals, x.Hobby.Name)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -95,12 +105,15 @@ func TestRead(t *testing.T) {
 					{Type: "string", Name: "Name", RepetitionType: fields.Optional},
 				},
 			},
-			result: `func readHobbyName(x Person) ([]string, []uint8, []uint8) {
+			result: `func readHobbyName(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Hobby.Name == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []string{*x.Hobby.Name}, []uint8{1}, nil
+		vals = append(vals, *x.Hobby.Name)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -113,14 +126,18 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendHobbyName(x Person) ([]string, []uint8, []uint8) {
+			result: `func readFriendHobbyName(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Friend == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	default:
-		return []string{*x.Friend.Hobby.Name}, []uint8{2}, nil
+		vals = append(vals, *x.Friend.Hobby.Name)
+		defs = append(defs, 2)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -133,14 +150,18 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendHobbyName(x Person) ([]string, []uint8, []uint8) {
+			result: `func readFriendHobbyName(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Friend.Hobby == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	default:
-		return []string{*x.Friend.Hobby.Name}, []uint8{2}, nil
+		vals = append(vals, *x.Friend.Hobby.Name)
+		defs = append(defs, 2)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -153,14 +174,18 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendHobbyName(x Person) ([]string, []uint8, []uint8) {
+			result: `func readFriendHobbyName(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Friend == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Friend.Hobby == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	default:
-		return []string{x.Friend.Hobby.Name}, []uint8{2}, nil
+		vals = append(vals, x.Friend.Hobby.Name)
+		defs = append(defs, 2)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -173,16 +198,21 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendHobbyName(x Person) ([]string, []uint8, []uint8) {
+			result: `func readFriendHobbyName(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Friend == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Friend.Hobby == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name == nil:
-		return nil, []uint8{2}, nil
+		defs = append(defs, 2)
+		return vals, defs, reps
 	default:
-		return []string{*x.Friend.Hobby.Name}, []uint8{3}, nil
+		vals = append(vals, *x.Friend.Hobby.Name)
+		defs = append(defs, 3)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -197,18 +227,24 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendHobbyNameFirst(x Person) ([]string, []uint8, []uint8) {
+			result: `func readFriendHobbyNameFirst(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Friend == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Friend.Hobby == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name == nil:
-		return nil, []uint8{2}, nil
+		defs = append(defs, 2)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name.First == nil:
-		return nil, []uint8{3}, nil
+		defs = append(defs, 3)
+		return vals, defs, reps
 	default:
-		return []string{*x.Friend.Hobby.Name.First}, []uint8{4}, nil
+		vals = append(vals, *x.Friend.Hobby.Name.First)
+		defs = append(defs, 4)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -223,16 +259,21 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendHobbyNameFirst(x Person) ([]string, []uint8, []uint8) {
+			result: `func readFriendHobbyNameFirst(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Friend.Hobby == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name.First == nil:
-		return nil, []uint8{2}, nil
+		defs = append(defs, 2)
+		return vals, defs, reps
 	default:
-		return []string{*x.Friend.Hobby.Name.First}, []uint8{3}, nil
+		vals = append(vals, *x.Friend.Hobby.Name.First)
+		defs = append(defs, 3)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -247,16 +288,21 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendHobbyNameFirst(x Person) ([]string, []uint8, []uint8) {
+			result: `func readFriendHobbyNameFirst(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.Friend == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	case x.Friend.Hobby == nil:
-		return nil, []uint8{1}, nil
+		defs = append(defs, 1)
+		return vals, defs, reps
 	case x.Friend.Hobby.Name == nil:
-		return nil, []uint8{2}, nil
+		defs = append(defs, 2)
+		return vals, defs, reps
 	default:
-		return []string{x.Friend.Hobby.Name.First}, []uint8{3}, nil
+		vals = append(vals, x.Friend.Hobby.Name.First)
+		defs = append(defs, 3)
+		return vals, defs, reps
 	}
 }`,
 		},
@@ -265,9 +311,7 @@ func TestRead(t *testing.T) {
 			f: fields.Field{
 				Type: "string", Name: "Friends", RepetitionType: fields.Repeated,
 			},
-			result: `func readFriends(x Person) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+			result: `func readFriends(x Person, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Friends) == 0 {
@@ -295,9 +339,7 @@ func TestRead(t *testing.T) {
 					{Type: "int64", Name: "Forward", RepetitionType: fields.Repeated},
 				},
 			},
-			result: `func readLinkForward(x Document) ([]int64, []uint8, []uint8) {
-	var vals []int64
-	var defs, reps []uint8
+			result: `func readLinkForward(x Document, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8) {
 	var lastRep uint8
 
 	if x.Link == nil {
@@ -332,9 +374,7 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+			result: `func readNamesLanguagesCode(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Names) == 0 {
@@ -374,9 +414,7 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+			result: `func readNamesLanguagesCountry(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Names) == 0 {
@@ -419,9 +457,7 @@ func TestRead(t *testing.T) {
 					{Type: "string", Name: "URL", RepetitionType: fields.Optional},
 				},
 			},
-			result: `func readNamesURL(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+			result: `func readNamesURL(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Names) == 0 {
@@ -456,9 +492,7 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendsNameLast(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+			result: `func readFriendsNameLast(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Friends) == 0 {
@@ -488,9 +522,7 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readFriendNameAliases(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+			result: `func readFriendNameAliases(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Friend.Name.Aliases) == 0 {
@@ -522,9 +554,7 @@ func TestRead(t *testing.T) {
 					}},
 				},
 			},
-			result: `func readOtherFriendsNameMiddle(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+			result: `func readOtherFriendsNameMiddle(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if x.Other == nil {

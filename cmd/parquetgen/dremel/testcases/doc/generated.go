@@ -63,9 +63,7 @@ func writeDocID(x *Document, vals []int64) {
 	x.DocID = vals[0]
 }
 
-func readLinksBackward(x Document) ([]int64, []uint8, []uint8) {
-	var vals []int64
-	var defs, reps []uint8
+func readLinksBackward(x Document, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8) {
 	var lastRep uint8
 
 	if x.Links == nil {
@@ -121,9 +119,7 @@ func writeLinksBackward(x *Document, vals []int64, defs, reps []uint8) (int, int
 	return nVals, nLevels
 }
 
-func readLinksForward(x Document) ([]int64, []uint8, []uint8) {
-	var vals []int64
-	var defs, reps []uint8
+func readLinksForward(x Document, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8) {
 	var lastRep uint8
 
 	if x.Links == nil {
@@ -172,9 +168,7 @@ func writeLinksForward(x *Document, vals []int64, defs, reps []uint8) (int, int)
 	return nVals, nLevels
 }
 
-func readNamesLanguagesCode(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readNamesLanguagesCode(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Names) == 0 {
@@ -235,9 +229,7 @@ func writeNamesLanguagesCode(x *Document, vals []string, defs, reps []uint8) (in
 	return nVals, nLevels
 }
 
-func readNamesLanguagesCountry(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readNamesLanguagesCountry(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Names) == 0 {
@@ -296,9 +288,7 @@ func writeNamesLanguagesCountry(x *Document, vals []string, defs, reps []uint8) 
 	return nVals, nLevels
 }
 
-func readNamesURL(x Document) ([]string, []uint8, []uint8) {
-	var vals []string
-	var defs, reps []uint8
+func readNamesURL(x Document, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	var lastRep uint8
 
 	if len(x.Names) == 0 {
@@ -411,8 +401,10 @@ func MaxPageSize(m int) func(*ParquetWriter) error {
 	}
 }
 
+var par1 = []byte("PAR1")
+
 func begin(p *ParquetWriter) error {
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -475,7 +467,7 @@ func (p *ParquetWriter) Close() error {
 		return err
 	}
 
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -734,12 +726,12 @@ func (f *Int64Field) Levels() ([]uint8, []uint8) {
 type Int64OptionalField struct {
 	parquet.OptionalField
 	vals  []int64
-	read  func(r Document) ([]int64, []uint8, []uint8)
-	write func(r *Document, vals []int64, def, rep []uint8) (int, int)
+	read  func(r Document, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8)
+	write func(r *Document, vals []int64, defs, reps []uint8) (int, int)
 	stats *int64optionalStats
 }
 
-func NewInt64OptionalField(read func(r Document) ([]int64, []uint8, []uint8), write func(r *Document, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+func NewInt64OptionalField(read func(r Document, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8), write func(r *Document, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
 	return &Int64OptionalField{
 		read:          read,
 		write:         write,
@@ -779,11 +771,11 @@ func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int64OptionalField) Add(r Document) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *Int64OptionalField) Scan(r *Document) {
@@ -806,12 +798,12 @@ func (f *Int64OptionalField) Levels() ([]uint8, []uint8) {
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
-	read  func(r Document) ([]string, []uint8, []uint8)
+	read  func(r Document, vals []string, def, rep []uint8) ([]string, []uint8, []uint8)
 	write func(r *Document, vals []string, def, rep []uint8) (int, int)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r Document) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r Document, vals []string, def, rep []uint8) ([]string, []uint8, []uint8), write func(r *Document, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
@@ -825,11 +817,11 @@ func (f *StringOptionalField) Schema() parquet.Field {
 }
 
 func (f *StringOptionalField) Add(r Document) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *StringOptionalField) Scan(r *Document) {

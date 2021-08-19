@@ -3,9 +3,10 @@ package parquet
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/valyala/bytebufferpool"
 	"math/bits"
 	"strings"
+
+	"github.com/valyala/bytebufferpool"
 
 	"fmt"
 
@@ -28,8 +29,7 @@ const (
 )
 
 var (
-  buffpool = bytebufferpool.Pool{}
-  compresspool = bytebufferpool.Pool{}
+	buffpool = bytebufferpool.Pool{}
 )
 
 type RepetitionTypes []RepetitionType
@@ -94,8 +94,8 @@ func RequiredFieldUncompressed(r *RequiredField) {
 
 // DoWrite writes the actual raw data.
 func (f *RequiredField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
-	buff :=	compresspool.Get()
-	defer compresspool.Put(buff)
+	buff := buffpool.Get()
+	defer buffpool.Put(buff)
 
 	l, cl, vals, err := compress(f.compression, buff, vals)
 	if err != nil {
@@ -227,7 +227,6 @@ func (f *OptionalField) valsFromDefs(defs []uint8, max uint8) int {
 	return out
 }
 
-
 // DoWrite is called by all optional field types to write the definition levels
 // and raw data to the io.Writer
 func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count int, stats Stats) error {
@@ -256,10 +255,10 @@ func (f *OptionalField) DoWrite(w io.Writer, meta *Metadata, vals []byte, count 
 		return err
 	}
 
-	compresBuf := compresspool.Get()
-	defer compresspool.Put(compresBuf)
+	compressed := buffpool.Get()
+	defer buffpool.Put(compressed)
 
-	l, cl, vals, err := compress(f.compression, compresBuf, buf.Bytes())
+	l, cl, vals, err := compress(f.compression, compressed, buf.Bytes())
 	if err != nil {
 		return err
 	}

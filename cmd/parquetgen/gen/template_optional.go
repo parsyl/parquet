@@ -7,12 +7,12 @@ var optionalNumericTpl = `{{define "optionalField"}}
 type {{.FieldType}} struct {
 	parquet.OptionalField
 	vals  []{{removeStar .TypeName}}
-	read   func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8)
-	write  func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, def, rep []uint8) (int, int)
+	read   func(r {{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) ([]{{removeStar .TypeName}}, []uint8, []uint8)
+	write  func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int)
 	stats *{{removeStar .TypeName}}optionalStats
 }
 
-func New{{.FieldType}}(read func(r {{.StructType}}) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
+func New{{.FieldType}}(read func(r {{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) ([]{{removeStar .TypeName}}, []uint8, []uint8), write func(r *{{.StructType}}, vals []{{removeStar .TypeName}}, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *{{.FieldType}} {
 	return &{{.FieldType}}{
 		read:          read,
 		write:         write,
@@ -52,11 +52,11 @@ func (f *{{.FieldType}}) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *{{.FieldType}}) Add(r {{.StructType}}) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *{{.FieldType}}) Scan(r *{{.StructType}}) {
@@ -108,7 +108,7 @@ func (f *{{removeStar .TypeName}}optionalStats) add(vals []{{removeStar .TypeNam
 			}
 			if val > f.max {
 				f.max = val
-			}			
+			}
 		}
 	}
 }

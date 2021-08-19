@@ -18,7 +18,8 @@ func readOptional(f fields.Field) string {
 	n := f.MaxDef()
 	for def := 0; def < n; def++ {
 		out += fmt.Sprintf(`case x.%s == nil:
-			return nil, []uint8{%d}, nil
+			defs = append(defs, %d)
+			return vals, defs, reps
 	`, nilField(def, f), def)
 	}
 
@@ -29,13 +30,15 @@ func readOptional(f fields.Field) string {
 	}
 
 	out += fmt.Sprintf(`	default:
-			return []%s{%sx.%s}, []uint8{%d}, nil`, cleanTypeName(f.Type), ptr, nilField(n, f), n)
+			vals = append(vals, %sx.%s)
+			defs = append(defs, %d)
+			return vals, defs, reps`, ptr, nilField(n, f), n)
 
-	return fmt.Sprintf(`func read%s(x %s) ([]%s, []uint8, []uint8) {
+	return fmt.Sprintf(`func read%s(x %s, vals []%s, defs, reps []uint8) ([]%s, []uint8, []uint8) {
 		switch {
 		%s
 		}
-	}`, strings.Join(f.FieldNames(), ""), f.StructType(), cleanTypeName(f.Type), out)
+	}`, strings.Join(f.FieldNames(), ""), f.StructType(), cleanTypeName(f.Type), cleanTypeName(f.Type), out)
 }
 
 func cleanTypeName(s string) string {

@@ -2,11 +2,12 @@ package performance
 
 import (
 	"bytes"
+	"math/rand"
+	"testing"
+
 	"github.com/bxcodec/faker/v3"
 	"github.com/parsyl/parquet/performance/base"
 	"github.com/parsyl/parquet/performance/message"
-	"math/rand"
-	"testing"
 )
 
 const (

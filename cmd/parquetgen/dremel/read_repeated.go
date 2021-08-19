@@ -60,9 +60,7 @@ type readClause struct {
 }
 
 func readRepeated(f fields.Field) string {
-	return fmt.Sprintf(`func read%s(x %s) ([]%s, []uint8, []uint8) {
-	var vals []%s
-	var defs, reps []uint8
+	return fmt.Sprintf(`func read%s(x %s, vals []%s, defs, reps []uint8) ([]%s, []uint8, []uint8) {
 	var lastRep uint8
 
 	%s

@@ -89,12 +89,15 @@ func Fields(compression compression) []Field {
 	}
 }
 
-func readColStr0(x Message) ([]string, []uint8, []uint8) {
+func readColStr0(x Message, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.ColStr0 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []string{*x.ColStr0}, []uint8{1}, nil
+		vals = append(vals, *x.ColStr0)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -117,12 +120,15 @@ func writeColStr1(x *Message, vals []string) {
 	x.ColStr1 = vals[0]
 }
 
-func readColStr2(x Message) ([]string, []uint8, []uint8) {
+func readColStr2(x Message, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.ColStr2 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []string{*x.ColStr2}, []uint8{1}, nil
+		vals = append(vals, *x.ColStr2)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -145,12 +151,15 @@ func writeColStr3(x *Message, vals []string) {
 	x.ColStr3 = vals[0]
 }
 
-func readColStr4(x Message) ([]string, []uint8, []uint8) {
+func readColStr4(x Message, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.ColStr4 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []string{*x.ColStr4}, []uint8{1}, nil
+		vals = append(vals, *x.ColStr4)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -173,12 +182,15 @@ func writeColStr5(x *Message, vals []string) {
 	x.ColStr5 = vals[0]
 }
 
-func readColStr6(x Message) ([]string, []uint8, []uint8) {
+func readColStr6(x Message, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.ColStr6 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []string{*x.ColStr6}, []uint8{1}, nil
+		vals = append(vals, *x.ColStr6)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -201,12 +213,15 @@ func writeColStr7(x *Message, vals []string) {
 	x.ColStr7 = vals[0]
 }
 
-func readColStr8(x Message) ([]string, []uint8, []uint8) {
+func readColStr8(x Message, vals []string, defs, reps []uint8) ([]string, []uint8, []uint8) {
 	switch {
 	case x.ColStr8 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []string{*x.ColStr8}, []uint8{1}, nil
+		vals = append(vals, *x.ColStr8)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -229,12 +244,15 @@ func writeColStr9(x *Message, vals []string) {
 	x.ColStr9 = vals[0]
 }
 
-func readColInt0(x Message) ([]int64, []uint8, []uint8) {
+func readColInt0(x Message, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8) {
 	switch {
 	case x.ColInt0 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []int64{*x.ColInt0}, []uint8{1}, nil
+		vals = append(vals, *x.ColInt0)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -257,12 +275,15 @@ func writeColInt1(x *Message, vals []int64) {
 	x.ColInt1 = vals[0]
 }
 
-func readColInt2(x Message) ([]int64, []uint8, []uint8) {
+func readColInt2(x Message, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8) {
 	switch {
 	case x.ColInt2 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []int64{*x.ColInt2}, []uint8{1}, nil
+		vals = append(vals, *x.ColInt2)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -285,12 +306,15 @@ func writeColInt3(x *Message, vals []int64) {
 	x.ColInt3 = vals[0]
 }
 
-func readColInt4(x Message) ([]int64, []uint8, []uint8) {
+func readColInt4(x Message, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8) {
 	switch {
 	case x.ColInt4 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []int64{*x.ColInt4}, []uint8{1}, nil
+		vals = append(vals, *x.ColInt4)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -305,12 +329,15 @@ func writeColInt4(x *Message, vals []int64, defs, reps []uint8) (int, int) {
 	return 0, 1
 }
 
-func readColInt32_0(x Message) ([]int32, []uint8, []uint8) {
+func readColInt32_0(x Message, vals []int32, defs, reps []uint8) ([]int32, []uint8, []uint8) {
 	switch {
 	case x.ColInt32_0 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []int32{*x.ColInt32_0}, []uint8{1}, nil
+		vals = append(vals, *x.ColInt32_0)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -333,12 +360,15 @@ func writeColInt32_1(x *Message, vals []int32) {
 	x.ColInt32_1 = vals[0]
 }
 
-func readColInt32_2(x Message) ([]int32, []uint8, []uint8) {
+func readColInt32_2(x Message, vals []int32, defs, reps []uint8) ([]int32, []uint8, []uint8) {
 	switch {
 	case x.ColInt32_2 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []int32{*x.ColInt32_2}, []uint8{1}, nil
+		vals = append(vals, *x.ColInt32_2)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -361,12 +391,15 @@ func writeColInt32_3(x *Message, vals []int32) {
 	x.ColInt32_3 = vals[0]
 }
 
-func readColInt32_4(x Message) ([]int32, []uint8, []uint8) {
+func readColInt32_4(x Message, vals []int32, defs, reps []uint8) ([]int32, []uint8, []uint8) {
 	switch {
 	case x.ColInt32_4 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []int32{*x.ColInt32_4}, []uint8{1}, nil
+		vals = append(vals, *x.ColInt32_4)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -381,12 +414,15 @@ func writeColInt32_4(x *Message, vals []int32, defs, reps []uint8) (int, int) {
 	return 0, 1
 }
 
-func readColFloat0(x Message) ([]float64, []uint8, []uint8) {
+func readColFloat0(x Message, vals []float64, defs, reps []uint8) ([]float64, []uint8, []uint8) {
 	switch {
 	case x.ColFloat0 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []float64{*x.ColFloat0}, []uint8{1}, nil
+		vals = append(vals, *x.ColFloat0)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -409,12 +445,15 @@ func writeColFloat1(x *Message, vals []float64) {
 	x.ColFloat1 = vals[0]
 }
 
-func readColFloat2(x Message) ([]float64, []uint8, []uint8) {
+func readColFloat2(x Message, vals []float64, defs, reps []uint8) ([]float64, []uint8, []uint8) {
 	switch {
 	case x.ColFloat2 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []float64{*x.ColFloat2}, []uint8{1}, nil
+		vals = append(vals, *x.ColFloat2)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -437,12 +476,15 @@ func writeColFloat3(x *Message, vals []float64) {
 	x.ColFloat3 = vals[0]
 }
 
-func readColFloat4(x Message) ([]float64, []uint8, []uint8) {
+func readColFloat4(x Message, vals []float64, defs, reps []uint8) ([]float64, []uint8, []uint8) {
 	switch {
 	case x.ColFloat4 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []float64{*x.ColFloat4}, []uint8{1}, nil
+		vals = append(vals, *x.ColFloat4)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -457,12 +499,15 @@ func writeColFloat4(x *Message, vals []float64, defs, reps []uint8) (int, int) {
 	return 0, 1
 }
 
-func readColFloat32_0(x Message) ([]float32, []uint8, []uint8) {
+func readColFloat32_0(x Message, vals []float32, defs, reps []uint8) ([]float32, []uint8, []uint8) {
 	switch {
 	case x.ColFloat32_0 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []float32{*x.ColFloat32_0}, []uint8{1}, nil
+		vals = append(vals, *x.ColFloat32_0)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -485,12 +530,15 @@ func writeColFloat32_1(x *Message, vals []float32) {
 	x.ColFloat32_1 = vals[0]
 }
 
-func readColFloat32_2(x Message) ([]float32, []uint8, []uint8) {
+func readColFloat32_2(x Message, vals []float32, defs, reps []uint8) ([]float32, []uint8, []uint8) {
 	switch {
 	case x.ColFloat32_2 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []float32{*x.ColFloat32_2}, []uint8{1}, nil
+		vals = append(vals, *x.ColFloat32_2)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -513,12 +561,15 @@ func writeColFloat32_3(x *Message, vals []float32) {
 	x.ColFloat32_3 = vals[0]
 }
 
-func readColFloat32_4(x Message) ([]float32, []uint8, []uint8) {
+func readColFloat32_4(x Message, vals []float32, defs, reps []uint8) ([]float32, []uint8, []uint8) {
 	switch {
 	case x.ColFloat32_4 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []float32{*x.ColFloat32_4}, []uint8{1}, nil
+		vals = append(vals, *x.ColFloat32_4)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -533,12 +584,15 @@ func writeColFloat32_4(x *Message, vals []float32, defs, reps []uint8) (int, int
 	return 0, 1
 }
 
-func readColBool0(x Message) ([]bool, []uint8, []uint8) {
+func readColBool0(x Message, vals []bool, defs, reps []uint8) ([]bool, []uint8, []uint8) {
 	switch {
 	case x.ColBool0 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []bool{*x.ColBool0}, []uint8{1}, nil
+		vals = append(vals, *x.ColBool0)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -561,12 +615,15 @@ func writeColBool1(x *Message, vals []bool) {
 	x.ColBool1 = vals[0]
 }
 
-func readColBool2(x Message) ([]bool, []uint8, []uint8) {
+func readColBool2(x Message, vals []bool, defs, reps []uint8) ([]bool, []uint8, []uint8) {
 	switch {
 	case x.ColBool2 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []bool{*x.ColBool2}, []uint8{1}, nil
+		vals = append(vals, *x.ColBool2)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -589,12 +646,15 @@ func writeColBool3(x *Message, vals []bool) {
 	x.ColBool3 = vals[0]
 }
 
-func readColBool4(x Message) ([]bool, []uint8, []uint8) {
+func readColBool4(x Message, vals []bool, defs, reps []uint8) ([]bool, []uint8, []uint8) {
 	switch {
 	case x.ColBool4 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []bool{*x.ColBool4}, []uint8{1}, nil
+		vals = append(vals, *x.ColBool4)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -617,12 +677,15 @@ func writeColBool5(x *Message, vals []bool) {
 	x.ColBool5 = vals[0]
 }
 
-func readColBool6(x Message) ([]bool, []uint8, []uint8) {
+func readColBool6(x Message, vals []bool, defs, reps []uint8) ([]bool, []uint8, []uint8) {
 	switch {
 	case x.ColBool6 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []bool{*x.ColBool6}, []uint8{1}, nil
+		vals = append(vals, *x.ColBool6)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -645,12 +708,15 @@ func writeColBool7(x *Message, vals []bool) {
 	x.ColBool7 = vals[0]
 }
 
-func readColBool8(x Message) ([]bool, []uint8, []uint8) {
+func readColBool8(x Message, vals []bool, defs, reps []uint8) ([]bool, []uint8, []uint8) {
 	switch {
 	case x.ColBool8 == nil:
-		return nil, []uint8{0}, nil
+		defs = append(defs, 0)
+		return vals, defs, reps
 	default:
-		return []bool{*x.ColBool8}, []uint8{1}, nil
+		vals = append(vals, *x.ColBool8)
+		defs = append(defs, 1)
+		return vals, defs, reps
 	}
 }
 
@@ -737,8 +803,10 @@ func MaxPageSize(m int) func(*ParquetWriter) error {
 	}
 }
 
+var par1 = []byte("PAR1")
+
 func begin(p *ParquetWriter) error {
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -801,7 +869,7 @@ func (p *ParquetWriter) Close() error {
 		return err
 	}
 
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -994,12 +1062,12 @@ func (p *ParquetReader) Scan(x *Message) {
 type StringOptionalField struct {
 	parquet.OptionalField
 	vals  []string
-	read  func(r Message) ([]string, []uint8, []uint8)
+	read  func(r Message, vals []string, def, rep []uint8) ([]string, []uint8, []uint8)
 	write func(r *Message, vals []string, def, rep []uint8) (int, int)
 	stats *stringOptionalStats
 }
 
-func NewStringOptionalField(read func(r Message) ([]string, []uint8, []uint8), write func(r *Message, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
+func NewStringOptionalField(read func(r Message, vals []string, def, rep []uint8) ([]string, []uint8, []uint8), write func(r *Message, vals []string, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *StringOptionalField {
 	return &StringOptionalField{
 		read:          read,
 		write:         write,
@@ -1013,11 +1081,11 @@ func (f *StringOptionalField) Schema() parquet.Field {
 }
 
 func (f *StringOptionalField) Add(r Message) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *StringOptionalField) Scan(r *Message) {
@@ -1154,12 +1222,12 @@ func (f *StringField) Levels() ([]uint8, []uint8) {
 type Int64OptionalField struct {
 	parquet.OptionalField
 	vals  []int64
-	read  func(r Message) ([]int64, []uint8, []uint8)
-	write func(r *Message, vals []int64, def, rep []uint8) (int, int)
+	read  func(r Message, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8)
+	write func(r *Message, vals []int64, defs, reps []uint8) (int, int)
 	stats *int64optionalStats
 }
 
-func NewInt64OptionalField(read func(r Message) ([]int64, []uint8, []uint8), write func(r *Message, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
+func NewInt64OptionalField(read func(r Message, vals []int64, defs, reps []uint8) ([]int64, []uint8, []uint8), write func(r *Message, vals []int64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int64OptionalField {
 	return &Int64OptionalField{
 		read:          read,
 		write:         write,
@@ -1199,11 +1267,11 @@ func (f *Int64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int64OptionalField) Add(r Message) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *Int64OptionalField) Scan(r *Message) {
@@ -1292,12 +1360,12 @@ func (f *Int64Field) Levels() ([]uint8, []uint8) {
 type Int32OptionalField struct {
 	parquet.OptionalField
 	vals  []int32
-	read  func(r Message) ([]int32, []uint8, []uint8)
-	write func(r *Message, vals []int32, def, rep []uint8) (int, int)
+	read  func(r Message, vals []int32, defs, reps []uint8) ([]int32, []uint8, []uint8)
+	write func(r *Message, vals []int32, defs, reps []uint8) (int, int)
 	stats *int32optionalStats
 }
 
-func NewInt32OptionalField(read func(r Message) ([]int32, []uint8, []uint8), write func(r *Message, vals []int32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
+func NewInt32OptionalField(read func(r Message, vals []int32, defs, reps []uint8) ([]int32, []uint8, []uint8), write func(r *Message, vals []int32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Int32OptionalField {
 	return &Int32OptionalField{
 		read:          read,
 		write:         write,
@@ -1337,11 +1405,11 @@ func (f *Int32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Int32OptionalField) Add(r Message) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *Int32OptionalField) Scan(r *Message) {
@@ -1430,12 +1498,12 @@ func (f *Int32Field) Levels() ([]uint8, []uint8) {
 type Float64OptionalField struct {
 	parquet.OptionalField
 	vals  []float64
-	read  func(r Message) ([]float64, []uint8, []uint8)
-	write func(r *Message, vals []float64, def, rep []uint8) (int, int)
+	read  func(r Message, vals []float64, defs, reps []uint8) ([]float64, []uint8, []uint8)
+	write func(r *Message, vals []float64, defs, reps []uint8) (int, int)
 	stats *float64optionalStats
 }
 
-func NewFloat64OptionalField(read func(r Message) ([]float64, []uint8, []uint8), write func(r *Message, vals []float64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float64OptionalField {
+func NewFloat64OptionalField(read func(r Message, vals []float64, defs, reps []uint8) ([]float64, []uint8, []uint8), write func(r *Message, vals []float64, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float64OptionalField {
 	return &Float64OptionalField{
 		read:          read,
 		write:         write,
@@ -1475,11 +1543,11 @@ func (f *Float64OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Float64OptionalField) Add(r Message) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *Float64OptionalField) Scan(r *Message) {
@@ -1568,12 +1636,12 @@ func (f *Float64Field) Levels() ([]uint8, []uint8) {
 type Float32OptionalField struct {
 	parquet.OptionalField
 	vals  []float32
-	read  func(r Message) ([]float32, []uint8, []uint8)
-	write func(r *Message, vals []float32, def, rep []uint8) (int, int)
+	read  func(r Message, vals []float32, defs, reps []uint8) ([]float32, []uint8, []uint8)
+	write func(r *Message, vals []float32, defs, reps []uint8) (int, int)
 	stats *float32optionalStats
 }
 
-func NewFloat32OptionalField(read func(r Message) ([]float32, []uint8, []uint8), write func(r *Message, vals []float32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
+func NewFloat32OptionalField(read func(r Message, vals []float32, defs, reps []uint8) ([]float32, []uint8, []uint8), write func(r *Message, vals []float32, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *Float32OptionalField {
 	return &Float32OptionalField{
 		read:          read,
 		write:         write,
@@ -1613,11 +1681,11 @@ func (f *Float32OptionalField) Read(r io.ReadSeeker, pg parquet.Page) error {
 }
 
 func (f *Float32OptionalField) Add(r Message) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *Float32OptionalField) Scan(r *Message) {
@@ -1706,12 +1774,12 @@ func (f *Float32Field) Levels() ([]uint8, []uint8) {
 type BoolOptionalField struct {
 	parquet.OptionalField
 	vals  []bool
-	read  func(r Message) ([]bool, []uint8, []uint8)
+	read  func(r Message, vals []bool, defs, reps []uint8) ([]bool, []uint8, []uint8)
 	write func(r *Message, vals []bool, defs, reps []uint8) (int, int)
 	stats *boolOptionalStats
 }
 
-func NewBoolOptionalField(read func(r Message) ([]bool, []uint8, []uint8), write func(r *Message, vals []bool, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
+func NewBoolOptionalField(read func(r Message, vals []bool, defs, reps []uint8) ([]bool, []uint8, []uint8), write func(r *Message, vals []bool, defs, reps []uint8) (int, int), path []string, types []int, opts ...func(*parquet.OptionalField)) *BoolOptionalField {
 	return &BoolOptionalField{
 		read:          read,
 		write:         write,
@@ -1749,11 +1817,11 @@ func (f *BoolOptionalField) Scan(r *Message) {
 }
 
 func (f *BoolOptionalField) Add(r Message) {
-	vals, defs, reps := f.read(r)
-	f.stats.add(vals, defs)
-	f.vals = append(f.vals, vals...)
-	f.Defs = append(f.Defs, defs...)
-	f.Reps = append(f.Reps, reps...)
+	vals, defs, reps := f.read(r, f.vals, f.Defs, f.Reps)
+	f.stats.add(vals[len(f.vals):], defs[len(f.Defs):])
+	f.vals = vals
+	f.Defs = defs
+	f.Reps = reps
 }
 
 func (f *BoolOptionalField) Write(w io.Writer, meta *parquet.Metadata) error {

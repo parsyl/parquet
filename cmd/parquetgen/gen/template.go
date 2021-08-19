@@ -125,8 +125,10 @@ func MaxPageSize(m int) func(*ParquetWriter) error {
 	}
 }
 
+var par1 = []byte("PAR1")
+
 func begin(p *ParquetWriter) error {
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -189,7 +191,7 @@ func (p *ParquetWriter) Close() error {
 		return err
 	}
 
-	_, err := p.w.Write([]byte("PAR1"))
+	_, err := p.w.Write(par1)
 	return err
 }
 
@@ -282,7 +284,7 @@ type ParquetReader struct {
 	rows           int64
 	rowGroupCursor int64
 	rowGroupCount  int64
-	pages        map[string][]parquet.Page
+	pages          map[string][]parquet.Page
 	meta           *parquet.Metadata
 	err            error
 
