@@ -41,17 +41,6 @@ var (
 			}
 			return strings.Join(names, ", ")
 		},
-		"imports": func(fields []fields.Field) []string {
-			var out []string
-			var intFound bool
-			for _, f := range fields {
-				if !intFound && strings.Contains(f.Type, "int") {
-					intFound = true
-					out = append(out, `"math"`)
-				}
-			}
-			return out
-		},
 		"maxType": func(f fields.Field) string {
 			var out string
 			switch f.Type {

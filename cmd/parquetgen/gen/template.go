@@ -11,14 +11,15 @@ import (
 	"io"
 	"strings"
 	"encoding/binary"
+	"math"
 
 	"github.com/valyala/bytebufferpool"
 	"github.com/parsyl/parquet"
 	sch "github.com/parsyl/parquet/schema"
-	{{.Import}}
-	{{range imports .Parent.Fields}}{{.}}
-	{{end}}
+	
 )
+
+var _ = math.MaxInt32 // to avoid unused import
 
 type compression int
 
