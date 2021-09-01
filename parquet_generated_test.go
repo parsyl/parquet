@@ -6,14 +6,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"github.com/parsyl/parquet"
 	sch "github.com/parsyl/parquet/schema"
 	"github.com/valyala/bytebufferpool"
-
-	"math"
 )
+
+var _ = math.MaxInt32 // to avoid unused import
 
 type compression int
 
