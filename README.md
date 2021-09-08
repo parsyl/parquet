@@ -107,10 +107,10 @@ to snappy:
 w, err := NewParquetWriter(&buf, MaxPageSize(10000), Snappy)
 ```
 
-See [this](./examples/people) for a complete example of how to generate the code
+See [this](./_examples/people) for a complete example of how to generate the code
 based on an existing struct.
 
-See [this](./examples/via_parquet) for a complete example of how to generate the code
+See [this](./_examples/via_parquet) for a complete example of how to generate the code
 based on an existing parquet file.
 
 ## Supported Types 
