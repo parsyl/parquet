@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/parsyl/parquet/internal/bitpack"
+	"github.com/inigolabs/parquet/internal/bitpack"
 	"github.com/stretchr/testify/assert"
 )
 

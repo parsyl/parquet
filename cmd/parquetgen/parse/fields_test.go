@@ -6,9 +6,9 @@ import (
 	"log"
 	"testing"
 
-	"github.com/parsyl/parquet/cmd/parquetgen/fields"
-	"github.com/parsyl/parquet/cmd/parquetgen/parse"
-	sch "github.com/parsyl/parquet/schema"
+	"github.com/inigolabs/parquet/cmd/parquetgen/fields"
+	"github.com/inigolabs/parquet/cmd/parquetgen/parse"
+	sch "github.com/inigolabs/parquet/schema"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,9 +5,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/bxcodec/faker/v3"
-	"github.com/parsyl/parquet/performance/base"
-	"github.com/parsyl/parquet/performance/message"
+	"github.com/inigolabs/parquet/performance/base"
+	"github.com/inigolabs/parquet/performance/message"
 )
 
 const (

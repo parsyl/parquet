@@ -13,8 +13,8 @@ import (
 	"io"
 
 	"github.com/golang/snappy"
-	"github.com/parsyl/parquet/internal/rle"
-	sch "github.com/parsyl/parquet/schema"
+	"github.com/inigolabs/parquet/internal/rle"
+	sch "github.com/inigolabs/parquet/schema"
 )
 
 // RepetitionType is an enum of the possible

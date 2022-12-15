@@ -1,9 +1,9 @@
 package message
 
 // base
-// go run cmd/parquetgen/main.go -input performance/message/message.go -type Message -package base  -output performance/base/parquet.go -import github.com/parsyl/parquet/performance/message
+// go run cmd/parquetgen/main.go -input performance/message/message.go -type Message -package base  -output performance/base/parquet.go -import github.com/inigolabs/parquet/performance/message
 // optimized
-// go run cmd/parquetgen/main.go -input performance/message/message.go -type Message -package performance  -output performance/parquet.go -import github.com/parsyl/parquet/performance/message
+// go run cmd/parquetgen/main.go -input performance/message/message.go -type Message -package performance  -output performance/parquet.go -import github.com/inigolabs/parquet/performance/message
 type Message struct {
 	ColStr0 *string `parquet:"col_str_0" json:"col_str_0" faker:"word"`
 	ColStr1 string  `parquet:"col_str_1" json:"col_str_1" faker:"oneof: aaaaa, "` // optionally empty

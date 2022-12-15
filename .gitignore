@@ -19,3 +19,5 @@ _examples/people/people.parquet
 _examples/people/read.py
 _examples/via_parquet/generated_struct.go
 _examples/via_parquet/parquet.go
+
+.idea

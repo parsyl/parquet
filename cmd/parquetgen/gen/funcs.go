@@ -5,9 +5,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/parsyl/parquet/cmd/parquetgen/cases"
-	"github.com/parsyl/parquet/cmd/parquetgen/dremel"
-	"github.com/parsyl/parquet/cmd/parquetgen/fields"
+	"github.com/inigolabs/parquet/cmd/parquetgen/cases"
+	"github.com/inigolabs/parquet/cmd/parquetgen/dremel"
+	"github.com/inigolabs/parquet/cmd/parquetgen/fields"
 )
 
 var (
