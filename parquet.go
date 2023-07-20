@@ -368,7 +368,7 @@ func ReadMetaData(r io.ReadSeeker) (*sch.FileMetaData, error) {
 	}
 
 	m := sch.NewFileMetaData()
-	return m, m.Read(p)
+	return m, m.Read(context.TODO(), p)
 }
 
 // ReadFooter reads the parquet metadata
@@ -382,7 +382,7 @@ func (m *Metadata) ReadFooter(r io.ReadSeeker) error {
 func PageHeader(r io.Reader) (*sch.PageHeader, error) {
 	p := thrift.NewTCompactProtocol(&thrift.StreamTransport{Reader: r})
 	pg := &sch.PageHeader{}
-	err := pg.Read(p)
+	err := pg.Read(context.TODO(), p)
 	return pg, err
 }
 
