@@ -72,11 +72,7 @@ func (s schema) schema() (int64, []*sch.SchemaElement) {
 		}
 
 		se := &sch.SchemaElement{
-			Name:       f.Path[len(f.Path)-1],
-			TypeLength: &z,
-			Scale:      &z,
-			Precision:  &z,
-			FieldID:    &z,
+			Name: f.Path[len(f.Path)-1],
 		}
 
 		f.Type(se)
@@ -310,13 +306,8 @@ func (r *RowGroup) updateColumnChunk(pth []string, dataLen, compressedLen, count
 func schemaElements(fields []Field) schema {
 	m := make(map[string]sch.SchemaElement)
 	for _, f := range fields {
-		var z int32
 		se := sch.SchemaElement{
-			Name:       f.Name,
-			TypeLength: &z,
-			Scale:      &z,
-			Precision:  &z,
-			FieldID:    &z,
+			Name: f.Name,
 		}
 
 		f.Type(&se)
